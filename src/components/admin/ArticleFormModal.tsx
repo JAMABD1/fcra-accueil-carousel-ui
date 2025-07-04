@@ -1,30 +1,15 @@
-
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Article } from "./ArticlesManager";
 import TagSelector from "./TagSelector";
+import ArticleBasicFields from "./ArticleBasicFields";
+import ArticleImageUpload from "./ArticleImageUpload";
+import ArticleSettings from "./ArticleSettings";
 
 interface ArticleFormData {
   title: string;
@@ -158,97 +143,10 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="title"
-            rules={{ required: "Le titre est requis" }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Titre *</FormLabel>
-                <FormControl>
-                  <Input placeholder="Titre de l'article" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="author"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Auteur</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nom de l'auteur" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="excerpt"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Extrait</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Résumé de l'article"
-                  className="min-h-[80px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="content"
-          rules={{ required: "Le contenu est requis" }}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Contenu *</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Contenu complet de l'article"
-                  className="min-h-[200px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <ArticleBasicFields control={form.control} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="images"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Images</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => field.onChange(e.target.files)}
-                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                  />
-                </FormControl>
-                <div className="text-sm text-muted-foreground">
-                  Sélectionnez plusieurs images pour créer un carrousel
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <ArticleImageUpload control={form.control} />
 
           <FormField
             control={form.control}
@@ -268,51 +166,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Statut</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un statut" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="draft">Brouillon</SelectItem>
-                    <SelectItem value="published">Publié</SelectItem>
-                    <SelectItem value="archived">Archivé</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="featured"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Article en vedette</FormLabel>
-                  <div className="text-sm text-muted-foreground">
-                    Mettre cet article en avant
-                  </div>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
+        <ArticleSettings control={form.control} />
 
         <div className="flex justify-end space-x-4 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
