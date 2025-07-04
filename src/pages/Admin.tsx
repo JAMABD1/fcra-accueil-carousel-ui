@@ -34,6 +34,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ArticlesManager from "@/components/admin/ArticlesManager";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
@@ -146,7 +147,10 @@ const Admin = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <Button className="h-20 flex flex-col space-y-2">
+                    <Button 
+                      className="h-20 flex flex-col space-y-2"
+                      onClick={() => setActiveSection("news")}
+                    >
                       <FileText className="h-6 w-6" />
                       <span className="text-sm">Nouvel Article</span>
                     </Button>
@@ -168,6 +172,9 @@ const Admin = () => {
             </div>
           </div>
         );
+        
+      case "news":
+        return <ArticlesManager />;
         
       default:
         return (
