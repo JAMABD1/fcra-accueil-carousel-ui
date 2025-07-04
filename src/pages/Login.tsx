@@ -7,6 +7,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { Shield, Lock, User } from "lucide-react";
 
 interface LoginForm {
   email: string;
@@ -16,6 +18,7 @@ interface LoginForm {
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const form = useForm<LoginForm>({
     defaultValues: {
@@ -33,7 +36,8 @@ const Login = () => {
         title: "Connexion réussie",
         description: "Bienvenue, administrateur!",
       });
-      // Here you would typically redirect to admin dashboard
+      // Redirect to admin dashboard
+      navigate("/admin");
     } else {
       toast({
         title: "Erreur de connexion",
@@ -47,16 +51,29 @@ const Login = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold">Connexion Administrateur</CardTitle>
-              <p className="text-gray-600">Connectez-vous à votre compte admin</p>
+          {/* Header with logo */}
+          <div className="text-center mb-8">
+            <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Espace Administrateur</h1>
+            <p className="text-gray-600">Accédez au panneau de contrôle FCRA</p>
+          </div>
+
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-8">
+              <CardTitle className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
+                <Lock className="w-5 h-5 text-green-600" />
+                Connexion Sécurisée
+              </CardTitle>
+              <p className="text-gray-600 mt-2">Veuillez vous identifier pour continuer</p>
             </CardHeader>
-            <CardContent>
+            
+            <CardContent className="space-y-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="email"
@@ -69,9 +86,17 @@ const Login = () => {
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="text-gray-700 font-medium">Adresse email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="admin@fcra.com" {...field} />
+                          <div className="relative">
+                            <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Input 
+                              type="email" 
+                              placeholder="admin@fcra.com" 
+                              className="pl-10 h-12 border-gray-200 focus:border-green-500 focus:ring-green-500" 
+                              {...field} 
+                            />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -90,9 +115,17 @@ const Login = () => {
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Mot de passe</FormLabel>
+                        <FormLabel className="text-gray-700 font-medium">Mot de passe</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="Votre mot de passe" {...field} />
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Input 
+                              type="password" 
+                              placeholder="••••••••" 
+                              className="pl-10 h-12 border-gray-200 focus:border-green-500 focus:ring-green-500" 
+                              {...field} 
+                            />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -101,21 +134,46 @@ const Login = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Connexion..." : "Se connecter"}
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Connexion...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4" />
+                        Se connecter
+                      </div>
+                    )}
                   </Button>
                 </form>
               </Form>
               
-              <div className="mt-4 p-3 bg-gray-100 rounded text-sm text-gray-600">
-                <strong>Démonstration:</strong><br />
-                Email: admin@fcra.com<br />
-                Mot de passe: admin123
+              {/* Demo info */}
+              <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <p className="text-sm font-medium text-green-800 mb-2">Informations de démonstration</p>
+                    <div className="space-y-1 text-sm text-green-700">
+                      <p><span className="font-medium">Email:</span> admin@fcra.com</p>
+                      <p><span className="font-medium">Mot de passe:</span> admin123</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
+          
+          {/* Footer */}
+          <div className="text-center mt-8">
+            <p className="text-sm text-gray-500">
+              © 2025 FCRA. Plateforme sécurisée d'administration.
+            </p>
+          </div>
         </div>
       </div>
     </Layout>

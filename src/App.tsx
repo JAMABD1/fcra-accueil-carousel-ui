@@ -17,6 +17,7 @@ import PhotoDetail from "./pages/PhotoDetail";
 import Bibliotheque from "./pages/Bibliotheque";
 import Ecoles from "./pages/Ecoles";
 import Login from "./pages/Login";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/ecoles" element={<Ecoles />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
