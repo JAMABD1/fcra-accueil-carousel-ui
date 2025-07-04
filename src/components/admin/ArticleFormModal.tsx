@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Article } from "./ArticlesManager";
+import TagSelector from "./TagSelector";
 
 interface ArticleFormData {
   title: string;
@@ -31,7 +32,7 @@ interface ArticleFormData {
   excerpt: string;
   images: FileList | null;
   author: string;
-  tags: string;
+  tags: string[];
   featured: boolean;
   status: string;
 }
@@ -53,7 +54,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
       excerpt: "",
       images: null,
       author: "",
-      tags: "",
+      tags: [],
       featured: false,
       status: "draft",
     },
@@ -68,7 +69,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         excerpt: article.excerpt || "",
         images: null,
         author: article.author || "",
-        tags: article.tags?.join(", ") || "",
+        tags: article.tags || [],
         featured: article.featured || false,
         status: article.status || "draft",
       });
@@ -112,7 +113,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         excerpt: data.excerpt || null,
         images: imageUrls,
         author: data.author || null,
-        tags: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
+        tags: data.tags,
         featured: data.featured,
         status: data.status,
       };
@@ -256,7 +257,10 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
               <FormItem>
                 <FormLabel>Tags</FormLabel>
                 <FormControl>
-                  <Input placeholder="Tag1, Tag2, Tag3" {...field} />
+                  <TagSelector 
+                    selectedTags={field.value} 
+                    onTagsChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

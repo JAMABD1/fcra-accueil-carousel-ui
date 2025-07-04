@@ -31,14 +31,17 @@ import {
   Bell,
   BarChart3,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Hash
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ArticlesManager from "@/components/admin/ArticlesManager";
+import TagsManager from "@/components/admin/TagsManager";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
   { title: "Actualités", icon: FileText, id: "news" },
+  { title: "Tags", icon: Hash, id: "tags" },
   { title: "Utilisateurs", icon: Users, id: "users" },
   { title: "Administrations", icon: Building, id: "administrations" },
   { title: "Centres", icon: Activity, id: "centers" },
@@ -175,6 +178,9 @@ const Admin = () => {
         
       case "news":
         return <ArticlesManager />;
+        
+      case "tags":
+        return <TagsManager />;
         
       default:
         return (
