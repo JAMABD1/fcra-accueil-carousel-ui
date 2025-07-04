@@ -1,6 +1,7 @@
-
 import Layout from "@/components/Layout";
 import HeroCarousel from "@/components/HeroCarousel";
+import Counter from "@/components/Counter";
+import ContactForm from "@/components/ContactForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -59,7 +60,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Impact Section */}
+      {/* Impact Section with Animated Counters */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -71,7 +72,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-3xl font-bold text-green-600">300+</span>
+                <Counter end={300} suffix="+" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Étudiants Universitaires</h3>
               <p className="text-gray-600">Enfants universitaire par an</p>
@@ -79,7 +80,7 @@ const Index = () => {
 
             <div className="text-center">
               <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-3xl font-bold text-green-600">1,000+</span>
+                <Counter end={1000} suffix="+" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Orphelinat</h3>
               <p className="text-gray-600">Enfants orphelin fille et garçons pris en charge</p>
@@ -193,50 +194,7 @@ const Index = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Nos Coordonnées
-            </h2>
-            <p className="text-lg text-gray-600">
-              Nous sommes toujours disponibles pour répondre à vos questions.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <Card className="p-6 text-center">
-              <CardContent className="p-0">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-green-600 text-xl">📞</span>
-                </div>
-                <h3 className="font-semibold mb-2">Téléphone</h3>
-                <p className="text-gray-600">0344679192</p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center">
-              <CardContent className="p-0">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-green-600 text-xl">✉️</span>
-                </div>
-                <h3 className="font-semibold mb-2">Email</h3>
-                <p className="text-gray-600">jao.lazabdallah83@gmail.com</p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center">
-              <CardContent className="p-0">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-green-600 text-xl">📍</span>
-                </div>
-                <h3 className="font-semibold mb-2">Adresse</h3>
-                <p className="text-gray-600">Antananarivo</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <ContactForm />
     </Layout>
   );
 };
