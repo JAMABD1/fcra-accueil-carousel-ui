@@ -29,7 +29,7 @@ interface ArticleFormData {
   title: string;
   content: string;
   excerpt: string;
-  image_url: string;
+  images: FileList | null;
   author: string;
   tags: string;
   featured: boolean;
@@ -51,7 +51,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
       title: "",
       content: "",
       excerpt: "",
-      image_url: "",
+      images: null,
       author: "",
       tags: "",
       featured: false,
@@ -66,7 +66,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         title: article.title,
         content: article.content,
         excerpt: article.excerpt || "",
-        image_url: article.image_url || "",
+        images: null,
         author: article.author || "",
         tags: article.tags?.join(", ") || "",
         featured: article.featured || false,
@@ -78,11 +78,39 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
   // Create/Update article mutation
   const saveArticleMutation = useMutation({
     mutationFn: async (data: ArticleFormData) => {
+      let imageUrls: string[] = [];
+      
+      // Upload images if provided
+      if (data.images && data.images.length > 0) {
+        const uploadPromises = Array.from(data.images).map(async (file) => {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('article-images')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('article-images')
+            .getPublicUrl(filePath);
+
+          return publicUrl;
+        });
+
+        imageUrls = await Promise.all(uploadPromises);
+      } else if (isEditing && article) {
+        // Keep existing images when editing
+        imageUrls = article.images || [];
+      }
+
       const articleData = {
         title: data.title,
         content: data.content,
         excerpt: data.excerpt || null,
-        image_url: data.image_url || null,
+        images: imageUrls,
         author: data.author || null,
         tags: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
         featured: data.featured,
@@ -200,13 +228,22 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
-            name="image_url"
+            name="images"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>URL de l'image</FormLabel>
+                <FormLabel>Images</FormLabel>
                 <FormControl>
-                  <Input placeholder="https://exemple.com/image.jpg" {...field} />
+                  <Input 
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => field.onChange(e.target.files)}
+                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+                  />
                 </FormControl>
+                <div className="text-sm text-muted-foreground">
+                  Sélectionnez plusieurs images pour créer un carrousel
+                </div>
                 <FormMessage />
               </FormItem>
             )}

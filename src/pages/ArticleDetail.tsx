@@ -1,72 +1,60 @@
-
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { 
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Calendar, User, ArrowLeft, Share2, Facebook, Twitter } from "lucide-react";
+import { Article } from "@/components/admin/ArticlesManager";
 
 const ArticleDetail = () => {
   const { id } = useParams();
 
-  // Mock data - in real app, this would come from API
-  const articles = [
-    {
-      id: 1,
-      title: "Cérémonie de Remise des Diplômes 2024",
-      date: "15 Décembre 2024",
-      author: "Admin FCRA",
-      image: "/lovable-uploads/120bc1b5-8776-4510-8628-3d1ca45aef5f.png",
-      excerpt: "Une cérémonie exceptionnelle pour célébrer la réussite de nos étudiants diplômés.",
-      tags: ["Éducation", "Cérémonie", "Diplômes"],
-      content: `
-        <p>La cérémonie de remise des diplômes 2024 de FCRA s'est tenue dans une atmosphère de joie et de fierté. Cette année, nous avons eu l'honneur de célébrer la réussite de plus de 150 étudiants qui ont complété avec succès leurs formations dans diverses spécialités.</p>
-        
-        <p>L'événement s'est déroulé en présence des familles, des enseignants et des partenaires de FCRA. Les diplômés ont été félicités pour leur persévérance et leur dévouement tout au long de leur parcours éducatif.</p>
-        
-        <h3>Programmes Diplômants</h3>
-        <p>Les formations diplômantes cette année couvraient plusieurs domaines :</p>
-        <ul>
-          <li>Informatique et bureautique</li>
-          <li>Couture et textile</li>
-          <li>Menuiserie et ébénisterie</li>
-          <li>Électricité et électronique</li>
-          <li>Agriculture moderne</li>
-        </ul>
-        
-        <h3>Témoignages</h3>
-        <p>"Cette formation a changé ma vie. Grâce à FCRA, j'ai acquis les compétences nécessaires pour créer ma propre entreprise," témoigne Aina, diplômée en couture.</p>
-        
-        <p>La cérémonie s'est conclue par la remise officielle des certificats et un cocktail de célébration, marquant le début d'une nouvelle étape pour ces jeunes diplômés prêts à contribuer au développement de Madagascar.</p>
-      `
+  // Fetch article from Supabase
+  const { data: article, isLoading } = useQuery({
+    queryKey: ['article', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data as Article;
     },
-    {
-      id: 2,
-      title: "Nouveau Programme d'Aide aux Orphelins",
-      date: "10 Décembre 2024",
-      author: "Équipe Social",
-      image: "https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=600&h=400&fit=crop",
-      excerpt: "Lancement d'un programme innovant pour soutenir les enfants orphelins.",
-      tags: ["Social", "Orphelins", "Programme"],
-      content: `
-        <p>FCRA lance un nouveau programme d'aide aux orphelins, une initiative ambitieuse visant à offrir un avenir meilleur aux enfants les plus vulnérables de Madagascar.</p>
-        
-        <p>Ce programme comprend plusieurs volets d'assistance :</p>
-        
-        <h3>Éducation et Formation</h3>
-        <p>Bourses d'études complètes pour permettre aux orphelins de poursuivre leur scolarité jusqu'au niveau universitaire. Un accompagnement personnalisé est fourni par nos conseillers pédagogiques.</p>
-        
-        <h3>Hébergement et Nutrition</h3>
-        <p>Mise en place de foyers d'accueil sécurisés avec repas équilibrés et suivi médical régulier.</p>
-        
-        <h3>Soutien Psychologique</h3>
-        <p>Sessions de counseling individuel et de groupe pour aider les enfants à surmonter leurs traumatismes et développer leur confiance en soi.</p>
-        
-        <p>Le programme bénéficie du soutien de partenaires internationaux et vise à accompagner plus de 200 orphelins dans les trois prochaines années.</p>
-      `
-    }
-  ];
+    enabled: !!id
+  });
 
-  const article = articles.find(a => a.id === parseInt(id || "1"));
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="py-16 bg-gray-50 min-h-screen">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-300 rounded w-3/4 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!article) {
     return (
@@ -101,15 +89,66 @@ const ArticleDetail = () => {
 
           {/* Article Header */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-            <div 
-              className="h-96 bg-cover bg-center relative"
-              style={{ backgroundImage: `url(${article.image})` }}
-            >
-              <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-              <div className="absolute bottom-6 left-6 right-6 text-white">
+            {/* Image Carousel */}
+            {article.images && article.images.length > 0 && (
+              <div className="relative">
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {article.images.map((imageUrl, index) => (
+                      <CarouselItem key={index}>
+                        <div className="h-96 bg-cover bg-center relative">
+                          <img 
+                            src={imageUrl} 
+                            alt={`${article.title} - Image ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  {article.images.length > 1 && (
+                    <>
+                      <CarouselPrevious className="left-4" />
+                      <CarouselNext className="right-4" />
+                    </>
+                  )}
+                </Carousel>
+                
+                {/* Article Title Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {article.tags?.map((tag) => (
+                      <Badge key={tag} className="bg-green-600 text-white">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                    {article.title}
+                  </h1>
+                  <div className="flex items-center gap-6 text-sm opacity-90">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>{formatDate(article.created_at)}</span>
+                    </div>
+                    {article.author && (
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span>{article.author}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Fallback for articles without images */}
+            {(!article.images || article.images.length === 0) && (
+              <div className="p-8 bg-gradient-to-r from-green-500 to-green-600 text-white">
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {article.tags.map((tag) => (
-                    <Badge key={tag} className="bg-green-600 text-white">
+                  {article.tags?.map((tag) => (
+                    <Badge key={tag} className="bg-white/20 text-white border-white/30">
                       {tag}
                     </Badge>
                   ))}
@@ -120,25 +159,34 @@ const ArticleDetail = () => {
                 <div className="flex items-center gap-6 text-sm opacity-90">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    <span>{article.date}</span>
+                    <span>{formatDate(article.created_at)}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    <span>{article.author}</span>
-                  </div>
+                  {article.author && (
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      <span>{article.author}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Article Content */}
             <div className="lg:col-span-3">
               <div className="bg-white rounded-lg shadow-lg p-8">
+                {article.excerpt && (
+                  <div className="text-lg text-gray-600 mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-green-500">
+                    {article.excerpt}
+                  </div>
+                )}
                 <div 
                   className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: article.content.replace(/\n/g, '<br>') }}
-                />
+                  style={{ whiteSpace: 'pre-wrap' }}
+                >
+                  {article.content}
+                </div>
               </div>
             </div>
 
@@ -155,27 +203,27 @@ const ArticleDetail = () => {
                     <Twitter className="w-4 h-4 mr-2" />
                     Twitter
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => navigator.clipboard.writeText(window.location.href)}
+                  >
                     <Share2 className="w-4 h-4 mr-2" />
                     Copier le lien
                   </Button>
                 </div>
 
-                <hr className="my-6" />
-
-                <h3 className="font-bold text-gray-900 mb-4">Articles similaires</h3>
-                <div className="space-y-4">
-                  {articles.filter(a => a.id !== article.id).slice(0, 2).map((relatedArticle) => (
-                    <div key={relatedArticle.id} className="border-l-4 border-green-600 pl-4">
-                      <Link to={`/actualites/${relatedArticle.id}`}>
-                        <h4 className="font-semibold text-sm text-gray-900 hover:text-green-600 transition-colors">
-                          {relatedArticle.title}
-                        </h4>
-                        <p className="text-xs text-gray-500 mt-1">{relatedArticle.date}</p>
-                      </Link>
+                {article.featured && (
+                  <>
+                    <hr className="my-6" />
+                    <div className="text-center">
+                      <Badge className="bg-yellow-500 text-white">
+                        Article en vedette
+                      </Badge>
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

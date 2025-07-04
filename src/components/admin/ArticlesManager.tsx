@@ -30,7 +30,7 @@ export interface Article {
   title: string;
   content: string;
   excerpt: string | null;
-  image_url: string | null;
+  images: string[] | null;
   author: string | null;
   tags: string[] | null;
   featured: boolean | null;
