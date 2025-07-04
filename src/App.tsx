@@ -10,7 +10,11 @@ import ArticleDetail from "./pages/ArticleDetail";
 import Administrations from "./pages/Administrations";
 import Centres from "./pages/Centres";
 import Activites from "./pages/Activites";
-import Medias from "./pages/Medias";
+import Videos from "./pages/Videos";
+import VideoDetail from "./pages/VideoDetail";
+import Photos from "./pages/Photos";
+import PhotoDetail from "./pages/PhotoDetail";
+import Bibliotheque from "./pages/Bibliotheque";
 import Ecoles from "./pages/Ecoles";
 import NotFound from "./pages/NotFound";
 
@@ -29,7 +33,11 @@ const App = () => (
           <Route path="/administrations" element={<Administrations />} />
           <Route path="/centres" element={<Centres />} />
           <Route path="/activites" element={<Activites />} />
-          <Route path="/medias" element={<Medias />} />
+          <Route path="/videos" element={<Videos />} />
+          <Route path="/videos/:id" element={<VideoDetail />} />
+          <Route path="/photos" element={<Photos />} />
+          <Route path="/photos/:id" element={<PhotoDetail />} />
+          <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/ecoles" element={<Ecoles />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,6 +1,12 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Globe } from "lucide-react";
+import { Globe, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -11,9 +17,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { name: "Administrations", path: "/administrations" },
     { name: "Centres", path: "/centres" },
     { name: "Activités", path: "/activites" },
-    { name: "Médias", path: "/medias" },
     { name: "Écoles", path: "/ecoles" },
   ];
+
+  const mediaItems = [
+    { name: "Vidéos", path: "/videos" },
+    { name: "Photos", path: "/photos" },
+    { name: "Bibliothèque", path: "/bibliotheque" },
+  ];
+
+  const isMediaActive = location.pathname.startsWith("/videos") || 
+                       location.pathname.startsWith("/photos") || 
+                       location.pathname.startsWith("/bibliotheque");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,6 +56,29 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   {item.name}
                 </Link>
               ))}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-green-600 ${
+                  isMediaActive
+                    ? "text-green-600 border-b-2 border-green-600"
+                    : "text-gray-700"
+                }`}>
+                  Médias
+                  <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white shadow-lg border">
+                  {mediaItems.map((item) => (
+                    <DropdownMenuItem key={item.path} asChild>
+                      <Link
+                        to={item.path}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      >
+                        {item.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
 
             {/* Language and Connect */}
