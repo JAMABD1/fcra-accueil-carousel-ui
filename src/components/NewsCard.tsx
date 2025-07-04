@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface NewsCardProps {
   id: number;
@@ -16,9 +17,10 @@ interface NewsCardProps {
 }
 
 const NewsCard = ({ id, title, date, author, image, excerpt, tags, featured = false }: NewsCardProps) => {
+  const navigate = useNavigate();
+
   const handleReadMore = () => {
-    // Navigate to individual article page
-    window.location.href = `/actualites/${id}`;
+    navigate(`/actualites/${id}`);
   };
 
   return (
