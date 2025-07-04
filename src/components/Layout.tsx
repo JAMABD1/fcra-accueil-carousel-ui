@@ -87,9 +87,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <Globe className="h-4 w-4" />
                 <span>fr</span>
               </button>
-              <button className="text-sm text-gray-600 hover:text-gray-900">
+              <Link 
+                to="/login"
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
                 Se connecter
-              </button>
+              </Link>
             </div>
           </div>
         </div>
