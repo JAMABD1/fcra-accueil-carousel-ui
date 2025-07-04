@@ -1,0 +1,106 @@
+
+import { Link, useLocation } from "react-router-dom";
+import { Globe } from "lucide-react";
+
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+
+  const navItems = [
+    { name: "Accueil", path: "/" },
+    { name: "Actualités", path: "/actualites" },
+    { name: "Administrations", path: "/administrations" },
+    { name: "Centres", path: "/centres" },
+    { name: "Activités", path: "/activites" },
+    { name: "Médias", path: "/medias" },
+    { name: "Écoles", path: "/ecoles" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="text-green-600 font-bold text-xl">FCRA</div>
+            </Link>
+
+            {/* Navigation */}
+            <nav className="hidden md:flex space-x-8">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`text-sm font-medium transition-colors hover:text-green-600 ${
+                    location.pathname === item.path
+                      ? "text-green-600 border-b-2 border-green-600"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Language and Connect */}
+            <div className="flex items-center space-x-4">
+              <button className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900">
+                <Globe className="h-4 w-4" />
+                <span>fr</span>
+              </button>
+              <button className="text-sm text-gray-600 hover:text-gray-900">
+                Se connecter
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main>{children}</main>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="col-span-2">
+              <h3 className="text-xl font-bold mb-4">FCRA</h3>
+              <p className="text-gray-300 mb-4">
+                Une association à but non lucratif au service de la communauté.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Contact</h4>
+              <div className="space-y-2 text-gray-300">
+                <p>📞 0344679192</p>
+                <p>✉️ jao.lazabdallah83@gmail.com</p>
+                <p>📍 Antananarivo</p>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Liens Rapides</h4>
+              <div className="space-y-2">
+                {navItems.slice(1, 4).map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="block text-gray-300 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+          <hr className="border-gray-700 my-8" />
+          <div className="text-center text-gray-400">
+            <p>&copy; 2025 FCRA. Tous droits réservés.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default Layout;
