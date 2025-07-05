@@ -138,8 +138,8 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
       if (data.thumbnail && data.thumbnail[0]) {
         setUploadProgress(75);
         const thumbnailFile = data.thumbnail[0];
-        const thumbnailPath = `thumbnails/${Date.now()}-${thumbnailFile.name}`;
-        thumbnailUrl = await uploadFile(thumbnailFile, 'videos', thumbnailPath);
+        const thumbnailPath = `${Date.now()}-${thumbnailFile.name}`;
+        thumbnailUrl = await uploadFile(thumbnailFile, 'video-thumbnails', thumbnailPath);
       }
 
       setUploadProgress(90);

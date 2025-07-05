@@ -31,7 +31,7 @@ const VideoUpload = ({ control, existingVideoUrl, existingThumbnailUrl }: VideoU
           validate: (files: FileList | null) => {
             if (!files || files.length === 0) return "Veuillez sélectionner un fichier vidéo";
             const file = files[0];
-            if (file.size > 629145600) return "La taille du fichier ne doit pas dépasser 600MB";
+            if (file.size > 734003200) return "La taille du fichier ne doit pas dépasser 700MB";
             return true;
           }
         } : {}}
@@ -47,7 +47,7 @@ const VideoUpload = ({ control, existingVideoUrl, existingThumbnailUrl }: VideoU
               />
             </FormControl>
             <div className="text-sm text-muted-foreground">
-              Formats supportés: MP4, WebM, OGG, AVI, MOV, WMV. Taille maximum: 600MB
+              Formats supportés: MP4, WebM, OGG, AVI, MOV, WMV. Taille maximum: 700MB
             </div>
             {existingVideoUrl && (
               <div className="text-sm text-muted-foreground">
