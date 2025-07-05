@@ -4,69 +4,76 @@ import { useParams, Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Eye, ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Lightbox } from "@/components/Lightbox";
+
+interface Photo {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string;
+  thumbnail_url: string | null;
+  category: string;
+  featured: boolean;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const PhotoDetail = () => {
   const { id } = useParams();
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  const photos = [
-    {
-      id: 1,
-      title: "Atelier de Formation Technique",
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&h=600&fit=crop",
-      date: "18 Déc 2024",
-      category: "Formation",
-      views: "245",
-      description: "Nos étudiants en pleine formation technique dans nos ateliers modernes équipés des dernières technologies."
+  const { data: photo, isLoading } = useQuery({
+    queryKey: ["photo", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        .eq("id", id)
+        .eq("status", "published")
+        .single();
+      
+      if (error) throw error;
+      return data as Photo;
     },
-    {
-      id: 2,
-      title: "Équipe Administrative",
-      image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&h=600&fit=crop",
-      date: "12 Déc 2024",
-      category: "Équipe",
-      views: "189",
-      description: "Photo de groupe de notre équipe administrative dédiée au service de nos étudiants."
-    },
-    {
-      id: 3,
-      title: "Nouvelle Infrastructure",
-      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop",
-      date: "8 Déc 2024",
-      category: "Infrastructure",
-      views: "367",
-      description: "Découvrez nos nouvelles infrastructures modernes conçues pour offrir les meilleures conditions d'apprentissage."
-    },
-    {
-      id: 4,
-      title: "Étudiants en Action",
-      image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=600&fit=crop",
-      date: "25 Nov 2024",
-      category: "Étudiants",
-      views: "456",
-      description: "Nos étudiants lors d'un projet collaboratif, démontrant leur engagement et leur esprit d'équipe."
-    },
-    {
-      id: 5,
-      title: "Cérémonie Officielle",
-      image: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&h=600&fit=crop",
-      date: "20 Nov 2024",
-      category: "Événement",
-      views: "523",
-      description: "Moment solennel lors de notre cérémonie officielle avec les personnalités et partenaires."
-    },
-    {
-      id: 6,
-      title: "Laboratoire Informatique",
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&h=600&fit=crop",
-      date: "15 Nov 2024",
-      category: "Formation",
-      views: "298",
-      description: "Vue d'ensemble de notre laboratoire informatique avec les équipements de pointe."
-    }
-  ];
+    enabled: !!id,
+  });
 
-  const photo = photos.find(p => p.id === parseInt(id || "0"));
-  const relatedPhotos = photos.filter(p => p.id !== parseInt(id || "0") && p.category === photo?.category).slice(0, 6);
+  const { data: relatedPhotos = [] } = useQuery({
+    queryKey: ["related-photos", photo?.category],
+    queryFn: async () => {
+      if (!photo) return [];
+      
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        .eq("status", "published")
+        .eq("category", photo.category)
+        .neq("id", photo.id)
+        .limit(6);
+      
+      if (error) throw error;
+      return data as Photo[];
+    },
+    enabled: !!photo,
+  });
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="py-16 bg-gray-50 min-h-screen">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <p>Chargement...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!photo) {
     return (
@@ -101,9 +108,10 @@ const PhotoDetail = () => {
               <Card className="overflow-hidden">
                 <div className="relative">
                   <img
-                    src={photo.image}
+                    src={photo.image_url}
                     alt={photo.title}
-                    className="w-full h-auto max-h-96 object-cover"
+                    className="w-full h-auto max-h-96 object-cover cursor-pointer"
+                    onClick={() => setIsLightboxOpen(true)}
                   />
                 </div>
                 <CardContent className="p-6">
@@ -118,12 +126,14 @@ const PhotoDetail = () => {
                         </span>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          <span>{photo.date}</span>
+                          <span>{new Date(photo.created_at).toLocaleDateString()}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          <span>{photo.views} vues</span>
-                        </div>
+                        {photo.featured && (
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" />
+                            <span>Vedette</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Button className="bg-green-600 hover:bg-green-700">
@@ -150,7 +160,7 @@ const PhotoDetail = () => {
                       <div className="relative">
                         <div 
                           className="w-full h-24 bg-cover bg-center hover:scale-105 transition-transform duration-300"
-                          style={{ backgroundImage: `url(${relatedPhoto.image})` }}
+                          style={{ backgroundImage: `url(${relatedPhoto.thumbnail_url || relatedPhoto.image_url})` }}
                         />
                         <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300" />
                       </div>
@@ -159,7 +169,7 @@ const PhotoDetail = () => {
                           {relatedPhoto.title}
                         </h3>
                         <div className="text-xs text-gray-500">
-                          {relatedPhoto.date}
+                          {new Date(relatedPhoto.created_at).toLocaleDateString()}
                         </div>
                       </div>
                     </Link>

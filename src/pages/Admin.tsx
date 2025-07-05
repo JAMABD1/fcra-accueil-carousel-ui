@@ -38,6 +38,7 @@ import { useNavigate } from "react-router-dom";
 import ArticlesManager from "@/components/admin/ArticlesManager";
 import TagsManager from "@/components/admin/TagsManager";
 import VideosManager from "@/components/admin/VideosManager";
+import PhotosManager from "@/components/admin/PhotosManager";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
@@ -185,6 +186,9 @@ const Admin = () => {
         
       case "videos":
         return <VideosManager />;
+        
+      case "photos":
+        return <PhotosManager />;
         
       default:
         return (

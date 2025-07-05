@@ -51,6 +51,45 @@ export type Database = {
         }
         Relationships: []
       }
+      photos: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          featured: boolean | null
+          id: string
+          image_url: string
+          status: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url: string
+          status?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string
+          status?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           color: string | null
