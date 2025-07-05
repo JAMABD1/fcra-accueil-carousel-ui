@@ -26,6 +26,15 @@ const VideoUpload = ({ control, existingVideoUrl, existingThumbnailUrl }: VideoU
       <FormField
         control={control}
         name="video"
+        rules={!existingVideoUrl ? { 
+          required: "Veuillez sélectionner un fichier vidéo",
+          validate: (files: FileList | null) => {
+            if (!files || files.length === 0) return "Veuillez sélectionner un fichier vidéo";
+            const file = files[0];
+            if (file.size > 629145600) return "La taille du fichier ne doit pas dépasser 600MB";
+            return true;
+          }
+        } : {}}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Vidéo {!existingVideoUrl && "*"}</FormLabel>
