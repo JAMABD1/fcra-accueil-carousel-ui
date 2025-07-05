@@ -82,9 +82,15 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
   const uploadFile = async (file: File, bucket: string, path: string) => {
     const { data, error } = await supabase.storage
       .from(bucket)
-      .upload(path, file);
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
 
     const { data: { publicUrl } } = supabase.storage
       .from(bucket)
@@ -133,7 +139,7 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
         setUploadProgress(75);
         const thumbnailFile = data.thumbnail[0];
         const thumbnailPath = `thumbnails/${Date.now()}-${thumbnailFile.name}`;
-        thumbnailUrl = await uploadFile(thumbnailFile, 'article-images', thumbnailPath);
+        thumbnailUrl = await uploadFile(thumbnailFile, 'videos', thumbnailPath);
       }
 
       setUploadProgress(90);
