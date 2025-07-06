@@ -4,8 +4,40 @@ import Counter from "@/components/Counter";
 import ContactForm from "@/components/ContactForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  // Fetch impact data
+  const { data: impacts = [] } = useQuery({
+    queryKey: ['impacts-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('impact')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch sections data
+  const { data: sections = [] } = useQuery({
+    queryKey: ['sections-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sections')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   return (
     <Layout>
       {/* Hero Carousel */}
@@ -69,22 +101,18 @@ const Index = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Counter end={300} suffix="+" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {impacts.map((impact) => (
+              <div key={impact.id} className="text-center">
+                <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Counter end={impact.number} suffix="+" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{impact.title}</h3>
+                {impact.subtitle && (
+                  <p className="text-gray-600">{impact.subtitle}</p>
+                )}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Étudiants Universitaires</h3>
-              <p className="text-gray-600">Enfants universitaire par an</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Counter end={1000} suffix="+" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Orphelinat</h3>
-              <p className="text-gray-600">Enfants orphelin fille et garçons pris en charge</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -98,51 +126,26 @@ const Index = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 bg-cover bg-center" style={{
-                backgroundImage: "url(/lovable-uploads/586b3ef5-3f2c-4e08-9ed5-25bbc640d5da.png)"
-              }}></div>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-2">Étudiants Universitaires</h3>
-                <p className="text-gray-600 mb-4">
-                  Accompagnement et soutien des étudiants dans leur parcours académique.
-                </p>
-                <Button variant="outline" className="w-full">
-                  Visitez Nous
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 bg-cover bg-center" style={{
-                backgroundImage: "url(https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=400&h=200&fit=crop)"
-              }}></div>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-2">Orphelinat</h3>
-                <p className="text-gray-600 mb-4">
-                  Prise en charge et éducation des enfants orphelins.
-                </p>
-                <Button variant="outline" className="w-full">
-                  Visitez Nous
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 bg-cover bg-center" style={{
-                backgroundImage: "url(https://images.unsplash.com/photo-1581091870632-5a5ad36db9c6?w=400&h=200&fit=crop)"
-              }}></div>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-2">RVS</h3>
-                <p className="text-gray-600 mb-4">
-                  Programmes de formation et développement des compétences.
-                </p>
-                <Button variant="outline" className="w-full">
-                  Visitez Nous
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {sections.map((section) => (
+              <Card key={section.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="h-48 bg-cover bg-center" style={{
+                  backgroundImage: `url(${section.image_url})`
+                }}></div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
+                  {section.subtitle && (
+                    <p className="text-sm text-gray-500 mb-2">{section.subtitle}</p>
+                  )}
+                  {section.description && (
+                    <p className="text-gray-600 mb-4">{section.description}</p>
+                  )}
+                  <Button variant="outline" className="w-full">
+                    Visitez Nous
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Globe, ChevronDown } from "lucide-react";
+import { Globe, ChevronDown, Menu, X } from "lucide-react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,7 @@ import {
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { name: "Accueil", path: "/" },
@@ -32,8 +34,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      {/* Header - Sticky */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -41,7 +43,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               <div className="text-green-600 font-bold text-xl">FCRA</div>
             </Link>
 
-            {/* Navigation */}
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
               {navItems.map((item) => (
                 <Link
@@ -81,8 +83,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </DropdownMenu>
             </nav>
 
-            {/* Language and Connect */}
-            <div className="flex items-center space-x-4">
+            {/* Desktop Language and Connect */}
+            <div className="hidden md:flex items-center space-x-4">
               <button className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900">
                 <Globe className="h-4 w-4" />
                 <span>fr</span>
@@ -94,7 +96,71 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 Se connecter
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden p-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-gray-100"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t bg-white">
+              <div className="px-2 pt-2 pb-3 space-y-1">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                      location.pathname === item.path
+                        ? "text-green-600 bg-green-50"
+                        : "text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                
+                {/* Mobile Media Items */}
+                <div className="border-t pt-2">
+                  <div className="px-3 py-2 text-sm font-medium text-gray-500">Médias</div>
+                  {mediaItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`block px-6 py-2 text-base font-medium rounded-md transition-colors ${
+                        location.pathname === item.path
+                          ? "text-green-600 bg-green-50"
+                          : "text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
+                
+                {/* Mobile Language and Connect */}
+                <div className="border-t pt-2 space-y-1">
+                  <button className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-900">
+                    <Globe className="h-4 w-4" />
+                    <span>Français</span>
+                  </button>
+                  <Link 
+                    to="/login"
+                    className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Se connecter
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

@@ -32,21 +32,37 @@ import {
   BarChart3,
   Calendar,
   MessageSquare,
-  Hash
+  Hash,
+  ImageIcon,
+  TrendingUp,
+  Layers,
+  MapPin
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ArticlesManager from "@/components/admin/ArticlesManager";
 import TagsManager from "@/components/admin/TagsManager";
 import VideosManager from "@/components/admin/VideosManager";
 import PhotosManager from "@/components/admin/PhotosManager";
+import HeroManager from "@/components/admin/HeroManager";
+import ImpactManager from "@/components/admin/ImpactManager";
+import SectionsManager from "@/components/admin/SectionsManager";
+import DirectorsManager from "@/components/admin/DirectorsManager";
+import CentresManager from "@/components/admin/CentresManager";
+import CoordonnesManager from "@/components/admin/CoordonnesManager";
+import { ActivitiesManager } from "@/components/admin/ActivitiesManager";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
+  { title: "Heroes", icon: ImageIcon, id: "heroes" },
+  { title: "Impacts", icon: TrendingUp, id: "impacts" },
+  { title: "Sections", icon: Layers, id: "sections" },
   { title: "Actualités", icon: FileText, id: "news" },
   { title: "Tags", icon: Hash, id: "tags" },
+  { title: "Directeurs", icon: Users, id: "directors" },
+  { title: "Centres", icon: Building, id: "centres" },
+  { title: "Coordonnées", icon: MapPin, id: "coordonnes" },
   { title: "Utilisateurs", icon: Users, id: "users" },
   { title: "Administrations", icon: Building, id: "administrations" },
-  { title: "Centres", icon: Activity, id: "centers" },
   { title: "Activités", icon: Calendar, id: "activities" },
   { title: "Écoles", icon: GraduationCap, id: "schools" },
   { title: "Vidéos", icon: Video, id: "videos" },
@@ -151,25 +167,61 @@ const Admin = () => {
                   <CardTitle>Actions Rapides</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex flex-col space-y-2"
+                      onClick={() => setActiveSection("heroes")}
+                    >
+                      <ImageIcon className="h-6 w-6" />
+                      <span className="text-sm">Gérer Heroes</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex flex-col space-y-2"
+                      onClick={() => setActiveSection("impacts")}
+                    >
+                      <TrendingUp className="h-6 w-6" />
+                      <span className="text-sm">Gérer Impacts</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex flex-col space-y-2"
+                      onClick={() => setActiveSection("sections")}
+                    >
+                      <Layers className="h-6 w-6" />
+                      <span className="text-sm">Gérer Sections</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex flex-col space-y-2"
+                      onClick={() => setActiveSection("directors")}
+                    >
+                      <Users className="h-6 w-6" />
+                      <span className="text-sm">Gérer Directeurs</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex flex-col space-y-2"
+                      onClick={() => setActiveSection("centres")}
+                    >
+                      <Building className="h-6 w-6" />
+                      <span className="text-sm">Gérer Centres</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex flex-col space-y-2"
+                      onClick={() => setActiveSection("coordonnes")}
+                    >
+                      <MapPin className="h-6 w-6" />
+                      <span className="text-sm">Gérer Coordonnées</span>
+                    </Button>
                     <Button 
                       className="h-20 flex flex-col space-y-2"
                       onClick={() => setActiveSection("news")}
                     >
                       <FileText className="h-6 w-6" />
                       <span className="text-sm">Nouvel Article</span>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex flex-col space-y-2">
-                      <Users className="h-6 w-6" />
-                      <span className="text-sm">Gérer Utilisateurs</span>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex flex-col space-y-2">
-                      <Building className="h-6 w-6" />
-                      <span className="text-sm">Ajouter Centre</span>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex flex-col space-y-2">
-                      <Calendar className="h-6 w-6" />
-                      <span className="text-sm">Nouvelle Activité</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -178,11 +230,32 @@ const Admin = () => {
           </div>
         );
         
+      case "heroes":
+        return <HeroManager />;
+        
+      case "impacts":
+        return <ImpactManager />;
+        
+      case "sections":
+        return <SectionsManager />;
+        
       case "news":
         return <ArticlesManager />;
         
       case "tags":
         return <TagsManager />;
+        
+      case "directors":
+        return <DirectorsManager />;
+        
+      case "centres":
+        return <CentresManager />;
+        
+      case "coordonnes":
+        return <CoordonnesManager />;
+        
+      case "activities":
+        return <ActivitiesManager />;
         
       case "videos":
         return <VideosManager />;

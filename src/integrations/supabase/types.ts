@@ -51,6 +51,86 @@ export type Database = {
         }
         Relationships: []
       }
+      activities: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          description: string | null
+          id: string
+          photo_description: string | null
+          photo_id: string | null
+          section_id: string | null
+          sort_order: number | null
+          subtitle: string | null
+          tag_id: string | null
+          title: string
+          updated_at: string
+          video_description: string | null
+          video_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_description?: string | null
+          photo_id?: string | null
+          section_id?: string | null
+          sort_order?: number | null
+          subtitle?: string | null
+          tag_id?: string | null
+          title: string
+          updated_at?: string
+          video_description?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_description?: string | null
+          photo_id?: string | null
+          section_id?: string | null
+          sort_order?: number | null
+          subtitle?: string | null
+          tag_id?: string | null
+          title?: string
+          updated_at?: string
+          video_description?: string | null
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       photos: {
         Row: {
           category: string
@@ -59,6 +139,7 @@ export type Database = {
           featured: boolean | null
           id: string
           image_url: string
+          images: string[] | null
           status: string | null
           thumbnail_url: string | null
           title: string
@@ -71,6 +152,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           image_url: string
+          images?: string[] | null
           status?: string | null
           thumbnail_url?: string | null
           title: string
@@ -83,6 +165,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           image_url?: string
+          images?: string[] | null
           status?: string | null
           thumbnail_url?: string | null
           title?: string
@@ -129,7 +212,9 @@ export type Database = {
           thumbnail_url: string | null
           title: string
           updated_at: string
-          video_url: string
+          video_url: string | null
+          video_type: string | null
+          youtube_id: string | null
         }
         Insert: {
           author?: string | null
@@ -145,7 +230,9 @@ export type Database = {
           thumbnail_url?: string | null
           title: string
           updated_at?: string
-          video_url: string
+          video_url?: string | null
+          video_type?: string | null
+          youtube_id?: string | null
         }
         Update: {
           author?: string | null
@@ -161,9 +248,355 @@ export type Database = {
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
-          video_url?: string
+          video_url?: string | null
+          video_type?: string | null
+          youtube_id?: string | null
         }
         Relationships: []
+      }
+      hero: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      impact: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          number: number
+          sort_order: number | null
+          subtitle: string | null
+          tags_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          number: number
+          sort_order?: number | null
+          subtitle?: string | null
+          tags_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          number?: number
+          sort_order?: number | null
+          subtitle?: string | null
+          tags_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impact_tags_id_fkey"
+            columns: ["tags_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      schools: {
+        Row: {
+          address: string | null
+          capacity: number | null
+          created_at: string
+          description: string | null
+          director: string | null
+          email: string | null
+          facilities: string[] | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          images: string[] | null
+          name: string
+          phone: string | null
+          programs: string[] | null
+          status: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          director?: string | null
+          email?: string | null
+          facilities?: string[] | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          images?: string[] | null
+          name: string
+          phone?: string | null
+          programs?: string[] | null
+          status?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          director?: string | null
+          email?: string | null
+          facilities?: string[] | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          images?: string[] | null
+          name?: string
+          phone?: string | null
+          programs?: string[] | null
+          status?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sections: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          description: string | null
+          hero_id: string | null
+          id: string
+          image_url: string
+          sort_order: number | null
+          subtitle: string | null
+          tag_name: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          hero_id?: string | null
+          id?: string
+          image_url: string
+          sort_order?: number | null
+          subtitle?: string | null
+          tag_name?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          hero_id?: string | null
+          id?: string
+          image_url?: string
+          sort_order?: number | null
+          subtitle?: string | null
+          tag_name?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sections_hero_id_fkey"
+            columns: ["hero_id"]
+            isOneToOne: false
+            referencedRelation: "hero"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      directors: {
+        Row: {
+          active: boolean | null
+          centre_id: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          is_director: boolean | null
+          job: string | null
+          name: string
+          responsibility: string | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          centre_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_director?: boolean | null
+          job?: string | null
+          name: string
+          responsibility?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          centre_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_director?: boolean | null
+          job?: string | null
+          name?: string
+          responsibility?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "directors_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      centres: {
+        Row: {
+          active: boolean | null
+          address: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          hero_id: string | null
+          id: string
+          name: string
+          phone: string | null
+          sort_order: number | null
+          updated_at: string
+          video_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          hero_id?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          video_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          hero_id?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centres_hero_id_fkey"
+            columns: ["hero_id"]
+            isOneToOne: false
+            referencedRelation: "hero"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "centres_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      coordonnes: {
+        Row: {
+          active: boolean | null
+          address: string | null
+          created_at: string
+          email: string | null
+          google_map_url: string | null
+          id: string
+          phone: string | null
+          sort_order: number | null
+          tags_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          google_map_url?: string | null
+          id?: string
+          phone?: string | null
+          sort_order?: number | null
+          tags_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          google_map_url?: string | null
+          id?: string
+          phone?: string | null
+          sort_order?: number | null
+          tags_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordonnes_tags_id_fkey"
+            columns: ["tags_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

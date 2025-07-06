@@ -6,7 +6,7 @@ import { Calendar, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface NewsCardProps {
-  id: number;
+  id: string;
   title: string;
   date: string;
   author?: string;

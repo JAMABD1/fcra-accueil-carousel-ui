@@ -7,8 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
 import { PhotoBasicFields } from "./PhotoBasicFields";
-import { PhotoUpload } from "./PhotoUpload";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { X, Upload, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Photo {
   id: string;
@@ -16,6 +19,7 @@ interface Photo {
   description: string | null;
   image_url: string;
   thumbnail_url: string | null;
+  images: string[] | null;
   category: string;
   featured: boolean;
   status: string;
@@ -35,13 +39,13 @@ interface PhotoFormData {
   category: string;
   featured: boolean;
   status: string;
-  image: FileList | null;
-  thumbnail: FileList | null;
 }
 
 export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -52,8 +56,6 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       category: "General",
       featured: false,
       status: "published",
-      image: null,
-      thumbnail: null,
     },
   });
 
@@ -65,8 +67,6 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         category: photo.category,
         featured: photo.featured,
         status: photo.status,
-        image: null,
-        thumbnail: null,
       });
     } else {
       form.reset({
@@ -75,11 +75,25 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         category: "General",
         featured: false,
         status: "published",
-        image: null,
-        thumbnail: null,
       });
     }
   }, [photo, form]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles(files);
+    
+    // Create preview URLs
+    const urls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newUrls = previewUrls.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newUrls);
+  };
 
   const uploadFile = async (file: File, bucket: string, path: string) => {
     const { data, error } = await supabase.storage
@@ -106,33 +120,39 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       setIsUploading(true);
       setUploadProgress(0);
 
-      let imageUrl = photo?.image_url;
-      let thumbnailUrl = photo?.thumbnail_url;
-
       try {
-        // Upload main image if provided
-        if (data.image && data.image[0]) {
-          setUploadProgress(25);
-          const imageFile = data.image[0];
-          const imagePath = `images/${Date.now()}-${imageFile.name}`;
-          imageUrl = await uploadFile(imageFile, 'photos', imagePath);
+        let imageUrls: string[] = [];
+        let mainImageUrl = photo?.image_url;
+
+        // Upload all selected images
+        if (selectedFiles.length > 0) {
+          const totalFiles = selectedFiles.length;
+          
+          for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const imagePath = `images/${Date.now()}-${i}-${file.name}`;
+            const uploadedUrl = await uploadFile(file, 'photos', imagePath);
+            imageUrls.push(uploadedUrl);
+            
+            // Update progress
+            setUploadProgress(Math.round(((i + 1) / totalFiles) * 80));
+          }
+          
+          // Set the first image as the main image
+          mainImageUrl = imageUrls[0];
+        } else if (photo && photo.images) {
+          // Keep existing images if no new files selected
+          imageUrls = photo.images;
         }
 
-        // Upload thumbnail if provided
-        if (data.thumbnail && data.thumbnail[0]) {
-          setUploadProgress(50);
-          const thumbnailFile = data.thumbnail[0];
-          const thumbnailPath = `thumbnails/${Date.now()}-${thumbnailFile.name}`;
-          thumbnailUrl = await uploadFile(thumbnailFile, 'photos', thumbnailPath);
-        }
-
-        setUploadProgress(75);
+        setUploadProgress(90);
 
         const photoData = {
           title: data.title,
           description: data.description || null,
-          image_url: imageUrl!,
-          thumbnail_url: thumbnailUrl,
+          image_url: mainImageUrl!,
+          thumbnail_url: imageUrls.length > 0 ? imageUrls[0] : photo?.thumbnail_url,
+          images: imageUrls.length > 0 ? imageUrls : null,
           category: data.category,
           featured: data.featured,
           status: data.status,
@@ -168,6 +188,8 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         title: photo ? "Photo modifiée" : "Photo ajoutée",
         description: photo ? "La photo a été modifiée avec succès." : "La photo a été ajoutée avec succès.",
       });
+      setSelectedFiles([]);
+      setPreviewUrls([]);
       onClose();
     },
     onError: (error) => {
@@ -180,10 +202,10 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
   });
 
   const onSubmit = (data: PhotoFormData) => {
-    if (!photo && (!data.image || !data.image[0])) {
+    if (!photo && selectedFiles.length === 0) {
       toast({
         title: "Erreur",
-        description: "Veuillez sélectionner une image.",
+        description: "Veuillez sélectionner au moins une image.",
         variant: "destructive",
       });
       return;
@@ -194,7 +216,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {photo ? "Modifier la photo" : "Ajouter une nouvelle photo"}
@@ -205,11 +227,78 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <PhotoBasicFields form={form} />
             
-            <PhotoUpload 
-              form={form} 
-              existingImageUrl={photo?.image_url}
-              existingThumbnailUrl={photo?.thumbnail_url}
-            />
+            {/* Bulk Image Upload */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="images">Images (Upload multiple)</Label>
+                <Input
+                  id="images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="mt-2"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sélectionnez plusieurs images à télécharger. La première image sera utilisée comme image principale.
+                </p>
+              </div>
+
+              {/* Existing Images Preview */}
+              {photo && photo.images && photo.images.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Images existantes</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {photo.images.map((imageUrl, index) => (
+                      <Card key={index} className="overflow-hidden">
+                        <CardContent className="p-2">
+                          <img
+                            src={imageUrl}
+                            alt={`Existing ${index + 1}`}
+                            className="w-full h-24 object-cover rounded"
+                          />
+                          <p className="text-xs text-center mt-1">
+                            {index === 0 ? "Principal" : `Image ${index + 1}`}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New Images Preview */}
+              {selectedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Nouvelles images à télécharger</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {previewUrls.map((url, index) => (
+                      <Card key={index} className="overflow-hidden relative">
+                        <CardContent className="p-2">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={() => removeFile(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                          <img
+                            src={url}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded"
+                          />
+                          <p className="text-xs text-center mt-1">
+                            {index === 0 ? "Principal" : `Image ${index + 1}`}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {isUploading && (
               <div className="space-y-2">

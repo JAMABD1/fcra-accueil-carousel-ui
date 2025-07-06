@@ -16,6 +16,7 @@ import Photos from "./pages/Photos";
 import PhotoDetail from "./pages/PhotoDetail";
 import Bibliotheque from "./pages/Bibliotheque";
 import Ecoles from "./pages/Ecoles";
+import EcoleDetail from "./pages/EcoleDetail";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/photos/:id" element={<PhotoDetail />} />
           <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/ecoles" element={<Ecoles />} />
+          <Route path="/ecoles/:id" element={<EcoleDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />

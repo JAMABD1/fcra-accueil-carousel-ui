@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Eye, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, FileText, Clock, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ArticleFormModal from "./ArticleFormModal";
 
@@ -87,6 +87,14 @@ const ArticlesManager = () => {
     }
   });
 
+  // Calculate statistics
+  const stats = {
+    total: articles.length,
+    published: articles.filter(a => a.status === 'published').length,
+    draft: articles.filter(a => a.status === 'draft').length,
+    featured: articles.filter(a => a.featured).length,
+  };
+
   const filteredArticles = articles.filter(article =>
     article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     article.author?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -131,6 +139,61 @@ const ArticlesManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Articles</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">
+              Articles au total
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Publiés</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.published}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.total > 0 ? Math.round((stats.published / stats.total) * 100) : 0}% du total
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Brouillons</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{stats.draft}</div>
+            <p className="text-xs text-muted-foreground">
+              En attente de publication
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">En vedette</CardTitle>
+            <Star className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.featured}</div>
+            <p className="text-xs text-muted-foreground">
+              Articles mis en avant
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -176,6 +239,7 @@ const ArticlesManager = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-20">Image</TableHead>
                   <TableHead>Titre</TableHead>
                   <TableHead>Auteur</TableHead>
                   <TableHead>Statut</TableHead>
@@ -187,23 +251,43 @@ const ArticlesManager = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       Chargement...
                     </TableCell>
                   </TableRow>
                 ) : filteredArticles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                       {searchTerm ? 'Aucun article trouvé' : 'Aucun article disponible'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredArticles.map((article) => (
                     <TableRow key={article.id}>
+                      <TableCell>
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
+                          {article.images && article.images.length > 0 ? (
+                            <img 
+                              src={article.images[0]} 
+                              alt={article.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <FileText className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="max-w-xs truncate" title={article.title}>
                           {article.title}
                         </div>
+                        {article.excerpt && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs" title={article.excerpt}>
+                            {article.excerpt}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>{article.author || 'Non spécifié'}</TableCell>
                       <TableCell>{getStatusBadge(article.status)}</TableCell>

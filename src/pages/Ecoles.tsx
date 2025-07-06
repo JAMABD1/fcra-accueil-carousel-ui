@@ -2,8 +2,68 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+import { MapPin, Users, Star } from "lucide-react";
+
+interface School {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  address: string;
+  phone: string;
+  email: string;
+  director: string;
+  capacity: number;
+  programs: string[];
+  facilities: string[];
+  image_url: string;
+  images: string[];
+  status: string;
+  featured: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 const Ecoles = () => {
+  const { data: schools = [], isLoading } = useQuery({
+    queryKey: ['schools'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('status', 'published')
+        .order('featured', { ascending: false })
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as School[];
+    }
+  });
+
+  const featuredSchools = schools.filter(school => school.featured);
+  const regularSchools = schools.filter(school => !school.featured);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="py-16 bg-gray-50 min-h-screen">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <div className="animate-pulse">
+                <div className="h-8 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/3 mx-auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="py-16 bg-gray-50 min-h-screen">
@@ -17,40 +77,111 @@ const Ecoles = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <Card className="overflow-hidden">
-              <div 
-                className="h-64 bg-cover bg-center"
-                style={{ backgroundImage: "url(https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&h=400&fit=crop)" }}
-              ></div>
-              <CardContent className="p-6">
-                <h3 className="text-2xl font-semibold mb-4">École Primaire</h3>
-                <p className="text-gray-600 mb-4">
-                  Éducation de base solide pour les enfants de 6 à 12 ans.
-                </p>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  Plus d'informations
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Featured Schools */}
+          {featuredSchools.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <Star className="w-6 h-6 text-yellow-500" />
+                Écoles vedettes
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {featuredSchools.map((school) => (
+                  <Card key={school.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <div 
+                      className="h-48 bg-cover bg-center relative"
+                      style={{ backgroundImage: `url(${school.image_url})` }}
+                    >
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-yellow-600 text-white">
+                          École vedette
+                        </Badge>
+                      </div>
+                      <div className="absolute top-4 right-4">
+                        <Badge className="bg-green-600 text-white">
+                          {school.type}
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <h3 className="text-xl font-semibold mb-2">{school.name}</h3>
+                      <p className="text-gray-600 mb-4 line-clamp-3">
+                        {school.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                        {school.address && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            <span className="truncate">{school.address.split(',')[0]}</span>
+                          </div>
+                        )}
+                        {school.capacity && (
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            <span>{school.capacity} élèves</span>
+                          </div>
+                        )}
+                      </div>
+                      <Link to={`/ecoles/${school.id}`}>
+                        <Button className="w-full bg-green-600 hover:bg-green-700">
+                          Voir les détails
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
-            <Card className="overflow-hidden">
-              <div 
-                className="h-64 bg-cover bg-center"
-                style={{ backgroundImage: "url(https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&h=400&fit=crop)" }}
-              ></div>
-              <CardContent className="p-6">
-                <h3 className="text-2xl font-semibold mb-4">École Secondaire</h3>
-                <p className="text-gray-600 mb-4">
-                  Préparation aux études supérieures et à la vie professionnelle.
-                </p>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  Plus d'informations
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Regular Schools */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Toutes nos écoles
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {regularSchools.map((school) => (
+                <Card key={school.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div 
+                    className="h-48 bg-cover bg-center relative"
+                    style={{ backgroundImage: `url(${school.image_url})` }}
+                  >
+                    <div className="absolute top-4 right-4">
+                      <Badge className="bg-green-600 text-white">
+                        {school.type}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">{school.name}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-3">
+                      {school.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                      {school.address && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          <span className="truncate">{school.address.split(',')[0]}</span>
+                        </div>
+                      )}
+                      {school.capacity && (
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          <span>{school.capacity} élèves</span>
+                        </div>
+                      )}
+                    </div>
+                    <Link to={`/ecoles/${school.id}`}>
+                      <Button className="w-full bg-green-600 hover:bg-green-700">
+                        Voir les détails
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
 
+          {/* Programs Overview */}
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">
               Nos Programmes Spécialisés

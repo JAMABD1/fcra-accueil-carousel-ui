@@ -15,6 +15,7 @@ interface Photo {
   description: string | null;
   image_url: string;
   thumbnail_url: string | null;
+  images: string[] | null;
   category: string;
   featured: boolean;
   status: string;
@@ -25,6 +26,7 @@ interface Photo {
 const PhotoDetail = () => {
   const { id } = useParams();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: photo, isLoading } = useQuery({
     queryKey: ["photo", id],
@@ -106,14 +108,40 @@ const PhotoDetail = () => {
             {/* Main Photo */}
             <div className="lg:col-span-2">
               <Card className="overflow-hidden">
-                <div className="relative">
-                  <img
-                    src={photo.image_url}
-                    alt={photo.title}
-                    className="w-full h-auto max-h-96 object-cover cursor-pointer"
-                    onClick={() => setIsLightboxOpen(true)}
-                  />
-                </div>
+                {photo.images && photo.images.length > 1 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                    {photo.images.map((imageUrl, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={imageUrl}
+                          alt={`${photo.title} ${index + 1}`}
+                          className="w-full h-64 object-cover cursor-pointer rounded hover:opacity-90 transition-opacity"
+                          onClick={() => {
+                            setCurrentImageIndex(index);
+                            setIsLightboxOpen(true);
+                          }}
+                        />
+                        {index === 0 && (
+                          <div className="absolute top-2 left-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
+                            Principal
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={photo.image_url}
+                      alt={photo.title}
+                      className="w-full h-auto max-h-96 object-cover cursor-pointer"
+                      onClick={() => {
+                        setCurrentImageIndex(0);
+                        setIsLightboxOpen(true);
+                      }}
+                    />
+                  </div>
+                )}
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -128,6 +156,12 @@ const PhotoDetail = () => {
                           <Calendar className="w-4 h-4" />
                           <span>{new Date(photo.created_at).toLocaleDateString()}</span>
                         </div>
+                        {photo.images && photo.images.length > 1 && (
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" />
+                            <span>{photo.images.length} images</span>
+                          </div>
+                        )}
                         {photo.featured && (
                           <div className="flex items-center gap-1">
                             <Eye className="w-4 h-4" />
@@ -180,6 +214,15 @@ const PhotoDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Lightbox for viewing images */}
+      <Lightbox
+        images={photo.images || [photo.image_url]}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        initialIndex={currentImageIndex}
+        title={photo.title}
+      />
     </Layout>
   );
 };

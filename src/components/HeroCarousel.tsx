@@ -1,46 +1,72 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const HeroCarousel = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const slides = [
-    {
-      image: "/lovable-uploads/36b49c92-9231-4224-b594-e4f46ff08417.png",
-      title: "Bienvenue sur FCRA",
-      subtitle: "Une association à but non lucratif au service de la communauté.",
-      buttons: [
-        { text: "En savoir plus", variant: "outline" as const },
-        { text: "Nous rejoindre", variant: "default" as const },
-      ],
-    },
-    {
-      image: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1200&h=600&fit=crop",
-      title: "Notre Mission",
-      subtitle: "Créer un impact durable en offrant des ressources et un soutien à ceux qui en ont besoin.",
-      buttons: [
-        { text: "Découvrir", variant: "outline" as const },
-        { text: "Participer", variant: "default" as const },
-      ],
-    },
-    {
-      image: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=1200&h=600&fit=crop",
-      title: "Nos Valeurs",
-      subtitle: "L'éducation accessible à tous, où les jeunes trouvent des opportunités égales pour réussir.",
-      buttons: [
-        { text: "Nos programmes", variant: "outline" as const },
-        { text: "S'engager", variant: "default" as const },
-      ],
-    },
+  // Fetch hero data
+  const { data: heroes = [], isLoading } = useQuery({
+    queryKey: ['heroes-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hero')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Default buttons for all slides
+  const defaultButtons = [
+    { text: "En savoir plus", variant: "outline" as const },
+    { text: "Nous rejoindre", variant: "default" as const },
   ];
 
+  const slides = heroes.map(hero => ({
+    image: hero.image_url,
+    title: hero.title,
+    subtitle: hero.subtitle || '',
+    buttons: defaultButtons,
+  }));
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
+    if (slides.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
   }, [slides.length]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="relative h-[70vh] overflow-hidden bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No slides available
+  if (slides.length === 0) {
+    return (
+      <div className="relative h-[70vh] overflow-hidden bg-gray-100 flex items-center justify-center">
+        <div className="text-center text-gray-600">
+          <h2 className="text-2xl font-bold mb-4">Aucune image hero disponible</h2>
+          <p>Les images seront affichées ici une fois configurées.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-[70vh] overflow-hidden">
