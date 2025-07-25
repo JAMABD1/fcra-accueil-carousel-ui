@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Impact } from "./ImpactManager";
 import { Save, X, Hash } from "lucide-react";
@@ -31,6 +33,9 @@ const ImpactFormModal = ({ impact, onClose }: ImpactFormModalProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!impact;
+
+  // State for multiple tag selection
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const form = useForm<ImpactFormData>({
     defaultValues: {
@@ -68,8 +73,20 @@ const ImpactFormModal = ({ impact, onClose }: ImpactFormModalProps) => {
         sort_order: impact.sort_order || 0,
         active: impact.active || false,
       });
+      
+      // Set selected tags from array
+      setSelectedTags(impact.tag_ids || []);
     }
   }, [impact, form]);
+
+  // Handle tag selection
+  const handleTagToggle = (tagId: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
 
   // Create/Update impact mutation
   const saveImpactMutation = useMutation({
@@ -79,6 +96,7 @@ const ImpactFormModal = ({ impact, onClose }: ImpactFormModalProps) => {
         title: data.title,
         subtitle: data.subtitle || null,
         tags_id: data.tags_id === "none" ? null : data.tags_id,
+        tag_ids: selectedTags,
         sort_order: data.sort_order,
         active: data.active,
       };
@@ -247,37 +265,53 @@ const ImpactFormModal = ({ impact, onClose }: ImpactFormModalProps) => {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="tags_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tag (optionnel)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionnez un tag" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Aucun tag</SelectItem>
-                        {tags.map((tag) => (
-                          <SelectItem key={tag.id} value={tag.id}>
-                            <div className="flex items-center space-x-2">
-                              <div 
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: tag.color }}
-                              />
-                              <span>{tag.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+              <div className="space-y-4">
+                <FormLabel>Tags (sélection multiple)</FormLabel>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant={selectedTags.includes(tag.id) ? "default" : "outline"}
+                      onClick={() => handleTagToggle(tag.id)}
+                      className="cursor-pointer"
+                      style={selectedTags.includes(tag.id) ? {
+                        backgroundColor: tag.color,
+                        borderColor: tag.color,
+                        color: '#fff'
+                      } : {
+                        borderColor: tag.color,
+                        color: tag.color,
+                        backgroundColor: `${tag.color}10`
+                      }}
+                    >
+                      <span>{tag.name}</span>
+                    </Badge>
+                  ))}
+                </div>
+                {selectedTags.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Tags sélectionnés :</div>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedTags.map((tagId) => {
+                        const tag = tags.find(t => t.id === tagId);
+                        return tag ? (
+                          <Badge 
+                            key={tagId} 
+                            variant="secondary"
+                            style={{ 
+                              borderColor: tag.color,
+                              color: tag.color,
+                              backgroundColor: `${tag.color}20`
+                            }}
+                          >
+                            {tag.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
                 )}
-              />
+              </div>
 
               <FormField
                 control={form.control}

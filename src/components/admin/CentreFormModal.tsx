@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Centre } from "./CentresManager";
-import { Save, X, Building } from "lucide-react";
+import { Save, X, Building, Upload, Image as ImageIcon } from "lucide-react";
 
 interface CentreFormData {
   name: string;
@@ -19,6 +19,7 @@ interface CentreFormData {
   address: string;
   phone: string;
   email: string;
+  image_url: string;
   hero_id: string;
   video_id: string;
   sort_order: number;
@@ -35,6 +36,13 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
   const queryClient = useQueryClient();
   const isEditing = !!centre;
 
+  // Image upload states
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [uploadMode, setUploadMode] = useState<"url" | "upload">("url");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string>("");
+
   const form = useForm<CentreFormData>({
     defaultValues: {
       name: "",
@@ -42,6 +50,7 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
       address: "",
       phone: "",
       email: "",
+      image_url: "",
       hero_id: "none",
       video_id: "none",
       sort_order: 0,
@@ -88,23 +97,113 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         address: centre.address || "",
         phone: centre.phone || "",
         email: centre.email || "",
+        image_url: centre.image_url || "",
         hero_id: centre.hero_id || "none",
         video_id: centre.video_id || "none",
         sort_order: centre.sort_order || 0,
         active: centre.active || false,
       });
+      setImagePreview(centre.image_url || "");
     }
   }, [centre, form]);
+
+  // Upload image to Supabase storage
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      setUploadError("");
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `centre-${Date.now()}.${fileExt}`;
+      
+      console.log('Uploading file:', fileName, 'to bucket: centres');
+      
+      const { data, error } = await supabase.storage
+        .from('centres')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Upload error:', error);
+        let errorMsg = `Erreur d'upload: ${error.message}`;
+        
+        // Provide more specific error messages
+        if (error.message?.includes('bucket')) {
+          errorMsg = 'Le bucket de stockage "centres" n\'existe pas ou n\'est pas accessible';
+        } else if (error.message?.includes('size')) {
+          errorMsg = 'Le fichier est trop volumineux (maximum 10MB)';
+        } else if (error.message?.includes('type')) {
+          errorMsg = 'Type de fichier non supporté (uniquement JPEG, PNG, WebP, GIF)';
+        }
+        
+        setUploadError(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      console.log('Upload successful:', data);
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('centres')
+        .getPublicUrl(fileName);
+
+      console.log('Public URL:', publicUrl);
+      setUploadError(""); // Clear any previous errors
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload function error:', error);
+      const errorMsg = `Erreur lors de l'upload: ${error instanceof Error ? error.message : 'Erreur inconnue'}`;
+      setUploadError(errorMsg);
+      throw new Error(errorMsg);
+    }
+  };
+
+  // Handle image file selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setUploadError(""); // Clear any previous errors
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Switch back to URL mode when upload fails
+  const switchToUrlMode = () => {
+    setUploadMode("url");
+    setImageFile(null);
+    setUploadError("");
+    if (imagePreview && !imagePreview.startsWith('data:')) {
+      form.setValue("image_url", imagePreview);
+    }
+  };
 
   // Create/Update centre mutation
   const saveCentreMutation = useMutation({
     mutationFn: async (data: CentreFormData) => {
+      let imageUrl = data.image_url;
+      
+      // Upload image if file is selected
+      if (imageFile && uploadMode === "upload") {
+        setIsUploading(true);
+        try {
+          imageUrl = await uploadImage(imageFile);
+        } catch (error) {
+          console.error('Image upload failed:', error);
+          throw new Error(`Erreur d'upload d'image: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+        } finally {
+          setIsUploading(false);
+        }
+      }
+
       const centreData = {
         name: data.name,
         description: data.description || null,
         address: data.address || null,
         phone: data.phone || null,
         email: data.email || null,
+        image_url: imageUrl || null,
         hero_id: data.hero_id === "none" ? null : data.hero_id,
         video_id: data.video_id === "none" ? null : data.video_id,
         sort_order: data.sort_order,
@@ -313,6 +412,115 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
                       </FormItem>
                     )}
                   />
+                </CardContent>
+              </Card>
+
+              {/* Image Upload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Image du centre</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Upload Mode Toggle */}
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      type="button"
+                      variant={uploadMode === "url" ? "default" : "outline"}
+                      onClick={() => setUploadMode("url")}
+                      className="flex items-center space-x-2"
+                    >
+                      <span>URL</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={uploadMode === "upload" ? "default" : "outline"}
+                      onClick={() => setUploadMode("upload")}
+                      className="flex items-center space-x-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      <span>Upload</span>
+                    </Button>
+                  </div>
+
+                  {/* URL Input */}
+                  {uploadMode === "url" && (
+                    <FormField
+                      control={form.control}
+                      name="image_url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL de l'image</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://example.com/image.jpg" 
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setImagePreview(e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {/* File Upload */}
+                  {uploadMode === "upload" && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Sélectionner une image
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                        />
+                      </div>
+
+                      {uploadError && (
+                        <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+                          {uploadError}
+                          <Button
+                            type="button"
+                            variant="link"
+                            onClick={switchToUrlMode}
+                            className="p-0 h-auto ml-2 text-red-600"
+                          >
+                            Utiliser URL à la place
+                          </Button>
+                        </div>
+                      )}
+
+                      {isUploading && (
+                        <div className="text-blue-600 text-sm">
+                          Upload en cours...
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">
+                        Aperçu
+                      </label>
+                      <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                        <img 
+                          src={imagePreview} 
+                          alt="Aperçu" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

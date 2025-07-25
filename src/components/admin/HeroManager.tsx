@@ -22,10 +22,16 @@ export interface Hero {
   title: string;
   subtitle: string | null;
   image_url: string;
+  tag_ids: string[];
   sort_order: number | null;
   active: boolean | null;
   created_at: string;
   updated_at: string;
+  tags?: {
+    id: string;
+    name: string;
+    color: string;
+  }[];
 }
 
 const HeroManager = () => {
@@ -34,6 +40,20 @@ const HeroManager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch tags
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   // Fetch heroes
   const { data: heroes = [], isLoading } = useQuery({
@@ -45,7 +65,33 @@ const HeroManager = () => {
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
-      return data as Hero[];
+      
+      // Transform the data to match our interface
+      const transformedData = data.map((hero: any) => {
+        let tagIds = [];
+        
+        // Handle both JSON string and array formats
+        if (hero.tag_ids) {
+          if (typeof hero.tag_ids === 'string') {
+            try {
+              tagIds = JSON.parse(hero.tag_ids);
+            } catch (e) {
+              console.error('Error parsing tag_ids:', e);
+              tagIds = [];
+            }
+          } else if (Array.isArray(hero.tag_ids)) {
+            tagIds = hero.tag_ids;
+          }
+        }
+        
+        return {
+          ...hero,
+          tag_ids: tagIds,
+          tags: [], // We'll fetch these separately if needed
+        };
+      });
+      
+      return transformedData as Hero[];
     }
   });
 
@@ -109,6 +155,52 @@ const HeroManager = () => {
       <Badge variant="default">Actif</Badge>
     ) : (
       <Badge variant="secondary">Inactif</Badge>
+    );
+  };
+
+  const getTagsBadges = (tagIds: string[] | string) => {
+    // Handle both array and string formats
+    let processedTagIds: string[] = [];
+    
+    if (!tagIds) {
+      return <Badge variant="outline">Aucun tag</Badge>;
+    }
+    
+    if (typeof tagIds === 'string') {
+      try {
+        processedTagIds = JSON.parse(tagIds);
+      } catch (e) {
+        console.error('Error parsing tagIds:', e);
+        return <Badge variant="outline">Erreur tags</Badge>;
+      }
+    } else if (Array.isArray(tagIds)) {
+      processedTagIds = tagIds;
+    } else {
+      return <Badge variant="outline">Aucun tag</Badge>;
+    }
+    
+    if (processedTagIds.length === 0) {
+      return <Badge variant="outline">Aucun tag</Badge>;
+    }
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {processedTagIds.map(tagId => {
+          const tag = tags.find(t => t.id === tagId);
+          return tag ? (
+            <Badge 
+              key={tagId} 
+              style={{ backgroundColor: tag.color }}
+            >
+              {tag.name}
+            </Badge>
+          ) : (
+            <Badge key={tagId} variant="outline">
+              Tag-{tagId.substring(0, 8)}
+            </Badge>
+          );
+        })}
+      </div>
     );
   };
 
@@ -205,6 +297,7 @@ const HeroManager = () => {
                     <TableHead>Image</TableHead>
                     <TableHead>Titre</TableHead>
                     <TableHead>Sous-titre</TableHead>
+                    <TableHead>Tags</TableHead>
                     <TableHead>Ordre</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Date de création</TableHead>
@@ -230,6 +323,7 @@ const HeroManager = () => {
                       <TableCell className="text-gray-600">
                         {hero.subtitle || 'Aucun sous-titre'}
                       </TableCell>
+                      <TableCell>{getTagsBadges(hero.tag_ids)}</TableCell>
                       <TableCell>{hero.sort_order || 0}</TableCell>
                       <TableCell>{getStatusBadge(hero.active)}</TableCell>
                       <TableCell>{formatDate(hero.created_at)}</TableCell>

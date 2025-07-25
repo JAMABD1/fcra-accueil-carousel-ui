@@ -1,13 +1,16 @@
 import Layout from "@/components/Layout";
-import HeroCarousel from "@/components/HeroCarousel";
+import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
+import Coordonnees from "@/components/ContactForm";
 import Counter from "@/components/Counter";
-import ContactForm from "@/components/ContactForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
+  
   // Fetch impact data
   const { data: impacts = [] } = useQuery({
     queryKey: ['impacts-public'],
@@ -41,7 +44,7 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero Carousel */}
-      <HeroCarousel />
+      <TaggedHeroCarousel filterTags={["home"]} />
 
       {/* About Section */}
       <section className="py-16 bg-white">
@@ -85,7 +88,10 @@ const Index = () => {
           </div>
 
           <div className="text-center mt-8">
-            <Button className="bg-green-600 hover:bg-green-700 px-8 py-3">
+            <Button 
+              className="bg-green-600 hover:bg-green-700 px-8 py-3"
+              onClick={() => navigate('/sections')}
+            >
               Découvrez nos projets
             </Button>
           </div>
@@ -137,11 +143,13 @@ const Index = () => {
                   {section.subtitle && (
                     <p className="text-sm text-gray-500 mb-2">{section.subtitle}</p>
                   )}
-                  {section.description && (
-                    <p className="text-gray-600 mb-4">{section.description}</p>
-                  )}
-                  <Button variant="outline" className="w-full">
-                    Visitez Nous
+                
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate(`/sections/${section.id}`)}
+                  >
+                    Voir Plus
                   </Button>
                 </CardContent>
               </Card>
@@ -189,7 +197,10 @@ const Index = () => {
           </div>
 
           <div className="text-center mt-8">
-            <Button className="bg-green-600 hover:bg-green-700 px-8 py-3">
+            <Button 
+              className="bg-green-600 hover:bg-green-700 px-8 py-3"
+              onClick={() => navigate('/actualites')}
+            >
               Découvrez Toutes les articles
             </Button>
           </div>
@@ -197,7 +208,7 @@ const Index = () => {
       </section>
 
       {/* Contact Section */}
-      <ContactForm />
+      <Coordonnees />
     </Layout>
   );
 };

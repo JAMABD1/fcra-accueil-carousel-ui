@@ -1,91 +1,95 @@
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import SearchBar from "@/components/SearchBar";
-import { BookOpen, Users, Heart, Briefcase, Stethoscope, Sprout } from "lucide-react";
+import { BookOpen, Users, Heart, Briefcase, Stethoscope, Sprout, Activity, Calendar, FileText, Video, Camera } from "lucide-react";
 
 const Activites = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
-  const activities = [
-    {
-      id: 1,
-      title: "Programmes Éducatifs",
-      description: "Cours et formations pour tous les niveaux d'éducation, de l'alphabétisation aux formations techniques spécialisées.",
-      icon: BookOpen,
-      category: "Éducation",
-      beneficiaries: 450,
-      duration: "Permanent",
-      details: "Nos programmes éducatifs couvrent l'enseignement primaire, secondaire et la formation professionnelle."
-    },
-    {
-      id: 2,
-      title: "Actions Sociales",
-      description: "Aide et soutien aux communautés locales, programmes d'assistance aux familles vulnérables.",
-      icon: Heart,
-      category: "Social",
-      beneficiaries: 320,
-      duration: "Continu",
-      details: "Distribution de vivres, aide médicale d'urgence, et programmes de réinsertion sociale."
-    },
-    {
-      id: 3,
-      title: "Formation Professionnelle",
-      description: "Ateliers et formations techniques pour l'insertion professionnelle et l'entrepreneuriat.",
-      icon: Briefcase,
-      category: "Formation",
-      beneficiaries: 280,
-      duration: "6-12 mois",
-      details: "Formations en informatique, couture, menuiserie, électricité et gestion d'entreprise."
-    },
-    {
-      id: 4,
-      title: "Programmes de Santé",
-      description: "Campagnes de sensibilisation santé, consultations médicales et programmes de prévention.",
-      icon: Stethoscope,
-      category: "Santé",
-      beneficiaries: 600,
-      duration: "Mensuel",
-      details: "Consultations gratuites, vaccinations, sensibilisation à l'hygiène et planning familial."
-    },
-    {
-      id: 5,
-      title: "Développement Rural",
-      description: "Projets agricoles, formation en techniques modernes d'agriculture et développement durable.",
-      icon: Sprout,
-      category: "Agriculture",
-      beneficiaries: 200,
-      duration: "Saisonnier",
-      details: "Formation en permaculture, distribution de semences et techniques d'irrigation."
-    },
-    {
-      id: 6,
-      title: "Projets Spéciaux",
-      description: "Initiatives innovantes pour le développement communautaire et l'autonomisation des jeunes.",
-      icon: Users,
-      category: "Développement",
-      beneficiaries: 150,
-      duration: "Variable",
-      details: "Projets pilotes, innovations sociales et programmes d'autonomisation des femmes."
+  // Fetch activities from the database
+  const { data: activities = [], isLoading, error } = useQuery({
+    queryKey: ['activities-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select(`
+          *,
+          sections(id, title),
+          videos(id, title),
+          photos(id, title),
+          tags(id, name, color)
+        `)
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
     }
-  ];
-
-  const categories = [...new Set(activities.map(activity => activity.category))];
-
-  const filteredActivities = activities.filter(activity => {
-    const matchesSearch = activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         activity.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "" || activity.category === selectedCategory;
-    return matchesSearch && matchesCategory;
   });
+
+  // Get unique categories from tags
+  const categories = [...new Set(activities?.filter(activity => activity.tags?.name).map(activity => activity.tags?.name))];
+
+  const filteredActivities = activities?.filter(activity => {
+    const matchesSearch = activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         activity.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "" || activity.tags?.name === selectedCategory;
+    return matchesSearch && matchesCategory;
+  }) || [];
 
   const handleSearch = () => {
     console.log("Searching for:", searchTerm);
   };
+
+  // Get appropriate icon based on activity content
+  const getActivityIcon = (activity: any) => {
+    if (activity.sections?.title) {
+      return FileText;
+    }
+    if (activity.videos?.title) {
+      return Video;
+    }
+    if (activity.photos?.title) {
+      return Camera;
+    }
+    return Activity;
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="py-16 bg-gray-50 min-h-screen">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement des activités...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="py-16 bg-gray-50 min-h-screen">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <p className="text-red-600">Erreur lors du chargement des activités</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -134,59 +138,100 @@ const Activites = () => {
           </div>
 
           {/* Activities Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredActivities.map((activity, index) => {
-              const IconComponent = activity.icon;
-              return (
-                <Card 
-                  key={activity.id} 
-                  className="hover:shadow-xl transition-all duration-300 animate-fade-in hover:scale-105"
-                  style={{ animationDelay: `${index * 150}ms` }}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                        <IconComponent className="w-6 h-6 text-green-600" />
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {activity.category}
-                      </Badge>
-                    </div>
-                    
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      {activity.title}
-                    </h3>
-                    
-                    <p className="text-gray-600 mb-4 line-clamp-3">
-                      {activity.description}
-                    </p>
-
-                    <div className="space-y-2 mb-4 text-sm text-gray-500">
-                      <div className="flex justify-between">
-                        <span>Bénéficiaires:</span>
-                        <span className="font-semibold text-green-600">{activity.beneficiaries}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Durée:</span>
-                        <span className="font-semibold">{activity.duration}</span>
-                      </div>
-                    </div>
-                    
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
-                      En savoir plus
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* No Results */}
-          {filteredActivities.length === 0 && (
-            <div className="text-center py-12 animate-fade-in">
-              <p className="text-gray-500 text-lg">
-                Aucune activité trouvée pour votre recherche.
+          {filteredActivities.length === 0 ? (
+            <div className="text-center py-12">
+              <Activity className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune activité trouvée</h3>
+              <p className="text-gray-600">
+                {searchTerm || selectedCategory 
+                  ? "Essayez de modifier vos critères de recherche" 
+                  : "Aucune activité n'est disponible pour le moment"}
               </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredActivities.map((activity, index) => {
+                const IconComponent = getActivityIcon(activity);
+                return (
+                  <Card 
+                    key={activity.id} 
+                    className="hover:shadow-xl transition-all duration-300 animate-fade-in hover:scale-105"
+                    style={{ animationDelay: `${index * 150}ms` }}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-center mb-4">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                          <IconComponent className="w-6 h-6 text-green-600" />
+                        </div>
+                        {activity.tags && (
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{ 
+                              borderColor: activity.tags.color,
+                              color: activity.tags.color
+                            }}
+                          >
+                            {activity.tags.name}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {activity.title}
+                      </h3>
+
+                      {activity.subtitle && (
+                        <p className="text-sm text-gray-500 mb-3">
+                          {activity.subtitle}
+                        </p>
+                      )}
+                      
+                      {activity.description && (
+                        <p className="text-gray-600 mb-4 line-clamp-3">
+                          {activity.description}
+                        </p>
+                      )}
+
+                      {/* Content Information */}
+                      <div className="space-y-2 mb-4">
+                        {activity.sections && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FileText className="h-4 w-4" />
+                            <span>Section: {activity.sections.title}</span>
+                          </div>
+                        )}
+                        {activity.videos && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Video className="h-4 w-4" />
+                            <span>Vidéo: {activity.videos.title}</span>
+                          </div>
+                        )}
+                        {activity.photos && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Camera className="h-4 w-4" />
+                            <span>Photo: {activity.photos.title}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="flex justify-between items-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="hover:bg-green-50 hover:text-green-600"
+                        >
+                          En savoir plus
+                        </Button>
+                        <span className="text-xs text-gray-500">
+                          #{activity.sort_order}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
 

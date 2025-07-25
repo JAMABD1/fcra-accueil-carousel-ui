@@ -23,6 +23,7 @@ export interface Impact {
   title: string;
   subtitle: string | null;
   tags_id: string | null;
+  tag_ids: string[];
   sort_order: number | null;
   active: boolean | null;
   created_at: string;
@@ -32,6 +33,11 @@ export interface Impact {
     name: string;
     color: string;
   };
+  tagsMultiple?: {
+    id: string;
+    name: string;
+    color: string;
+  }[];
 }
 
 const ImpactManager = () => {
@@ -58,7 +64,15 @@ const ImpactManager = () => {
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
-      return data as Impact[];
+      
+      // Transform the data to match our interface
+      const transformedData = data.map((impact: any) => ({
+        ...impact,
+        tag_ids: impact.tag_ids || [],
+        tagsMultiple: [], // We'll fetch these separately if needed
+      }));
+      
+      return transformedData as Impact[];
     }
   });
 
@@ -127,21 +141,44 @@ const ImpactManager = () => {
     );
   };
 
-  const getTagBadge = (tag: { name: string; color: string } | null) => {
-    if (!tag) return <Badge variant="outline">Aucun tag</Badge>;
+  const getTagsBadges = (tagIds: string[], legacyTag: { name: string; color: string } | null) => {
+    // Show both legacy tag and new multiple tags
+    const badges = [];
     
-    return (
-      <Badge 
-        variant="outline" 
-        style={{ 
-          borderColor: tag.color,
-          color: tag.color,
-          backgroundColor: `${tag.color}10`
-        }}
-      >
-        {tag.name}
-      </Badge>
-    );
+    if (legacyTag) {
+      badges.push(
+        <Badge 
+          key="legacy"
+          variant="outline" 
+          style={{ 
+            borderColor: legacyTag.color,
+            color: legacyTag.color,
+            backgroundColor: `${legacyTag.color}10`
+          }}
+        >
+          {legacyTag.name}
+        </Badge>
+      );
+    }
+    
+    if (tagIds && tagIds.length > 0) {
+      tagIds.forEach(tagId => {
+        badges.push(
+          <Badge 
+            key={tagId} 
+            variant="outline"
+          >
+            Tag-{tagId.substring(0, 8)}
+          </Badge>
+        );
+      });
+    }
+    
+    if (badges.length === 0) {
+      return <Badge variant="outline">Aucun tag</Badge>;
+    }
+    
+    return <div className="flex flex-wrap gap-1">{badges}</div>;
   };
 
   const formatDate = (dateString: string) => {
@@ -274,7 +311,7 @@ const ImpactManager = () => {
                         {impact.subtitle || 'Aucun sous-titre'}
                       </TableCell>
                       <TableCell>
-                        {getTagBadge(impact.tags)}
+                        {getTagsBadges(impact.tag_ids, impact.tags)}
                       </TableCell>
                       <TableCell>{impact.sort_order || 0}</TableCell>
                       <TableCell>{getStatusBadge(impact.active)}</TableCell>

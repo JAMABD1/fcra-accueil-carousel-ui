@@ -17,6 +17,9 @@ import PhotoDetail from "./pages/PhotoDetail";
 import Bibliotheque from "./pages/Bibliotheque";
 import Ecoles from "./pages/Ecoles";
 import EcoleDetail from "./pages/EcoleDetail";
+import SectionDetail from "./pages/SectionDetail";
+import Sections from "./pages/Sections";
+import CentreDetail from "./pages/CentreDetail";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -35,6 +38,7 @@ const App = () => (
           <Route path="/actualites/:id" element={<ArticleDetail />} />
           <Route path="/administrations" element={<Administrations />} />
           <Route path="/centres" element={<Centres />} />
+          <Route path="/centres/:id" element={<CentreDetail />} />
           <Route path="/activites" element={<Activites />} />
           <Route path="/videos" element={<Videos />} />
           <Route path="/videos/:id" element={<VideoDetail />} />
@@ -43,6 +47,8 @@ const App = () => (
           <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/ecoles" element={<Ecoles />} />
           <Route path="/ecoles/:id" element={<EcoleDetail />} />
+          <Route path="/sections" element={<Sections />} />
+          <Route path="/sections/:id" element={<SectionDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />

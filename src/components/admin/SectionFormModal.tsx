@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Section } from "./SectionsManager";
 import { Save, X, Layers } from "lucide-react";
@@ -34,6 +36,10 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!section;
+
+  // States for multiple selection
+  const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const form = useForm<SectionFormData>({
     defaultValues: {
@@ -63,19 +69,19 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
     }
   });
 
-  // Common tag names
-  const tagNames = [
-    'Education',
-    'Communauté',
-    'Sports',
-    'Culture',
-    'Santé',
-    'Technologie',
-    'Environnement',
-    'Social',
-    'Événements',
-    'Actualités'
-  ];
+  // Fetch tags from database
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('id, name, color')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   // Set form values when editing
   useEffect(() => {
@@ -90,8 +96,30 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
         sort_order: section.sort_order || 0,
         active: section.active || false,
       });
+      
+      // Set selected heroes and tags from arrays
+      setSelectedHeroes(section.hero_ids || []);
+      setSelectedTags(section.tag_ids || []);
     }
   }, [section, form]);
+
+  // Handle hero selection
+  const handleHeroToggle = (heroId: string) => {
+    setSelectedHeroes(prev => 
+      prev.includes(heroId) 
+        ? prev.filter(id => id !== heroId)
+        : [...prev, heroId]
+    );
+  };
+
+  // Handle tag selection
+  const handleTagToggle = (tagId: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
 
   // Create/Update section mutation
   const saveSectionMutation = useMutation({
@@ -127,7 +155,9 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
         description: data.description || null,
         image_url: imageUrl,
         hero_id: data.hero_id === "none" ? null : data.hero_id,
+        hero_ids: selectedHeroes,
         tag_name: data.tag_name === "none" ? null : data.tag_name,
+        tag_ids: selectedTags,
         sort_order: data.sort_order,
         active: data.active,
       };
@@ -272,59 +302,84 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="hero_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hero (optionnel)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez un hero" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Aucun hero</SelectItem>
-                          {heroes.map((hero) => (
-                            <SelectItem key={hero.id} value={hero.id}>
-                              {hero.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+              {/* Heroes Selection */}
+              <div className="space-y-4">
+                <div>
+                  <FormLabel>Heroes (sélection multiple)</FormLabel>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {heroes.map((hero) => (
+                      <div key={hero.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`hero-${hero.id}`}
+                          checked={selectedHeroes.includes(hero.id)}
+                          onCheckedChange={() => handleHeroToggle(hero.id)}
+                        />
+                        <label 
+                          htmlFor={`hero-${hero.id}`}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {hero.title}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedHeroes.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedHeroes.map((heroId) => {
+                        const hero = heroes.find(h => h.id === heroId);
+                        return hero ? (
+                          <Badge key={heroId} variant="secondary">
+                            {hero.title}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
                   )}
-                />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="tag_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tag</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez un tag" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Aucun tag</SelectItem>
-                          {tagNames.map((tagName) => (
-                            <SelectItem key={tagName} value={tagName}>
-                              {tagName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                {/* Tags Selection */}
+                <div>
+                  <FormLabel>Tags (sélection multiple)</FormLabel>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {tags.map((tag) => (
+                      <div key={tag.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`tag-${tag.id}`}
+                          checked={selectedTags.includes(tag.id)}
+                          onCheckedChange={() => handleTagToggle(tag.id)}
+                        />
+                        <label 
+                          htmlFor={`tag-${tag.id}`}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {tag.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedTags.map((tagId) => {
+                        const tag = tags.find(t => t.id === tagId);
+                        return tag ? (
+                          <Badge 
+                            key={tagId} 
+                            variant="outline"
+                            style={{ 
+                              borderColor: tag.color,
+                              color: tag.color,
+                              backgroundColor: `${tag.color}10`
+                            }}
+                          >
+                            {tag.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
                   )}
-                />
+                </div>
 
+                {/* Sort Order */}
                 <FormField
                   control={form.control}
                   name="sort_order"

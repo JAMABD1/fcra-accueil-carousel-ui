@@ -50,6 +50,7 @@ import DirectorsManager from "@/components/admin/DirectorsManager";
 import CentresManager from "@/components/admin/CentresManager";
 import CoordonnesManager from "@/components/admin/CoordonnesManager";
 import { ActivitiesManager } from "@/components/admin/ActivitiesManager";
+import SchoolsManager from "@/components/admin/SchoolsManager";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
@@ -262,6 +263,9 @@ const Admin = () => {
         
       case "photos":
         return <PhotosManager />;
+        
+      case "schools":
+        return <SchoolsManager />;
         
       default:
         return (

@@ -86,6 +86,7 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
       
       // Upload image if provided
       if (data.image && data.image.length > 0) {
+        console.log('Uploading director image...');
         const file = data.image[0];
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
@@ -95,16 +96,21 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
           .from('directors')
           .upload(filePath, file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Image upload error:', uploadError);
+          throw uploadError;
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('directors')
           .getPublicUrl(filePath);
 
         imageUrl = publicUrl;
+        console.log('Director image uploaded successfully:', imageUrl);
       } else if (isEditing && director) {
         // Keep existing image when editing
         imageUrl = director.image_url || "";
+        console.log('Keeping existing director image:', imageUrl);
       }
 
       const directorData = {
@@ -118,19 +124,29 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
         active: data.active,
       };
 
+      console.log('Saving director data:', directorData);
+
       if (isEditing && director) {
         const { error } = await supabase
           .from('directors')
           .update(directorData)
           .eq('id', director.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Director update error:', error);
+          throw error;
+        }
+        console.log('Director updated successfully');
       } else {
         const { error } = await supabase
           .from('directors')
           .insert([directorData]);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Director insert error:', error);
+          throw error;
+        }
+        console.log('Director created successfully');
       }
     },
     onSuccess: () => {

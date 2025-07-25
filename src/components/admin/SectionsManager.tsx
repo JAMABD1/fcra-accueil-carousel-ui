@@ -24,7 +24,9 @@ export interface Section {
   description: string | null;
   image_url: string;
   hero_id: string | null;
+  hero_ids: string[];
   tag_name: string | null;
+  tag_ids: string[];
   sort_order: number | null;
   active: boolean | null;
   created_at: string;
@@ -33,6 +35,15 @@ export interface Section {
     id: string;
     title: string;
   };
+  heroes?: {
+    id: string;
+    title: string;
+  }[];
+  tags?: {
+    id: string;
+    name: string;
+    color: string;
+  }[];
 }
 
 const SectionsManager = () => {
@@ -58,7 +69,17 @@ const SectionsManager = () => {
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
-      return data as Section[];
+      
+      // Transform the data to match our interface
+      const transformedData = data.map((section: any) => ({
+        ...section,
+        hero_ids: section.hero_ids || [],
+        tag_ids: section.tag_ids || [],
+        heroes: [], // We'll fetch these separately if needed
+        tags: [], // We'll fetch these separately if needed
+      }));
+      
+      return transformedData as Section[];
     }
   });
 
@@ -128,24 +149,62 @@ const SectionsManager = () => {
     );
   };
 
-  const getTagBadge = (tagName: string | null) => {
-    if (!tagName) return <Badge variant="outline">Aucun tag</Badge>;
+  const getTagsBadges = (tagIds: string[], tagName: string | null) => {
+    // Show both legacy tag_name and new multiple tags
+    const badges = [];
     
-    return (
-      <Badge variant="outline">
-        {tagName}
-      </Badge>
-    );
+    if (tagName) {
+      badges.push(
+        <Badge key="legacy" variant="outline">
+          {tagName}
+        </Badge>
+      );
+    }
+    
+    if (tagIds && tagIds.length > 0) {
+      tagIds.forEach(tagId => {
+        badges.push(
+          <Badge key={tagId} variant="outline">
+            Tag-{tagId.substring(0, 8)}
+          </Badge>
+        );
+      });
+    }
+    
+    if (badges.length === 0) {
+      return <Badge variant="outline">Aucun tag</Badge>;
+    }
+    
+    return <div className="flex flex-wrap gap-1">{badges}</div>;
   };
 
-  const getHeroBadge = (hero: { title: string } | null) => {
-    if (!hero) return <Badge variant="outline">Aucun hero</Badge>;
+  const getHeroesBadges = (heroIds: string[], hero: { title: string } | null) => {
+    // Show both legacy hero and new multiple heroes
+    const badges = [];
     
-    return (
-      <Badge variant="secondary">
-        {hero.title}
-      </Badge>
-    );
+    if (hero) {
+      badges.push(
+        <Badge key="legacy" variant="secondary">
+          {hero.title}
+        </Badge>
+      );
+    }
+    
+    if (heroIds && heroIds.length > 0) {
+      heroIds.forEach(heroId => {
+        badges.push(
+          <Badge key={heroId} variant="secondary">
+            Hero-{heroId.substring(0, 8)}
+          </Badge>
+        );
+      });
+    }
+    
+    if (badges.length === 0) {
+      return <Badge variant="outline">Aucun hero</Badge>;
+    }
+    
+    return <div className="flex flex-wrap gap-1">{badges}</div>;
   };
 
   const formatDate = (dateString: string) => {
@@ -282,10 +341,10 @@ const SectionsManager = () => {
                         {section.subtitle || 'Aucun sous-titre'}
                       </TableCell>
                       <TableCell>
-                        {getTagBadge(section.tag_name)}
+                        {getTagsBadges(section.tag_ids, section.tag_name)}
                       </TableCell>
                       <TableCell>
-                        {getHeroBadge(section.hero)}
+                        {getHeroesBadges(section.hero_ids, section.hero)}
                       </TableCell>
                       <TableCell>{section.sort_order || 0}</TableCell>
                       <TableCell>{getStatusBadge(section.active)}</TableCell>

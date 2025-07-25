@@ -5,12 +5,12 @@ import { Mail } from "lucide-react";
 interface AdminProfileProps {
   name: string;
   title: string;
-  email: string;
+  
   image: string;
   backgroundColor: string;
 }
 
-const AdminProfile = ({ name, title, email, image, backgroundColor }: AdminProfileProps) => {
+const AdminProfile = ({ name, title, image, backgroundColor }: AdminProfileProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <CardContent className="p-0">
@@ -32,10 +32,7 @@ const AdminProfile = ({ name, title, email, image, backgroundColor }: AdminProfi
           <p className="text-gray-600 mb-3">
             {title}
           </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-            <Mail className="w-4 h-4" />
-            <span>{email}</span>
-          </div>
+         
         </div>
       </CardContent>
     </Card>

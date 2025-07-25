@@ -17,6 +17,7 @@ export interface Centre {
   address: string | null;
   phone: string | null;
   email: string | null;
+  image_url: string | null;
   hero_id: string | null;
   video_id: string | null;
   sort_order: number | null;
@@ -309,10 +310,10 @@ const CentresManager = () => {
                       <span>{centre.videos.video_type === 'youtube' ? 'YouTube' : 'Vidéo'}</span>
                     </div>
                   )}
-                  {centre.directors && (
+                  {centre.directors && centre.directors.length > 0 && (
                     <div className="flex items-center space-x-1 bg-green-50 text-green-700 px-2 py-1 rounded-md text-xs">
                       <Users className="h-3 w-3" />
-                      <span>{centre.directors.name}</span>
+                      <span>{centre.directors[0].name}</span>
                     </div>
                   )}
                 </div>

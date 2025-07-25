@@ -1,13 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Hero } from "./HeroManager";
 import { Save, X, Upload, ImageIcon } from "lucide-react";
@@ -17,6 +19,7 @@ interface HeroFormData {
   title: string;
   subtitle: string;
   image: FileList | null;
+  tag_ids: string[];
   sort_order: number;
   active: boolean;
 }
@@ -30,24 +33,65 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!hero;
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const form = useForm<HeroFormData>({
     defaultValues: {
       title: "",
       subtitle: "",
       image: null,
+      tag_ids: [],
       sort_order: 0,
       active: true,
     },
   });
 
+  // Fetch tags
+  const { data: tags = [], isLoading: tagsLoading, error: tagsError } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      console.log('Fetching tags...');
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+      
+      console.log('Tags query result:', { data, error });
+      if (error) {
+        console.error('Tags fetch error:', error);
+        throw error;
+      }
+      return data;
+    }
+  });
+
+  console.log('Tags in component:', tags);
+
   // Set form values when editing
   useEffect(() => {
     if (hero) {
+      let tagIds = [];
+      
+      // Handle both JSON string and array formats
+      if (hero.tag_ids) {
+        if (typeof hero.tag_ids === 'string') {
+          try {
+            tagIds = JSON.parse(hero.tag_ids);
+          } catch (e) {
+            console.error('Error parsing hero tag_ids:', e);
+            tagIds = [];
+          }
+        } else if (Array.isArray(hero.tag_ids)) {
+          tagIds = hero.tag_ids;
+        }
+      }
+      
+      setSelectedTags(tagIds);
       form.reset({
         title: hero.title,
         subtitle: hero.subtitle || "",
         image: null,
+        tag_ids: tagIds,
         sort_order: hero.sort_order || 0,
         active: hero.active || false,
       });
@@ -86,6 +130,7 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
         title: data.title,
         subtitle: data.subtitle || null,
         image_url: imageUrl,
+        tag_ids: data.tag_ids, // Store as proper JSON array, not string
         sort_order: data.sort_order,
         active: data.active,
       };
@@ -211,7 +256,90 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
                   </FormItem>
                 )}
               />
+            </CardContent>
+          </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Tags</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="tag_ids"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sélectionnez les tags</FormLabel>
+                    {tagsLoading && (
+                      <div className="text-sm text-gray-500">Chargement des tags...</div>
+                    )}
+                    {tagsError && (
+                      <div className="text-sm text-red-500">
+                        Erreur lors du chargement des tags: {tagsError.message}
+                      </div>
+                    )}
+                    {tags.length === 0 && !tagsLoading && (
+                      <div className="text-sm text-gray-500">
+                        Aucun tag disponible. Créez des tags d'abord dans la section Tags.
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {tags.map((tag) => (
+                        <div key={tag.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`tag-${tag.id}`}
+                            checked={selectedTags.includes(tag.id)}
+                            onCheckedChange={(checked) => {
+                              let newSelectedTags;
+                              if (checked) {
+                                newSelectedTags = [...selectedTags, tag.id];
+                              } else {
+                                newSelectedTags = selectedTags.filter(id => id !== tag.id);
+                              }
+                              setSelectedTags(newSelectedTags);
+                              field.onChange(newSelectedTags);
+                            }}
+                          />
+                          <label
+                            htmlFor={`tag-${tag.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            <Badge style={{ backgroundColor: tag.color }}>
+                              {tag.name}
+                            </Badge>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {selectedTags.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-600 mb-2">Tags sélectionnés :</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedTags.map(tagId => {
+                            const tag = tags.find(t => t.id === tagId);
+                            return tag ? (
+                              <Badge key={tagId} style={{ backgroundColor: tag.color }}>
+                                {tag.name}
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Paramètres</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <FormField
                 control={form.control}
                 name="sort_order"

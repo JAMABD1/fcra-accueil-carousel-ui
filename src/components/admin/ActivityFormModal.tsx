@@ -33,12 +33,12 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     title: "",
     subtitle: "",
     description: "",
-    section_id: "",
-    video_id: "",
-    photo_id: "",
+    section_id: "none",
+    video_id: "none",
+    photo_id: "none",
     video_description: "",
     photo_description: "",
-    tag_id: "",
+    tag_id: "none",
     sort_order: 0,
     active: true,
   });
@@ -101,12 +101,12 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         title: activity.title,
         subtitle: activity.subtitle || "",
         description: activity.description || "",
-        section_id: activity.section_id || "",
-        video_id: activity.video_id || "",
-        photo_id: activity.photo_id || "",
+        section_id: activity.section_id || "none",
+        video_id: activity.video_id || "none",
+        photo_id: activity.photo_id || "none",
         video_description: activity.video_description || "",
         photo_description: activity.photo_description || "",
-        tag_id: activity.tag_id || "",
+        tag_id: activity.tag_id || "none",
         sort_order: activity.sort_order || 0,
         active: activity.active ?? true,
       });
@@ -115,12 +115,12 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         title: "",
         subtitle: "",
         description: "",
-        section_id: "",
-        video_id: "",
-        photo_id: "",
+        section_id: "none",
+        video_id: "none",
+        photo_id: "none",
         video_description: "",
         photo_description: "",
-        tag_id: "",
+        tag_id: "none",
         sort_order: 0,
         active: true,
       });
@@ -131,10 +131,10 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     mutationFn: async (data: typeof formData) => {
       const payload = {
         ...data,
-        section_id: data.section_id || null,
-        video_id: data.video_id || null,
-        photo_id: data.photo_id || null,
-        tag_id: data.tag_id || null,
+        section_id: data.section_id === "none" ? null : data.section_id,
+        video_id: data.video_id === "none" ? null : data.video_id,
+        photo_id: data.photo_id === "none" ? null : data.photo_id,
+        tag_id: data.tag_id === "none" ? null : data.tag_id,
         video_description: data.video_description || null,
         photo_description: data.photo_description || null,
         subtitle: data.subtitle || null,
@@ -247,7 +247,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                     <SelectValue placeholder="Select a section" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {sections?.map((section) => (
                       <SelectItem key={section.id} value={section.id}>
                         {section.title}
@@ -270,7 +270,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                       <SelectValue placeholder="Select a video" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {videos?.map((video) => (
                         <SelectItem key={video.id} value={video.id}>
                           {video.title}
@@ -290,7 +290,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                       <SelectValue placeholder="Select a photo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {photos?.map((photo) => (
                         <SelectItem key={photo.id} value={photo.id}>
                           {photo.title}
@@ -344,7 +344,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                       <SelectValue placeholder="Select a tag" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {tags?.map((tag) => (
                         <SelectItem key={tag.id} value={tag.id}>
                           {tag.name}

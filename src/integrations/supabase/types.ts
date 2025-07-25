@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       articles: {
@@ -262,6 +262,7 @@ export type Database = {
           image_url: string
           sort_order: number | null
           subtitle: string | null
+          tag_ids: string[] | null
           title: string
           updated_at: string
         }
@@ -272,6 +273,7 @@ export type Database = {
           image_url: string
           sort_order?: number | null
           subtitle?: string | null
+          tag_ids?: string[] | null
           title: string
           updated_at?: string
         }
@@ -282,6 +284,7 @@ export type Database = {
           image_url?: string
           sort_order?: number | null
           subtitle?: string | null
+          tag_ids?: string[] | null
           title?: string
           updated_at?: string
         }
@@ -350,6 +353,10 @@ export type Database = {
           status: string | null
           type: string
           updated_at: string
+          tagname: string | null
+          hero_id: string | null
+          subtitle: string | null
+          coordonne_id: string | null
         }
         Insert: {
           address?: string | null
@@ -369,6 +376,10 @@ export type Database = {
           status?: string | null
           type: string
           updated_at?: string
+          tagname?: string | null
+          hero_id?: string | null
+          subtitle?: string | null
+          coordonne_id?: string | null
         }
         Update: {
           address?: string | null
@@ -388,8 +399,27 @@ export type Database = {
           status?: string | null
           type?: string
           updated_at?: string
+          tagname?: string | null
+          hero_id?: string | null
+          subtitle?: string | null
+          coordonne_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "schools_hero_id_fkey"
+            columns: ["hero_id"]
+            isOneToOne: false
+            referencedRelation: "hero"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schools_coordonne_id_fkey"
+            columns: ["coordonne_id"]
+            isOneToOne: false
+            referencedRelation: "coordonnes"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       sections: {
         Row: {
@@ -454,6 +484,7 @@ export type Database = {
           responsibility: string | null
           sort_order: number | null
           updated_at: string
+          school_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -467,6 +498,7 @@ export type Database = {
           responsibility?: string | null
           sort_order?: number | null
           updated_at?: string
+          school_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -480,6 +512,7 @@ export type Database = {
           responsibility?: string | null
           sort_order?: number | null
           updated_at?: string
+          school_id?: string | null
         }
         Relationships: [
           {
@@ -487,6 +520,13 @@ export type Database = {
             columns: ["centre_id"]
             isOneToOne: false
             referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "directors_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           }
         ]
