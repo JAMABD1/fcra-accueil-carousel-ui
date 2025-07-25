@@ -3,6 +3,8 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Control } from "react-hook-form";
+import SimpleMDE from "react-simplemde-editor";
+import "easymde/dist/easymde.min.css";
 
 interface ArticleFormData {
   title: string;
@@ -79,10 +81,15 @@ const ArticleBasicFields = ({ control }: ArticleBasicFieldsProps) => {
           <FormItem>
             <FormLabel>Contenu *</FormLabel>
             <FormControl>
-              <Textarea 
-                placeholder="Contenu complet de l'article"
-                className="min-h-[200px]"
-                {...field} 
+              <SimpleMDE
+                value={field.value}
+                onChange={field.onChange}
+                options={{
+                  spellChecker: false,
+                  minHeight: "200px",
+                  placeholder: "Contenu complet de l'article (Markdown supporté)",
+                  status: false
+                }}
               />
             </FormControl>
             <FormMessage />

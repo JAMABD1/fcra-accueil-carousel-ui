@@ -83,6 +83,19 @@ const SectionsManager = () => {
     }
   });
 
+  // Fetch all tags for mapping tag_ids to tag names
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   // Delete section mutation
   const deleteSectionMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -161,13 +174,20 @@ const SectionsManager = () => {
       );
     }
     
-    if (tagIds && tagIds.length > 0) {
+    if (tagIds && tagIds.length > 0 && tags.length > 0) {
       tagIds.forEach(tagId => {
-        badges.push(
-          <Badge key={tagId} variant="outline">
-            Tag-{tagId.substring(0, 8)}
-          </Badge>
-        );
+        const tag = tags.find(t => t.id === tagId);
+        if (tag) {
+          badges.push(
+            <Badge 
+              key={tagId} 
+              variant="outline"
+              style={{ borderColor: tag.color, color: tag.color, backgroundColor: `${tag.color}10` }}
+            >
+              {tag.name}
+            </Badge>
+          );
+        }
       });
     }
     
@@ -314,8 +334,7 @@ const SectionsManager = () => {
                     <TableHead>Titre</TableHead>
                     <TableHead>Sous-titre</TableHead>
                     <TableHead>Tag</TableHead>
-                    <TableHead>Hero</TableHead>
-                    <TableHead>Ordre</TableHead>
+                     <TableHead>Ordre</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Actions</TableHead>
@@ -343,9 +362,7 @@ const SectionsManager = () => {
                       <TableCell>
                         {getTagsBadges(section.tag_ids, section.tag_name)}
                       </TableCell>
-                      <TableCell>
-                        {getHeroesBadges(section.hero_ids, section.hero)}
-                      </TableCell>
+                        
                       <TableCell>{section.sort_order || 0}</TableCell>
                       <TableCell>{getStatusBadge(section.active)}</TableCell>
                       <TableCell>{formatDate(section.created_at)}</TableCell>

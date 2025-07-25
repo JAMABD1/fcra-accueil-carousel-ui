@@ -76,6 +76,19 @@ const ImpactManager = () => {
     }
   });
 
+  // Fetch all tags for mapping tag_ids to tag names
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   // Delete impact mutation
   const deleteImpactMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -161,16 +174,20 @@ const ImpactManager = () => {
       );
     }
     
-    if (tagIds && tagIds.length > 0) {
+    if (tagIds && tagIds.length > 0 && tags.length > 0) {
       tagIds.forEach(tagId => {
-        badges.push(
-          <Badge 
-            key={tagId} 
-            variant="outline"
-          >
-            Tag-{tagId.substring(0, 8)}
-          </Badge>
-        );
+        const tag = tags.find(t => t.id === tagId);
+        if (tag) {
+          badges.push(
+            <Badge 
+              key={tagId} 
+              variant="outline"
+              style={{ borderColor: tag.color, color: tag.color, backgroundColor: `${tag.color}10` }}
+            >
+              {tag.name}
+            </Badge>
+          );
+        }
       });
     }
     

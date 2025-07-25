@@ -37,8 +37,7 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
   const queryClient = useQueryClient();
   const isEditing = !!section;
 
-  // States for multiple selection
-  const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
+  // No hero selection, only tags
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const form = useForm<SectionFormData>({
@@ -52,21 +51,6 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
       sort_order: 0,
       active: true,
     },
-  });
-
-  // Fetch heroes for selection
-  const { data: heroes = [] } = useQuery({
-    queryKey: ['heroes'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('hero')
-        .select('id, title')
-        .eq('active', true)
-        .order('sort_order');
-      
-      if (error) throw error;
-      return data;
-    }
   });
 
   // Fetch tags from database
@@ -91,26 +75,13 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
         subtitle: section.subtitle || "",
         description: section.description || "",
         image: null,
-        hero_id: section.hero_id || "none",
         tag_name: section.tag_name || "none",
         sort_order: section.sort_order || 0,
         active: section.active || false,
       });
-      
-      // Set selected heroes and tags from arrays
-      setSelectedHeroes(section.hero_ids || []);
       setSelectedTags(section.tag_ids || []);
     }
   }, [section, form]);
-
-  // Handle hero selection
-  const handleHeroToggle = (heroId: string) => {
-    setSelectedHeroes(prev => 
-      prev.includes(heroId) 
-        ? prev.filter(id => id !== heroId)
-        : [...prev, heroId]
-    );
-  };
 
   // Handle tag selection
   const handleTagToggle = (tagId: string) => {
@@ -154,8 +125,7 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
         subtitle: data.subtitle || null,
         description: data.description || null,
         image_url: imageUrl,
-        hero_id: data.hero_id === "none" ? null : data.hero_id,
-        hero_ids: selectedHeroes,
+        // No hero_id or hero_ids, only tags
         tag_name: data.tag_name === "none" ? null : data.tag_name,
         tag_ids: selectedTags,
         sort_order: data.sort_order,
@@ -302,122 +272,65 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
                 )}
               />
 
-              {/* Heroes Selection */}
-              <div className="space-y-4">
-                <div>
-                  <FormLabel>Heroes (sélection multiple)</FormLabel>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                    {heroes.map((hero) => (
-                      <div key={hero.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`hero-${hero.id}`}
-                          checked={selectedHeroes.includes(hero.id)}
-                          onCheckedChange={() => handleHeroToggle(hero.id)}
-                        />
-                        <label 
-                          htmlFor={`hero-${hero.id}`}
-                          className="text-sm cursor-pointer flex-1"
-                        >
-                          {hero.title}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                  {selectedHeroes.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {selectedHeroes.map((heroId) => {
-                        const hero = heroes.find(h => h.id === heroId);
-                        return hero ? (
-                          <Badge key={heroId} variant="secondary">
-                            {hero.title}
-                          </Badge>
-                        ) : null;
-                      })}
+              {/* Tags Selection */}
+              <div>
+                <FormLabel>Tags (sélection multiple)</FormLabel>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                  {tags.map((tag) => (
+                    <div key={tag.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`tag-${tag.id}`}
+                        checked={selectedTags.includes(tag.id)}
+                        onCheckedChange={() => handleTagToggle(tag.id)}
+                      />
+                      <label 
+                        htmlFor={`tag-${tag.id}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {tag.name}
+                      </label>
                     </div>
-                  )}
+                  ))}
                 </div>
-
-                {/* Tags Selection */}
-                <div>
-                  <FormLabel>Tags (sélection multiple)</FormLabel>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                    {tags.map((tag) => (
-                      <div key={tag.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`tag-${tag.id}`}
-                          checked={selectedTags.includes(tag.id)}
-                          onCheckedChange={() => handleTagToggle(tag.id)}
-                        />
-                        <label 
-                          htmlFor={`tag-${tag.id}`}
-                          className="text-sm cursor-pointer flex-1"
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedTags.map((tagId) => {
+                      const tag = tags.find(t => t.id === tagId);
+                      return tag ? (
+                        <Badge 
+                          key={tagId} 
+                          variant="outline"
+                          style={{ 
+                            borderColor: tag.color,
+                            color: tag.color,
+                            backgroundColor: `${tag.color}10`
+                          }}
                         >
                           {tag.name}
-                        </label>
-                      </div>
-                    ))}
+                        </Badge>
+                      ) : null;
+                    })}
                   </div>
-                  {selectedTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {selectedTags.map((tagId) => {
-                        const tag = tags.find(t => t.id === tagId);
-                        return tag ? (
-                          <Badge 
-                            key={tagId} 
-                            variant="outline"
-                            style={{ 
-                              borderColor: tag.color,
-                              color: tag.color,
-                              backgroundColor: `${tag.color}10`
-                            }}
-                          >
-                            {tag.name}
-                          </Badge>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Sort Order */}
-                <FormField
-                  control={form.control}
-                  name="sort_order"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ordre d'affichage</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          className="w-full"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                )}
               </div>
 
+              {/* Sort Order */}
               <FormField
                 control={form.control}
-                name="active"
+                name="sort_order"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Active</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Afficher cette section sur le site
-                      </div>
-                    </div>
+                  <FormItem>
+                    <FormLabel>Ordre d'affichage</FormLabel>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        className="w-full"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

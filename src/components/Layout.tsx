@@ -15,6 +15,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   const navItems = [
     { name: "Accueil", path: "/" },
+    { name: "Sections", path: "/sections" },
     { name: "Actualités", path: "/actualites" },
     { name: "Administrations", path: "/administrations" },
     { name: "Centres", path: "/centres" },

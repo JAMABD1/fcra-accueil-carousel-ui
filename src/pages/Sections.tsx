@@ -179,15 +179,6 @@ const Sections = () => {
 
   return (
     <Layout>
-      {/* Hero Carousel - Show heroes with any section-related tags */}
-      {allTagNames.length > 0 && (
-        <TaggedHeroCarousel 
-          filterTags={allTagNames}
-          showButtons={true}
-          heightClass="h-96 md:h-[500px]"
-        />
-      )}
-
       {/* Sections List */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -201,55 +192,35 @@ const Sections = () => {
             </p>
           </div>
 
-          {sections.length === 0 ? (
-            <div className="text-center py-12">
-              <Layers className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Aucune section disponible</h3>
-              <p className="text-gray-500">Les sections seront affichées ici une fois configurées.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {sections.map((section) => (
-                <Card key={section.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-video overflow-hidden bg-gray-100">
-                    <img 
-                      src={section.image_url || '/placeholder.svg'} 
-                      alt={section.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
-                    
-                    {section.subtitle && (
-                      <p className="text-sm text-gray-500 mb-3">{section.subtitle}</p>
-                    )}
-                    
-                    {section.description && (
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                        <div dangerouslySetInnerHTML={{ 
-                          __html: section.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...' 
-                        }} />
-                      </p>
-                    )}
-                    
-                    {/* Tags */}
-                    <div className="mb-4">
-                      {getTagsBadges(section.tag_ids, section.tag_name)}
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => navigate(`/sections/${section.id}`)}
-                    >
-                      Découvrir cette section
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {sections.map((section) => (
+              <Card key={section.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="h-48 bg-cover bg-center" style={{
+                  backgroundImage: `url(${section.image_url})`
+                }}></div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
+                  {section.subtitle && (
+                    <p className="text-sm text-gray-500 mb-3">{section.subtitle}</p>
+                  )}
+                  {section.description && (
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      <div dangerouslySetInnerHTML={{ 
+                        __html: section.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...' 
+                      }} />
+                    </p>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate(`/sections/${section.id}`)}
+                  >
+                    Découvrir cette section
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
     </Layout>

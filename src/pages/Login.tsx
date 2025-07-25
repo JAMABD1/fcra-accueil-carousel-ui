@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Shield, Lock, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoginForm {
   email: string;
@@ -29,23 +30,27 @@ const Login = () => {
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
-    
-    // Simple admin check (in a real app, this would be handled by authentication service)
-    if (data.email === "admin@fcra.com" && data.password === "admin123") {
+
+    // Use Supabase Auth for sign-in
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+
+    if (!error) {
       toast({
         title: "Connexion réussie",
-        description: "Bienvenue, administrateur!",
+        description: "Bienvenue!",
       });
-      // Redirect to admin dashboard
       navigate("/admin");
     } else {
       toast({
         title: "Erreur de connexion",
-        description: "Email ou mot de passe incorrect",
+        description: error.message || "Email ou mot de passe incorrect",
         variant: "destructive",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -152,28 +157,14 @@ const Login = () => {
                 </form>
               </Form>
               
-              {/* Demo info */}
-              <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <p className="text-sm font-medium text-green-800 mb-2">Informations de démonstration</p>
-                    <div className="space-y-1 text-sm text-green-700">
-                      <p><span className="font-medium">Email:</span> admin@fcra.com</p>
-                      <p><span className="font-medium">Mot de passe:</span> admin123</p>
-                    </div>
-                  </div>
-                </div>
+              {/* Footer */}
+              <div className="text-center mt-8">
+                <p className="text-sm text-gray-500">
+                  © 2025 FCRA. Plateforme sécurisée d'administration.
+                </p>
               </div>
             </CardContent>
           </Card>
-          
-          {/* Footer */}
-          <div className="text-center mt-8">
-            <p className="text-sm text-gray-500">
-              © 2025 FCRA. Plateforme sécurisée d'administration.
-            </p>
-          </div>
         </div>
       </div>
     </Layout>

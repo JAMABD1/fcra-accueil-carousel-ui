@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/carousel";
 import { Calendar, User, ArrowLeft, Share2, Facebook, Twitter } from "lucide-react";
 import { Article } from "@/components/admin/ArticlesManager";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const ArticleDetail = () => {
   const { id } = useParams();
@@ -183,9 +185,8 @@ const ArticleDetail = () => {
                 )}
                 <div 
                   className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                  style={{ whiteSpace: 'pre-wrap' }}
                 >
-                  {article.content}
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content}</ReactMarkdown>
                 </div>
               </div>
             </div>

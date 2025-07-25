@@ -172,7 +172,7 @@ const TaggedHeroCarousel = ({
                         className={`px-8 py-3 text-lg ${
                           button.variant === "default"
                             ? "bg-green-600 hover:bg-green-700"
-                            : "border-white text-white hover:bg-white hover:text-gray-900"
+                            : "border-white text-black hover:bg-white hover:text-gray-900"
                         }`}
                       >
                         {button.text}
