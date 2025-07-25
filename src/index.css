@@ -136,3 +136,47 @@ All colors MUST be HSL.
     overflow: hidden;
   }
 }
+
+/* Custom colorful markdown styles for prose */
+.prose h1 {
+  color: hsl(var(--primary));
+  font-weight: 600;
+  background: linear-gradient(90deg, #4f46e5, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.prose h2 {
+  color: hsl(var(--accent));
+  font-weight: 500;
+}
+.prose h3 {
+  color: #f59e42;
+  font-weight: 500;
+}
+.prose ul > li::marker {
+  color: hsl(var(--primary));
+}
+.prose ol > li::marker {
+  color: hsl(var(--accent));
+}
+.prose strong {
+  color: #eab308;
+  font-weight: bold;
+}
+.prose em {
+  color: #f43f5e;
+  font-style: italic;
+}
+.prose blockquote {
+  border-left: 4px solid hsl(var(--primary));
+  background: #f0f4ff;
+  color: #334155;
+  padding-left: 1em;
+}
+.prose code {
+  background: #f3f4f6;
+  color: #be185d;
+  border-radius: 0.25em;
+  padding: 0.2em 0.4em;
+}
+/* End custom prose styles */

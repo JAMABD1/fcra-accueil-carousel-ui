@@ -23,6 +23,7 @@ import CentreDetail from "./pages/CentreDetail";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import ActiviteDetail from "./pages/ActiviteDetail";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/centres" element={<Centres />} />
           <Route path="/centres/:id" element={<CentreDetail />} />
           <Route path="/activites" element={<Activites />} />
+          <Route path="/activites/:id" element={<ActiviteDetail />} />
           <Route path="/videos" element={<Videos />} />
           <Route path="/videos/:id" element={<VideoDetail />} />
           <Route path="/photos" element={<Photos />} />

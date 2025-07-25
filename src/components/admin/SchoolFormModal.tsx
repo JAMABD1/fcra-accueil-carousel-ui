@@ -17,8 +17,10 @@ interface SchoolFormData {
   description: string;
   type: string;
   image_url: string;
-  tagname: string;
-  hero_id: string;
+  tag_id: string | null;
+  video_id: string | null;
+  active: boolean;
+  sort_order: number;
   subtitle: string;
   coordonne_id: string;
 }
@@ -43,23 +45,35 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
       description: "",
       type: "primaire",
       image_url: "",
-      tagname: "",
-      hero_id: "none",
+      tag_id: null,
+      video_id: null,
+      active: true,
+      sort_order: 0,
       subtitle: "",
       coordonne_id: "none",
     },
   });
 
-  // Fetch heroes for dropdown
-  const { data: heroes = [] } = useQuery({
-    queryKey: ['heroes'],
+  // Fetch tags for dropdown
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('hero')
-        .select('id, title, image_url')
-        .eq('active', true)
-        .order('sort_order');
-      
+        .from('tags')
+        .select('id, name, color')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+  // Fetch videos for dropdown
+  const { data: videos = [] } = useQuery({
+    queryKey: ['videos'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('id, title')
+        .order('title');
       if (error) throw error;
       return data;
     }
@@ -174,8 +188,10 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
         description: data.description || null,
         type: data.type,
         image_url: imageUrl || null,
-        tagname: data.tagname || null,
-        hero_id: data.hero_id === "none" ? null : data.hero_id,
+        tag_id: data.tag_id,
+        video_id: data.video_id,
+        active: data.active,
+        sort_order: data.sort_order,
         subtitle: data.subtitle || null,
         coordonne_id: data.coordonne_id === "none" ? null : data.coordonne_id,
       };
@@ -232,8 +248,10 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
         description: school.description || "",
         type: school.type || "primaire",
         image_url: school.image_url || "",
-        tagname: school.tagname || "",
-        hero_id: school.hero_id || "none",
+        tag_id: school.tag_id || null,
+        video_id: school.video_id || null,
+        active: school.active ?? true,
+        sort_order: school.sort_order ?? 0,
         subtitle: school.subtitle || "",
         coordonne_id: school.coordonne_id || "none",
       });
@@ -339,32 +357,18 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
 
                   <FormField
                     control={form.control}
-                    name="tagname"
+                    name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-700">Tag</FormLabel>
+                        <FormLabel className="text-green-700">Description</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Tag de catégorie" className="focus:ring-green-500 focus:border-green-500" />
+                          <Textarea {...field} placeholder="Description de l'école" rows={3} className="focus:ring-green-500 focus:border-green-500" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-green-700">Description</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="Description de l'école" rows={3} className="focus:ring-green-500 focus:border-green-500" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Image Upload Section */}
                 <div className="space-y-4">
@@ -475,23 +479,23 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Tag Dropdown */}
                   <FormField
                     control={form.control}
-                    name="hero_id"
+                    name="tag_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-700">Hero associé</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel className="text-green-700">Tag</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || undefined}>
                           <FormControl>
                             <SelectTrigger className="focus:ring-green-500 focus:border-green-500">
-                              <SelectValue placeholder="Sélectionner un hero" />
+                              <SelectValue placeholder="Sélectionner un tag" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="none">Aucun hero</SelectItem>
-                            {heroes.map((hero) => (
-                              <SelectItem key={hero.id} value={hero.id}>
-                                {hero.title}
+                            {tags.map((tag: any) => (
+                              <SelectItem key={tag.id} value={tag.id}>
+                                <span style={{ color: tag.color }}>{tag.name}</span>
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -500,7 +504,60 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
                       </FormItem>
                     )}
                   />
+                  {/* Video Dropdown */}
+                  <FormField
+                    control={form.control}
+                    name="video_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-700">Vidéo</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || undefined}>
+                          <FormControl>
+                            <SelectTrigger className="focus:ring-green-500 focus:border-green-500">
+                              <SelectValue placeholder="Sélectionner une vidéo (optionnel)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {videos.map((video: any) => (
+                              <SelectItem key={video.id} value={video.id}>{video.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                {/* Active Switch */}
+                <FormField
+                  control={form.control}
+                  name="active"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-green-700">Active</FormLabel>
+                      <FormControl>
+                        <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Sort Order */}
+                <FormField
+                  control={form.control}
+                  name="sort_order"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-green-700">Ordre de tri</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="coordonne_id"

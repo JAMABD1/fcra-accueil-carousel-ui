@@ -4,55 +4,54 @@ import { useParams, Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Eye, ArrowLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const VideoDetail = () => {
   const { id } = useParams();
 
-  const videos = [
-    {
-      id: 1,
-      title: "Inauguration du Centre de Formation",
-      thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=450&fit=crop",
-      duration: "5:30",
-      date: "15 Déc 2024",
-      views: "1.2K",
-      description: "Découvrez l'inauguration de notre nouveau centre de formation avec les autorités locales. Cette vidéo présente les différentes étapes de la cérémonie, les discours des personnalités présentes et la visite des nouvelles installations.",
-      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+  // Fetch video from Supabase
+  const { data: video, isLoading } = useQuery({
+    queryKey: ['video-detail', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data;
     },
-    {
-      id: 2,
-      title: "Cérémonie de Remise des Diplômes",
-      thumbnail: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=800&h=450&fit=crop",
-      duration: "12:45",
-      date: "20 Nov 2024",
-      views: "856",
-      description: "La cérémonie annuelle de remise des diplômes de nos étudiants. Un moment émouvant où nous célébrons les réussites de nos diplômés.",
-      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-    },
-    {
-      id: 3,
-      title: "Formation Professionnelle - Témoignages",
-      thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=450&fit=crop",
-      duration: "8:15",
-      date: "5 Nov 2024",
-      views: "2.1K",
-      description: "Les témoignages de nos anciens étudiants sur leur parcours professionnel après leur formation dans nos centres.",
-      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-    },
-    {
-      id: 4,
-      title: "Journée Portes Ouvertes 2024",
-      thumbnail: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&h=450&fit=crop",
-      duration: "15:20",
-      date: "28 Oct 2024",
-      views: "945",
-      description: "Revivez notre journée portes ouvertes avec toutes les activités proposées.",
-      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-    }
-  ];
+    enabled: !!id
+  });
 
-  const video = videos.find(v => v.id === parseInt(id || "0"));
-  const relatedVideos = videos.filter(v => v.id !== parseInt(id || "0")).slice(0, 3);
+  // Fetch related videos (exclude current)
+  const { data: relatedVideos = [] } = useQuery({
+    queryKey: ['related-videos', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .neq('id', id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id
+  });
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="py-16 bg-gray-50 min-h-screen text-center">
+          <p className="text-gray-500">Chargement de la vidéo...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!video) {
     return (
@@ -86,12 +85,23 @@ const VideoDetail = () => {
             <div className="lg:col-span-2">
               <Card className="overflow-hidden">
                 <div className="relative aspect-video bg-black">
-                  <iframe
-                    src={video.videoUrl}
-                    title={video.title}
-                    className="w-full h-full"
-                    allowFullScreen
-                  />
+                  {video.video_type === 'youtube' && video.youtube_id ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${video.youtube_id}`}
+                      title={video.title}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  ) : video.video_type === 'upload' && video.video_url ? (
+                    <video
+                      src={video.video_url}
+                      controls
+                      className="w-full h-full"
+                      title={video.title}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-white">Aucune vidéo disponible</div>
+                  )}
                 </div>
                 <CardContent className="p-6">
                   <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -100,18 +110,18 @@ const VideoDetail = () => {
                   <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>{video.date}</span>
+                      <span>{video.created_at ? new Date(video.created_at).toLocaleDateString('fr-FR') : ''}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
-                      <span>{video.views} vues</span>
+                      <span>{'views' in video ? video.views?.toString() : '--'} vues</span>
                     </div>
                     <span className="bg-gray-100 px-2 py-1 rounded">
-                      {video.duration}
+                      {video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')}` : '--:--'}
                     </span>
                   </div>
                   <p className="text-gray-700 leading-relaxed">
-                    {video.description}
+                    {video.description || video.excerpt || ''}
                   </p>
                 </CardContent>
               </Card>
@@ -123,20 +133,20 @@ const VideoDetail = () => {
                 Vidéos similaires
               </h2>
               <div className="space-y-4">
-                {relatedVideos.map((relatedVideo) => (
+                {relatedVideos.map((relatedVideo: any) => (
                   <Card key={relatedVideo.id} className="overflow-hidden hover:shadow-md transition-shadow">
                     <Link to={`/videos/${relatedVideo.id}`}>
                       <div className="flex">
                         <div className="relative w-32 h-20 flex-shrink-0">
                           <div 
                             className="w-full h-full bg-cover bg-center"
-                            style={{ backgroundImage: `url(${relatedVideo.thumbnail})` }}
+                            style={{ backgroundImage: `url(${relatedVideo.thumbnail_url || '/placeholder.svg'})` }}
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
                             <Play className="w-4 h-4 text-white" />
                           </div>
                           <div className="absolute bottom-1 right-1 bg-black bg-opacity-75 text-white px-1 text-xs rounded">
-                            {relatedVideo.duration}
+                            {relatedVideo.duration ? `${Math.floor(relatedVideo.duration / 60)}:${(relatedVideo.duration % 60).toString().padStart(2, '0')}` : '--:--'}
                           </div>
                         </div>
                         <div className="p-3 flex-1">
@@ -144,8 +154,8 @@ const VideoDetail = () => {
                             {relatedVideo.title}
                           </h3>
                           <div className="text-xs text-gray-500">
-                            <div>{relatedVideo.views} vues</div>
-                            <div>{relatedVideo.date}</div>
+                            <div>{'views' in relatedVideo ? relatedVideo.views?.toString() : '--'} vues</div>
+                            <div>{relatedVideo.created_at ? new Date(relatedVideo.created_at).toLocaleDateString('fr-FR') : ''}</div>
                           </div>
                         </div>
                       </div>

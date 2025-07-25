@@ -19,6 +19,9 @@ interface Tag {
 const TagsManager = () => {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("#3B82F6");
+  const [editTagId, setEditTagId] = useState<string | null>(null);
+  const [editTagName, setEditTagName] = useState("");
+  const [editTagColor, setEditTagColor] = useState("#3B82F6");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -93,6 +96,33 @@ const TagsManager = () => {
     }
   });
 
+  // Update tag mutation
+  const updateTagMutation = useMutation({
+    mutationFn: async ({ id, name, color }: { id: string; name: string; color: string }) => {
+      const { error } = await supabase
+        .from('tags')
+        .update({ name, color })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      setEditTagId(null);
+      toast({
+        title: "Tag modifié",
+        description: "Le tag a été modifié avec succès.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier le tag.",
+        variant: "destructive",
+      });
+      console.error('Update error:', error);
+    }
+  });
+
   const handleCreateTag = () => {
     if (!newTagName.trim()) {
       toast({
@@ -109,6 +139,28 @@ const TagsManager = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce tag ?')) {
       deleteTagMutation.mutate(id);
     }
+  };
+
+  const handleEditClick = (tag: Tag) => {
+    setEditTagId(tag.id);
+    setEditTagName(tag.name);
+    setEditTagColor(tag.color);
+  };
+
+  const handleEditSave = (id: string) => {
+    if (!editTagName.trim()) {
+      toast({
+        title: "Erreur de validation",
+        description: "Le nom du tag est requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateTagMutation.mutate({ id, name: editTagName, color: editTagColor });
+  };
+
+  const handleEditCancel = () => {
+    setEditTagId(null);
   };
 
   return (
@@ -165,17 +217,60 @@ const TagsManager = () => {
                       key={tag.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
                     >
-                      <Badge style={{ backgroundColor: tag.color }}>
-                        {tag.name}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteTag(tag.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {editTagId === tag.id ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <Input
+                            value={editTagName}
+                            onChange={e => setEditTagName(e.target.value)}
+                            className="w-32"
+                          />
+                          <Input
+                            type="color"
+                            value={editTagColor}
+                            onChange={e => setEditTagColor(e.target.value)}
+                            className="w-12"
+                          />
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleEditSave(tag.id)}
+                            disabled={updateTagMutation.isPending}
+                          >
+                            Sauver
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleEditCancel}
+                          >
+                            Annuler
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <Badge style={{ backgroundColor: tag.color }}>
+                            {tag.name}
+                          </Badge>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(tag)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteTag(tag.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>

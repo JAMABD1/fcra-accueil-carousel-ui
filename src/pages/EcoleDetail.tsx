@@ -12,24 +12,36 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { ArrowLeft, MapPin, Phone, Mail, Users, GraduationCap, Building } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Mail, Users, GraduationCap, Building, ExternalLink } from "lucide-react";
+import Counter from "@/components/Counter";
 
 interface School {
   id: string;
   name: string;
   description: string;
   type: string;
-  address: string;
-  phone: string;
-  email: string;
-  director: string;
-  capacity: number;
-  programs: string[];
-  facilities: string[];
   image_url: string;
-  images: string[];
-  status: string;
-  featured: boolean;
+  tag_id: string | null;
+  video_id: string | null;
+  active: boolean | null;
+  sort_order: number | null;
+  subtitle: string | null;
+  coordonne_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // Add other fields as needed
+}
+
+// Coordonne interface for type safety
+interface Coordonne {
+  id: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  tags_id: string | null;
+  google_map_url: string | null;
+  sort_order: number | null;
+  active: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,41 +49,142 @@ interface School {
 const EcoleDetail = () => {
   const { id } = useParams();
 
-  // Fetch school from Supabase
+  // Fetch school from Supabase (with joined video)
   const { data: school, isLoading } = useQuery({
     queryKey: ['school', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schools')
-        .select('*')
+        .select(`
+          *,
+          video:videos!video_id (
+            id,
+            title,
+            video_type,
+            youtube_id,
+            video_url
+          )
+        `)
         .eq('id', id)
-        .eq('status', 'published')
         .single();
-      
       if (error) throw error;
-      return data as School;
+      if (!data) return null;
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        image_url: data.image_url,
+        tag_id: data['tag_id'] ?? null,
+        video_id: data['video_id'] ?? null,
+        active: data['active'] ?? null,
+        sort_order: data['sort_order'] ?? null,
+        subtitle: data.subtitle ?? null,
+        coordonne_id: data.coordonne_id ?? null,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        video: data.video ?? null,
+      };
     },
     enabled: !!id
+  });
+
+  // Fetch coordonnees for this school
+  const { data: coordonne } = useQuery({
+    queryKey: ['coordonne', school?.coordonne_id],
+    queryFn: async () => {
+      if (!school?.coordonne_id) return null;
+      const { data, error } = await supabase
+        .from('coordonnes')
+        .select('*')
+        .eq('id', school.coordonne_id)
+        .single();
+      if (error) throw error;
+      return data as Coordonne;
+    },
+    enabled: !!school?.coordonne_id,
   });
 
   const { data: relatedSchools = [] } = useQuery({
     queryKey: ['related-schools', school?.type],
     queryFn: async () => {
       if (!school) return [];
-      
       const { data, error } = await supabase
         .from('schools')
         .select('*')
-        .eq('status', 'published')
         .eq('type', school.type)
         .neq('id', school.id)
         .limit(3);
-      
       if (error) throw error;
-      return data as School[];
+      // Only pick fields that exist in School type
+      if (!data) return [];
+      return data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        type: item.type,
+        image_url: item.image_url,
+        tag_id: item['tag_id'] ?? null,
+        video_id: item['video_id'] ?? null,
+        active: item['active'] ?? null,
+        sort_order: item['sort_order'] ?? null,
+        subtitle: item.subtitle ?? null,
+        coordonne_id: item.coordonne_id ?? null,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }));
     },
     enabled: !!school,
   });
+
+  // Fetch impacts with the same tag as the school
+  const { data: relatedImpacts = [] } = useQuery({
+    queryKey: ['impacts-by-tag', school?.tag_id],
+    queryFn: async () => {
+      if (!school?.tag_id) return [];
+      const { data, error } = await supabase
+        .from('impact')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      // Filter impacts that have the same tag_id in their tag_ids array
+      return (data || []).filter((impact: any) => {
+        let tagIds: string[] = [];
+        if (impact.tag_ids) {
+          if (typeof impact.tag_ids === 'string') {
+            try { tagIds = JSON.parse(impact.tag_ids); } catch { tagIds = []; }
+          } else if (Array.isArray(impact.tag_ids)) {
+            tagIds = impact.tag_ids;
+          }
+        }
+        // Also support legacy tags_id field
+        if (tagIds.length === 0 && impact.tags_id) tagIds = [impact.tags_id];
+        return tagIds.includes(school.tag_id);
+      });
+    },
+    enabled: !!school?.tag_id
+  });
+
+  // Fetch up to 3 latest articles with the same tag as the school
+  const { data: latestArticles = [] } = useQuery({
+    queryKey: ['latest-articles-by-tag', school?.tag_id],
+    queryFn: async () => {
+      if (!school?.tag_id) return [];
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .contains('tags', [school.tag_id])
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!school?.tag_id
+  });
+
+  // Remove the relatedVideos query (no longer needed)
 
   if (isLoading) {
     return (
@@ -105,197 +218,246 @@ const EcoleDetail = () => {
     );
   }
 
+  const video: any = school && typeof school.video === 'object' && !('code' in school.video) ? school.video : null;
+
   return (
     <Layout>
-      <div className="py-8 bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back Button */}
-          <div className="mb-6">
-            <Link to="/ecoles">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Retour aux écoles
-              </Button>
-            </Link>
+      {/* Hero Section */}
+      <section className="relative h-96 md:h-[500px] overflow-hidden">
+        <div className="absolute inset-0 transition-all duration-1000">
+          <img 
+            src={school.image_url} 
+            alt={school.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-50" />
+        </div>
+        <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Badge className="bg-green-600 text-white">
+              {school.type}
+            </Badge>
           </div>
+          <h1 className="text-3xl md:text-5xl font-bold mb-4">
+            {school.name}
+          </h1>
+          {school.subtitle && (
+            <p className="text-lg md:text-xl mb-2 max-w-2xl mx-auto">{school.subtitle}</p>
+          )}
+          {/* Show full address from coordonne if available */}
+          {coordonne?.address && (
+            <p className="text-lg md:text-xl mb-6 max-w-2xl flex items-center justify-center gap-2">
+              <MapPin className="h-5 w-5" />
+              {coordonne.address}
+            </p>
+          )}
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              {/* School Header */}
-              <Card className="overflow-hidden mb-8">
-                {/* Image Carousel */}
-                {school.images && school.images.length > 0 ? (
-                  <Carousel className="w-full">
-                    <CarouselContent>
-                      {school.images.map((imageUrl, index) => (
-                        <CarouselItem key={index}>
-                          <div className="h-96 bg-cover bg-center relative">
-                            <img 
-                              src={imageUrl} 
-                              alt={`${school.name} - Image ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    {school.images.length > 1 && (
-                      <>
-                        <CarouselPrevious className="left-4" />
-                        <CarouselNext className="right-4" />
-                      </>
-                    )}
-                  </Carousel>
-                ) : (
-                  <div className="h-96 bg-cover bg-center relative">
-                    <img 
-                      src={school.image_url} 
-                      alt={school.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-                  </div>
-                )}
-
-                {/* School Title Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Badge className="bg-green-600 text-white">
-                      {school.type}
-                    </Badge>
-                    {school.featured && (
-                      <Badge className="bg-yellow-600 text-white">
-                        École vedette
-                      </Badge>
-                    )}
-                  </div>
-                  <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                    {school.name}
-                  </h1>
-                  <p className="text-lg opacity-90">
-                    {school.director && `Dirigé par ${school.director}`}
-                  </p>
-                </div>
-              </Card>
-
-              {/* School Details */}
-              <Card className="mb-8">
-                <CardContent className="p-8">
-                  <h2 className="text-2xl font-bold mb-4">Description</h2>
-                  <p className="text-gray-700 leading-relaxed mb-6">
-                    {school.description}
-                  </p>
-                  
-                  {/* Programs */}
-                  {school.programs && school.programs.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <GraduationCap className="w-5 h-5" />
-                        Programmes offerts
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {school.programs.map((program, index) => (
-                          <Badge key={index} variant="secondary">
-                            {program}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Facilities */}
-                  {school.facilities && school.facilities.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <Building className="w-5 h-5" />
-                        Installations
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {school.facilities.map((facility, index) => (
-                          <Badge key={index} variant="outline">
-                            {facility}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
-              {/* Contact Information */}
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-gray-900 mb-4">Informations de contact</h3>
-                  <div className="space-y-3">
-                    {school.address && (
-                      <div className="flex items-start gap-3">
-                        <MapPin className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm">{school.address}</span>
-                      </div>
-                    )}
-                    {school.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-green-600 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm">{school.phone}</span>
-                      </div>
-                    )}
-                    {school.email && (
-                      <div className="flex items-center gap-3">
-                        <Mail className="w-5 h-5 text-green-600 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm">{school.email}</span>
-                      </div>
-                    )}
-                    {school.capacity && (
-                      <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5 text-green-600 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm">Capacité: {school.capacity} élèves</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Related Schools */}
-              {relatedSchools.length > 0 && (
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-bold text-gray-900 mb-4">Autres écoles similaires</h3>
-                    <div className="space-y-4">
-                      {relatedSchools.map((relatedSchool) => (
-                        <Link 
-                          key={relatedSchool.id} 
-                          to={`/ecoles/${relatedSchool.id}`}
-                          className="block"
-                        >
-                          <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                            <div 
-                              className="w-16 h-16 bg-cover bg-center rounded-lg flex-shrink-0"
-                              style={{ backgroundImage: `url(${relatedSchool.image_url})` }}
-                            />
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 line-clamp-2 text-sm">
-                                {relatedSchool.name}
-                              </h4>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {relatedSchool.type}
-                              </p>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+      {/* About Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              À propos de l'école
+            </h2>
+            {school.description && (
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                {school.description}
+              </p>
+            )}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Video Section (joined video like centre) */}
+      {video && (
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Découvrez notre école
+              </h2>
+            </div>
+            <div className="max-w-4xl mx-auto">
+              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
+                {video.video_type === "youtube" && video.youtube_id && (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${video.youtube_id}`}
+                    title={video.title}
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                )}
+                {video.video_type === "upload" && video.video_url && (
+                  <video
+                    src={video.video_url}
+                    controls
+                    className="w-full h-full"
+                    title={video.title}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Impact Section with Animated Counters */}
+      {relatedImpacts.length > 0 && (
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Notre Impact en Chiffres
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {relatedImpacts.map((impact: any) => (
+                <div key={impact.id} className="text-center">
+                  <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <Counter end={impact.number} suffix="+" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{impact.title}</h3>
+                  {impact.subtitle && (
+                    <p className="text-gray-600">{impact.subtitle}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Contact Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Nous Contacter
+            </h2>
+            <p className="text-lg text-gray-600">
+              N'hésitez pas à nous contacter pour plus d'informations
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {coordonne?.address && (
+              <div className="p-6 text-center bg-green-50 rounded-lg">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Adresse</h3>
+                <p className="text-gray-600">{coordonne.address}</p>
+              </div>
+            )}
+            {coordonne?.phone && (
+              <div className="p-6 text-center bg-green-50 rounded-lg">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Phone className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Téléphone</h3>
+                <p className="text-gray-600">{coordonne.phone}</p>
+              </div>
+            )}
+            {coordonne?.email && (
+              <div className="p-6 text-center bg-green-50 rounded-lg">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Email</h3>
+                <p className="text-gray-600">{coordonne.email}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Notre Localisation Section (like homepage) */}
+      {coordonne?.google_map_url && (
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Notre Localisation
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                Trouvez-nous sur la carte ci-dessous.
+              </p>
+              <div className="w-full flex justify-center mb-8">
+                <iframe
+                  src={coordonne.google_map_url}
+                  width="100%"
+                  height="450"
+                  style={{ border: 0, maxWidth: '800px' }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Related Schools Section */}
+      {relatedSchools.length > 0 && (
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Autres écoles similaires</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              {relatedSchools.map((relatedSchool) => (
+                <Link 
+                  key={relatedSchool.id} 
+                  to={`/ecoles/${relatedSchool.id}`}
+                  className="block"
+                >
+                  <div className="flex flex-col items-center p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+                    <div 
+                      className="w-24 h-24 bg-cover bg-center rounded-full mb-4"
+                      style={{ backgroundImage: `url(${relatedSchool.image_url})` }}
+                    />
+                    <h4 className="font-medium text-gray-900 line-clamp-2 text-lg mb-2">
+                      {relatedSchool.name}
+                    </h4>
+                    <p className="text-xs text-gray-500 mb-1">
+                      {relatedSchool.type}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Derniers Articles Section */}
+      {latestArticles.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Derniers articles</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              {latestArticles.map((article: any) => (
+                <Card key={article.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg'})` }}></div>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
+                    <p className="text-gray-600 text-sm mb-2">{new Date(article.created_at).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-gray-600 text-sm">{article.excerpt || (article.content && article.content.substring(0, 150) + '...')}</p>
+                    <Button className="mt-4 w-full bg-green-600 hover:bg-green-700" asChild>
+                      <a href={`/actualites/${article.id}`}>Lire l'article</a>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </Layout>
   );
 };

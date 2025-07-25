@@ -18,7 +18,7 @@ export interface Centre {
   phone: string | null;
   email: string | null;
   image_url: string | null;
-  hero_id: string | null;
+  tag_id: string | null;
   video_id: string | null;
   sort_order: number | null;
   active: boolean | null;
@@ -58,11 +58,6 @@ const CentresManager = () => {
         .from('centres')
         .select(`
           *,
-          hero (
-            id,
-            title,
-            image_url
-          ),
           videos (
             id,
             title,
@@ -80,7 +75,23 @@ const CentresManager = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Centre[];
+      return (data as any[]).map((centre) => ({
+        id: centre.id,
+        name: centre.name,
+        description: centre.description ?? null,
+        address: centre.address ?? null,
+        phone: centre.phone ?? null,
+        email: centre.email ?? null,
+        image_url: centre.image_url ?? null,
+        tag_id: centre.tag_id ?? null,
+        video_id: centre.video_id ?? null,
+        sort_order: centre.sort_order ?? null,
+        active: centre.active ?? null,
+        created_at: centre.created_at,
+        updated_at: centre.updated_at,
+        videos: centre.videos ?? null,
+        directors: centre.directors ?? [],
+      })) as Centre[];
     }
   });
 

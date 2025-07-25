@@ -25,7 +25,6 @@ export const ActivitiesManager = () => {
         .from("activities")
         .select(`
           *,
-          sections(title),
           videos(title),
           photos(title),
           tags(name, color)
@@ -201,12 +200,6 @@ export const ActivitiesManager = () => {
 
                 {/* Content Info */}
                 <div className="space-y-2 mb-3">
-                  {activity.sections && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <FileText className="h-4 w-4 text-purple-600" />
-                      <span>Section: {activity.sections.title}</span>
-                    </div>
-                  )}
                   {activity.videos && (
                     <div className="flex items-center gap-2 text-sm">
                       <Video className="h-4 w-4 text-red-600" />

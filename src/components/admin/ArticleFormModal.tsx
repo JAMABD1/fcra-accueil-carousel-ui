@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,6 +81,19 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
     }
   };
 
+  // Fetch tags for mapping IDs to names
+  const { data: allTags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('id, name, color')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   // Create/Update article mutation
   const saveArticleMutation = useMutation({
     mutationFn: async (data: ArticleFormData) => {
@@ -112,13 +125,14 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         imageUrls = article.images || [];
       }
 
+      // Save tag IDs, not names
       const articleData = {
         title: data.title,
         content: data.content,
         excerpt: data.excerpt || null,
         images: imageUrls,
         author: data.author || null,
-        tags: data.tags,
+        tags: data.tags, // should be array of IDs
         featured: data.featured,
         status: data.status,
       };
@@ -326,9 +340,14 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
                       <FormItem>
                         <FormLabel>Tags</FormLabel>
                         <FormControl>
-                          <TagSelector 
-                            selectedTags={field.value} 
+                          <TagSelector
+                            control={form.control}
+                            name="tags"
+                            label="Tags"
+                            // Only pass tag IDs to the field
+                            selectedTags={field.value}
                             onTagsChange={field.onChange}
+                            idMode // <-- add a prop to TagSelector to use IDs
                           />
                         </FormControl>
                         <FormMessage />

@@ -174,15 +174,11 @@ const ArticleDetail = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Article Content */}
             <div className="lg:col-span-3">
               <div className="bg-white rounded-lg shadow-lg p-8">
-                {article.excerpt && (
-                  <div className="text-lg text-gray-600 mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-green-500">
-                    {article.excerpt}
-                  </div>
-                )}
+                 
                 <div 
                   className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
                 >
@@ -192,41 +188,7 @@ const ArticleDetail = () => {
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-lg p-6 sticky top-8">
-                <h3 className="font-bold text-gray-900 mb-4">Partager cet article</h3>
-                <div className="space-y-3">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Facebook className="w-4 h-4 mr-2" />
-                    Facebook
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Twitter className="w-4 h-4 mr-2" />
-                    Twitter
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => navigator.clipboard.writeText(window.location.href)}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Copier le lien
-                  </Button>
-                </div>
-
-                {article.featured && (
-                  <>
-                    <hr className="my-6" />
-                    <div className="text-center">
-                      <Badge className="bg-yellow-500 text-white">
-                        Article en vedette
-                      </Badge>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+            {/* Removed 'Partager cet article' section as requested */}
           </div>
         </div>
       </div>

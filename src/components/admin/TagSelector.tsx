@@ -36,7 +36,6 @@ const TagSelector = ({ selectedTags, onTagsChange, control, name = "tags", label
         .from('tags')
         .select('*')
         .order('name', { ascending: true });
-      
       if (error) throw error;
       return data as Tag[];
     }
@@ -48,11 +47,10 @@ const TagSelector = ({ selectedTags, onTagsChange, control, name = "tags", label
 
   const currentTags = selectedTags || internalSelectedTags;
   
-  const toggleTag = (tagName: string) => {
-    const newTags = currentTags.includes(tagName)
-      ? currentTags.filter(t => t !== tagName)
-      : [...currentTags, tagName];
-    
+  const toggleTag = (tagId: string) => {
+    const newTags = currentTags.includes(tagId)
+      ? currentTags.filter(t => t !== tagId)
+      : [...currentTags, tagId];
     if (onTagsChange) {
       onTagsChange(newTags);
     } else {
@@ -60,8 +58,8 @@ const TagSelector = ({ selectedTags, onTagsChange, control, name = "tags", label
     }
   };
 
-  const handleRemoveTag = (tagName: string) => {
-    const newTags = currentTags.filter(t => t !== tagName);
+  const handleRemoveTag = (tagId: string) => {
+    const newTags = currentTags.filter(t => t !== tagId);
     if (onTagsChange) {
       onTagsChange(newTags);
     } else {
@@ -77,19 +75,16 @@ const TagSelector = ({ selectedTags, onTagsChange, control, name = "tags", label
         name={name}
         render={({ field }) => {
           const fieldTags = field.value || [];
-          
-          const handleTagToggle = (tagName: string) => {
-            const newTags = fieldTags.includes(tagName)
-              ? fieldTags.filter((t: string) => t !== tagName)
-              : [...fieldTags, tagName];
+          const handleTagToggle = (tagId: string) => {
+            const newTags = fieldTags.includes(tagId)
+              ? fieldTags.filter((t: string) => t !== tagId)
+              : [...fieldTags, tagId];
             field.onChange(newTags);
           };
-
-          const handleTagRemove = (tagName: string) => {
-            const newTags = fieldTags.filter((t: string) => t !== tagName);
+          const handleTagRemove = (tagId: string) => {
+            const newTags = fieldTags.filter((t: string) => t !== tagId);
             field.onChange(newTags);
           };
-
           return (
             <FormItem>
               <FormLabel>{label}</FormLabel>
@@ -100,31 +95,30 @@ const TagSelector = ({ selectedTags, onTagsChange, control, name = "tags", label
                     <div>
                       <div className="text-sm font-medium mb-2">Tags sélectionnés:</div>
                       <div className="flex flex-wrap gap-2">
-                        {fieldTags.map((tagName: string) => {
-                          const tag = availableTags.find(t => t.name === tagName);
-                          return (
-                            <Badge 
-                              key={tagName}
+                        {fieldTags.map((tagId: string) => {
+                          const tag = availableTags.find(t => t.id === tagId);
+                          return tag ? (
+                            <Badge
+                              key={tagId}
                               variant="secondary"
-                              style={{ 
-                                backgroundColor: tag?.color + '20' || '#3B82F620', 
-                                color: tag?.color || '#3B82F6',
-                                borderColor: tag?.color || '#3B82F6'
+                              style={{
+                                backgroundColor: tag.color + '20' || '#3B82F620',
+                                color: tag.color || '#3B82F6',
+                                borderColor: tag.color || '#3B82F6'
                               }}
                               className="border flex items-center gap-1"
                             >
-                              {tagName}
-                              <X 
+                              {tag.name}
+                              <X
                                 className="w-3 h-3 cursor-pointer hover:text-red-500"
-                                onClick={() => handleTagRemove(tagName)}
+                                onClick={() => handleTagRemove(tagId)}
                               />
                             </Badge>
-                          );
+                          ) : null;
                         })}
                       </div>
                     </div>
                   )}
-
                   {/* Search */}
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -135,27 +129,26 @@ const TagSelector = ({ selectedTags, onTagsChange, control, name = "tags", label
                       className="pl-10"
                     />
                   </div>
-
                   {/* Available tags */}
                   <div>
                     <div className="text-sm font-medium mb-2">Tags disponibles:</div>
                     <ScrollArea className="h-32 border rounded-lg p-2">
                       <div className="flex flex-wrap gap-2">
                         {filteredTags.map((tag) => (
-                          <Badge 
+                          <Badge
                             key={tag.id}
-                            variant={fieldTags.includes(tag.name) ? "default" : "outline"}
-                            style={{ 
-                              backgroundColor: fieldTags.includes(tag.name) 
-                                ? tag.color 
+                            variant={fieldTags.includes(tag.id) ? "default" : "outline"}
+                            style={{
+                              backgroundColor: fieldTags.includes(tag.id)
+                                ? tag.color
                                 : tag.color + '10',
-                              color: fieldTags.includes(tag.name) 
-                                ? 'white' 
+                              color: fieldTags.includes(tag.id)
+                                ? 'white'
                                 : tag.color,
                               borderColor: tag.color
                             }}
                             className="cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => handleTagToggle(tag.name)}
+                            onClick={() => handleTagToggle(tag.id)}
                           >
                             {tag.name}
                           </Badge>

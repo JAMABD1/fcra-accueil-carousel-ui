@@ -104,114 +104,58 @@ const PhotoDetail = () => {
             Retour à la galerie
           </Link>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Photo */}
-            <div className="lg:col-span-2">
-              <Card className="overflow-hidden">
-                {photo.images && photo.images.length > 1 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                    {photo.images.map((imageUrl, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={imageUrl}
-                          alt={`${photo.title} ${index + 1}`}
-                          className="w-full h-64 object-cover cursor-pointer rounded hover:opacity-90 transition-opacity"
-                          onClick={() => {
-                            setCurrentImageIndex(index);
-                            setIsLightboxOpen(true);
-                          }}
-                        />
-                        {index === 0 && (
-                          <div className="absolute top-2 left-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
-                            Principal
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <img
-                      src={photo.image_url}
-                      alt={photo.title}
-                      className="w-full h-auto max-h-96 object-cover cursor-pointer"
-                      onClick={() => {
-                        setCurrentImageIndex(0);
-                        setIsLightboxOpen(true);
-                      }}
-                    />
-                  </div>
-                )}
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                        {photo.title}
-                      </h1>
-                      <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                          {photo.category}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{new Date(photo.created_at).toLocaleDateString()}</span>
-                        </div>
-                        {photo.images && photo.images.length > 1 && (
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            <span>{photo.images.length} images</span>
-                          </div>
-                        )}
-                        {photo.featured && (
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            <span>Vedette</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      <Download className="w-4 h-4 mr-2" />
-                      Télécharger
-                    </Button>
-                  </div>
-                  <p className="text-gray-700 leading-relaxed">
-                    {photo.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Related Photos */}
-            <div className="lg:col-span-1">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Photos similaires
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                {relatedPhotos.map((relatedPhoto) => (
-                  <Card key={relatedPhoto.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <Link to={`/photos/${relatedPhoto.id}`}>
-                      <div className="relative">
-                        <div 
-                          className="w-full h-24 bg-cover bg-center hover:scale-105 transition-transform duration-300"
-                          style={{ backgroundImage: `url(${relatedPhoto.thumbnail_url || relatedPhoto.image_url})` }}
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300" />
-                      </div>
-                      <div className="p-2">
-                        <h3 className="font-medium text-xs line-clamp-2 mb-1">
-                          {relatedPhoto.title}
-                        </h3>
-                        <div className="text-xs text-gray-500">
-                          {new Date(relatedPhoto.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </Link>
-                  </Card>
-                ))}
-              </div>
-            </div>
+          {/* Title and Description */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{photo.title}</h1>
+            {photo.description && (
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">{photo.description}</p>
+            )}
           </div>
+
+          {/* Simple Masonry Gallery */}
+          {photo.images && photo.images.length > 1 ? (
+            <div
+              className="grid gap-2"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gridAutoRows: 'auto',
+              }}
+            >
+              {photo.images.map((imageUrl, index) => (
+                <div
+                  key={index}
+                  className="relative group cursor-pointer overflow-hidden rounded-lg bg-white flex items-center justify-center"
+                  style={{ minHeight: '120px', minWidth: '120px' }}
+                  onClick={() => {
+                    setCurrentImageIndex(index);
+                    setIsLightboxOpen(true);
+                  }}
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`${photo.title} ${index + 1}`}
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    style={{ maxHeight: '320px', maxWidth: '100%' }}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="relative flex items-center justify-center bg-white rounded-lg" style={{ minHeight: '120px', minWidth: '120px' }}>
+              <img
+                src={photo.image_url}
+                alt={photo.title}
+                className="w-full h-full object-contain cursor-pointer rounded-lg"
+                style={{ maxHeight: '320px', maxWidth: '100%' }}
+                onClick={() => {
+                  setCurrentImageIndex(0);
+                  setIsLightboxOpen(true);
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 

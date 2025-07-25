@@ -88,11 +88,6 @@ const Centres = () => {
         .from('centres')
         .select(`
           *,
-          hero (
-            id,
-            title,
-            image_url
-          ),
           videos (
             id,
             title,
@@ -388,206 +383,39 @@ const Centres = () => {
 
   return (
     <Layout>
-      <div className="py-16 bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+      <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Nos Centres
             </h1>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              Découvrez nos centres d'excellence répartis à travers Madagascar, 
-              chacun dédié au développement communautaire et à l'accompagnement des familles
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Découvrez nos centres d'excellence répartis à travers Madagascar, chacun dédié au développement communautaire et à l'accompagnement des familles.
             </p>
           </div>
 
-          {/* Statistics Dashboard */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Centres Actifs</CardTitle>
-                <Building className="h-6 w-6 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{totalCenters}</div>
-                <p className="text-xs text-gray-500">À travers Madagascar</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Bénéficiaires</CardTitle>
-                <Users className="h-6 w-6 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{totalBeneficiaries.toLocaleString()}</div>
-                <p className="text-xs text-gray-500">Familles accompagnées</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Programmes</CardTitle>
-                <BookOpen className="h-6 w-6 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{totalPrograms}</div>
-                <p className="text-xs text-gray-500">Programmes actifs</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Équipe</CardTitle>
-                <Target className="h-6 w-6 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{totalEmployees}</div>
-                <p className="text-xs text-gray-500">Collaborateurs dédiés</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search */}
-          <div className="mb-12">
-            <div className="relative max-w-md mx-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Rechercher un centre..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
-              />
-            </div>
-          </div>
-
-          {/* Interactive Map */}
-        
-
-          {/* Centers Grid */}
-          <div className="mb-16">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
-              Découvrez nos Centres
-            </h2>
-            
-            {filteredCenters.length === 0 ? (
-              <div className="text-center py-12">
-                <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Aucun centre trouvé
-                </h3>
-                <p className="text-gray-600 max-w-md mx-auto mb-6">
-                  {searchTerm 
-                    ? "Aucun centre ne correspond à votre recherche."
-                    : "Aucun centre actif pour le moment."}
-                </p>
-                {searchTerm && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {centers.map((center) => (
+              <Card key={center.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${center.image_url})` }}></div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-2">{center.name}</h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {center.description.substring(0, 150)}{center.description.length > 150 ? '...' : ''}
+                  </p>
                   <Button 
-                    onClick={() => setSearchTerm("")}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Afficher tous les centres
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredCenters.map((center) => (
-                  <Card 
-                    key={center.id} 
-                    className="overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer bg-white/90 backdrop-blur-sm border-0 shadow-lg transform hover:-translate-y-1"
+                    variant="outline" 
+                    className="w-full"
                     onClick={() => handleCenterClick(center.id)}
                   >
-                    <div 
-                      className="h-64 bg-cover bg-center relative"
-                      style={{ backgroundImage: `url(${center.image_url})` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4 text-white">
-                        <h3 className="text-xl font-bold mb-2">{center.name}</h3>
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4" />
-                          <span>{center.location}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <CardContent className="p-6">
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {center.description}
-                      </p>
-                      
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">{center.beneficiaries}</div>
-                          <div className="text-xs text-gray-500">Bénéficiaires</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">{center.programs}</div>
-                          <div className="text-xs text-gray-500">Programmes</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-600">{center.directors.length}</div>
-                          <div className="text-xs text-gray-500">Équipe</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {center.services.slice(0, 3).map((service, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {service}
-                          </Badge>
-                        ))}
-                        {center.services.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{center.services.length - 3} autres
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <Button className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 border-0 shadow-lg">
-                        Découvrir le centre
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Call to Action */}
-          <div className="text-center">
-            <Card className="bg-gradient-to-r from-green-600 to-blue-600 text-white border-0 shadow-2xl">
-              <CardContent className="p-12">
-                <Award className="h-16 w-16 text-white mx-auto mb-6" />
-                <h3 className="text-3xl font-bold mb-4">
-                  Rejoignez Notre Mission
-                </h3>
-                <p className="text-xl mb-8 text-green-100 max-w-2xl mx-auto">
-                  Découvrez comment nos centres peuvent vous accompagner dans votre développement 
-                  personnel et communautaire
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button 
-                    size="lg" 
-                    className="bg-white text-green-600 hover:bg-gray-100 border-0 shadow-lg"
-                  >
-                    Nous Contacter
+                    Découvrir ce centre
                   </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="border-white text-white hover:bg-white hover:text-green-600"
-                  >
-                    Nos Services
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
     </Layout>
   );
 };

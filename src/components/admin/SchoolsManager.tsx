@@ -18,21 +18,19 @@ export interface School {
   image_url: string | null;
   created_at: string;
   updated_at: string;
-  tagname: string | null;
-  hero_id: string | null;
+  tag_id: string | null;
+  video_id: string | null;
+  active: boolean | null;
+  sort_order: number | null;
   subtitle: string | null;
   coordonne_id: string | null;
-  hero?: {
-    id: string;
-    title: string;
-    image_url: string;
-  } | null;
   coordonnes?: {
     id: string;
     phone: string;
     email: string;
     address: string;
   } | null;
+  // Optionally, add tag?: { id: string; name: string; color: string } | null;
 }
 
 const SchoolsManager = () => {
@@ -50,11 +48,6 @@ const SchoolsManager = () => {
         .from('schools')
         .select(`
           *,
-          hero (
-            id,
-            title,
-            image_url
-          ),
           coordonnes (
             id,
             phone,
@@ -74,8 +67,8 @@ const SchoolsManager = () => {
     school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     school.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     school.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    school.tagname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     school.subtitle?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Remove tagname and hero_id from filter
   );
 
   // Statistics
@@ -283,21 +276,17 @@ const SchoolsManager = () => {
                   <Building className="h-3 w-3 mr-1" />
                   {school.type}
                 </Badge>
-                {school.tagname && (
+                {/* Tag badge: fetch tag name/color if needed, else just show tag_id */}
+                {school.tag_id && (
                   <Badge variant="outline" className="border-green-300 text-green-700">
-                    {school.tagname}
+                    {school.tag_id}
                   </Badge>
                 )}
               </div>
 
               {/* Associated Data */}
               <div className="space-y-2 text-sm">
-                {school.hero && (
-                  <div className="flex items-center gap-2 text-green-600">
-                    <span className="font-medium">Hero:</span>
-                    <span>{school.hero.title}</span>
-                  </div>
-                )}
+                {/* Remove hero display */}
                 {school.coordonnes && (
                   <div className="flex items-center gap-2 text-green-600">
                     <span className="font-medium">Contact:</span>

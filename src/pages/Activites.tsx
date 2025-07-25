@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import SearchBar from "@/components/SearchBar";
 import { BookOpen, Users, Heart, Briefcase, Stethoscope, Sprout, Activity, Calendar, FileText, Video, Camera } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Activites = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const navigate = useNavigate();
 
   // Fetch activities from the database
   const { data: activities = [], isLoading, error } = useQuery({
@@ -21,7 +23,6 @@ const Activites = () => {
         .from('activities')
         .select(`
           *,
-          sections(id, title),
           videos(id, title),
           photos(id, title),
           tags(id, name, color)
@@ -50,9 +51,6 @@ const Activites = () => {
 
   // Get appropriate icon based on activity content
   const getActivityIcon = (activity: any) => {
-    if (activity.sections?.title) {
-      return FileText;
-    }
     if (activity.videos?.title) {
       return Video;
     }
@@ -195,12 +193,6 @@ const Activites = () => {
 
                       {/* Content Information */}
                       <div className="space-y-2 mb-4">
-                        {activity.sections && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <FileText className="h-4 w-4" />
-                            <span>Section: {activity.sections.title}</span>
-                          </div>
-                        )}
                         {activity.videos && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <Video className="h-4 w-4" />
@@ -217,17 +209,14 @@ const Activites = () => {
 
                       {/* Action Button */}
                       <div className="flex justify-between items-center">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="hover:bg-green-50 hover:text-green-600"
-                        >
-                          En savoir plus
-                        </Button>
-                        <span className="text-xs text-gray-500">
-                          #{activity.sort_order}
-                        </span>
+                        
                       </div>
+                      <Button 
+                        className="w-full bg-green-600 hover:bg-green-700 mt-2"
+                        onClick={() => navigate(`/activites/${activity.id}`)}
+                      >
+                        Voir le détail
+                      </Button>
                     </CardContent>
                   </Card>
                 );

@@ -6,50 +6,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Videos = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const videos = [
-    {
-      id: 1,
-      title: "Inauguration du Centre de Formation",
-      thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop",
-      duration: "5:30",
-      date: "15 Déc 2024",
-      views: "1.2K",
-      description: "Découvrez l'inauguration de notre nouveau centre de formation avec les autorités locales."
-    },
-    {
-      id: 2,
-      title: "Cérémonie de Remise des Diplômes",
-      thumbnail: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&h=300&fit=crop",
-      duration: "12:45",
-      date: "20 Nov 2024",
-      views: "856",
-      description: "La cérémonie annuelle de remise des diplômes de nos étudiants."
-    },
-    {
-      id: 3,
-      title: "Formation Professionnelle - Témoignages",
-      thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop",
-      duration: "8:15",
-      date: "5 Nov 2024",
-      views: "2.1K",
-      description: "Les témoignages de nos anciens étudiants sur leur parcours professionnel."
-    },
-    {
-      id: 4,
-      title: "Journée Portes Ouvertes 2024",
-      thumbnail: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
-      duration: "15:20",
-      date: "28 Oct 2024",
-      views: "945",
-      description: "Revivez notre journée portes ouvertes avec toutes les activités proposées."
+  // Fetch videos from Supabase
+  const { data: videos = [], isLoading } = useQuery({
+    queryKey: ['videos-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
     }
-  ];
+  });
 
-  const filteredVideos = videos.filter(video =>
+  const filteredVideos = videos.filter((video: any) =>
     video.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -81,13 +58,13 @@ const Videos = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVideos.map((video) => (
+            {filteredVideos.map((video: any) => (
               <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
                 <Link to={`/videos/${video.id}`}>
                   <div className="relative">
                     <div 
                       className="h-48 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${video.thumbnail})` }}
+                      style={{ backgroundImage: `url(${video.thumbnail_url || '/placeholder.svg'})` }}
                     >
                       <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <Button size="lg" className="bg-red-600 hover:bg-red-700">
@@ -97,20 +74,21 @@ const Videos = () => {
                       </div>
                     </div>
                     <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
-                      {video.duration}
+                      {/* Show duration if available, else fallback */}
+                      {video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')}` : '--:--'}
                     </div>
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-semibold mb-2 text-lg line-clamp-2">{video.title}</h3>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{video.description}</p>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{video.description || video.excerpt || ''}</p>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        <span>{video.date}</span>
+                        <span>{video.created_at ? new Date(video.created_at).toLocaleDateString('fr-FR') : ''}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Eye className="w-4 h-4" />
-                        <span>{video.views} vues</span>
+                        <span>{video.views || '--'} vues</span>
                       </div>
                     </div>
                   </CardContent>
@@ -119,7 +97,12 @@ const Videos = () => {
             ))}
           </div>
 
-          {filteredVideos.length === 0 && (
+          {isLoading && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Chargement des vidéos...</p>
+            </div>
+          )}
+          {filteredVideos.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <p className="text-gray-500">Aucune vidéo trouvée pour "{searchTerm}"</p>
             </div>

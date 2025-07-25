@@ -33,7 +33,6 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     title: "",
     subtitle: "",
     description: "",
-    section_id: "none",
     video_id: "none",
     photo_id: "none",
     video_description: "",
@@ -43,19 +42,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     active: true,
   });
 
-  // Fetch related data
-  const { data: sections } = useQuery({
-    queryKey: ["sections"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sections")
-        .select("id, title")
-        .eq("active", true)
-        .order("title");
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Remove fetching of sections
 
   const { data: videos } = useQuery({
     queryKey: ["videos"],
@@ -101,7 +88,6 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         title: activity.title,
         subtitle: activity.subtitle || "",
         description: activity.description || "",
-        section_id: activity.section_id || "none",
         video_id: activity.video_id || "none",
         photo_id: activity.photo_id || "none",
         video_description: activity.video_description || "",
@@ -115,7 +101,6 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         title: "",
         subtitle: "",
         description: "",
-        section_id: "none",
         video_id: "none",
         photo_id: "none",
         video_description: "",
@@ -131,7 +116,6 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     mutationFn: async (data: typeof formData) => {
       const payload = {
         ...data,
-        section_id: data.section_id === "none" ? null : data.section_id,
         video_id: data.video_id === "none" ? null : data.video_id,
         photo_id: data.photo_id === "none" ? null : data.photo_id,
         tag_id: data.tag_id === "none" ? null : data.tag_id,
@@ -237,28 +221,6 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="section_id">Section</Label>
-                <Select
-                  value={formData.section_id}
-                  onValueChange={(value) => handleInputChange("section_id", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a section" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {sections?.map((section) => (
-                      <SelectItem key={section.id} value={section.id}>
-                        {section.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Separator />
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="video_id">Video</Label>

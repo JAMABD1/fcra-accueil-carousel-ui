@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, BookOpen, Phone, Mail, Building2, Target, TrendingUp, Award, Calendar, User, Play } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Counter from "@/components/Counter";
 
 interface DatabaseCenter {
@@ -17,7 +17,7 @@ interface DatabaseCenter {
   phone: string | null;
   email: string | null;
   image_url: string | null;
-  hero_id: string | null;
+  tag_id: string | null;
   video_id: string | null;
   sort_order: number | null;
   active: boolean | null;
@@ -33,6 +33,7 @@ interface DatabaseCenter {
     title: string;
     video_type: string;
     youtube_id: string;
+    video_url: string;
   } | null;
   directors?: {
     id: string;
@@ -57,16 +58,12 @@ const CentreDetail = () => {
         .from('centres')
         .select(`
           *,
-          hero (
-            id,
-            title,
-            image_url
-          ),
           videos (
             id,
             title,
             video_type,
-            youtube_id
+            youtube_id,
+            video_url
           ),
           directors (
             id,
@@ -79,10 +76,136 @@ const CentreDetail = () => {
         .single();
       
       if (error) throw error;
-      return data as DatabaseCenter;
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description ?? null,
+        address: data.address ?? null,
+        phone: data.phone ?? null,
+        email: data.email ?? null,
+        image_url: data?.image_url ?? null,
+        tag_id: data?.tag_id ?? null,
+        video_id: data.video_id ?? null,
+        sort_order: data.sort_order ?? null,
+        active: data.active ?? null,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        videos: data.videos ?? null,
+        directors: data.directors ?? [],
+      } as DatabaseCenter;
     },
     enabled: !!id
   });
+
+  // Fetch related impacts with the same tag
+  const { data: relatedImpacts = [] } = useQuery({
+    queryKey: ['impacts-by-tag', centre?.tag_id],
+    queryFn: async () => {
+      if (!centre?.tag_id) return [];
+      const { data, error } = await supabase
+        .from('impact')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      // Filter impacts that have the same tag_id in their tag_ids array
+      return (data || []).filter((impact: any) => {
+        let tagIds: string[] = [];
+        if (impact.tag_ids) {
+          if (typeof impact.tag_ids === 'string') {
+            try { tagIds = JSON.parse(impact.tag_ids); } catch { tagIds = []; }
+          } else if (Array.isArray(impact.tag_ids)) {
+            tagIds = impact.tag_ids;
+          }
+        }
+        // Also support legacy tags_id field
+        if (tagIds.length === 0 && impact.tags_id) tagIds = [impact.tags_id];
+        return tagIds.includes(centre.tag_id);
+      });
+    },
+    enabled: !!centre?.tag_id
+  });
+
+  // Fetch the latest article with the same tag as the centre
+  const { data: latestArticle } = useQuery({
+    queryKey: ['latest-article-by-tag', centre?.tag_id],
+    queryFn: async () => {
+      if (!centre?.tag_id) return null;
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, title, excerpt, content, created_at')
+        .contains('tags', [centre.tag_id])
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] : null;
+    },
+    enabled: !!centre?.tag_id
+  });
+
+  // Fetch up to 3 latest articles with the same tag as the centre
+  const { data: latestArticles = [] } = useQuery({
+    queryKey: ['latest-articles-by-tag', centre?.tag_id],
+    queryFn: async () => {
+      if (!centre?.tag_id) return [];
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .contains('tags', [centre.tag_id])
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!centre?.tag_id
+  });
+
+  console.log("latestArticle", latestArticle);
+  // Fetch heroes with the same tag as the centre for the hero section images
+  const { data: heroImages = [] } = useQuery({
+    queryKey: ['hero-images-by-tag', centre?.tag_id],
+    queryFn: async () => {
+      if (!centre?.tag_id) return [];
+      const { data, error } = await supabase
+        .from('hero')
+        .select('image_url,tag_ids')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      // Filter heroes that have the same tag_id in their tag_ids array
+      return (data || []).filter((hero: any) => {
+        let tagIds: string[] = [];
+        if (hero.tag_ids) {
+          if (typeof hero.tag_ids === 'string') {
+            try { tagIds = JSON.parse(hero.tag_ids); } catch { tagIds = []; }
+          } else if (Array.isArray(hero.tag_ids)) {
+            tagIds = hero.tag_ids;
+          }
+        }
+        // Also support legacy tags_id field
+        if (tagIds.length === 0 && hero.tags_id) tagIds = [hero.tags_id];
+        return tagIds.includes(centre.tag_id);
+      });
+    },
+    enabled: !!centre?.tag_id
+  });
+
+  // Use hero images for the hero section carousel
+  const images = (heroImages.length > 0
+    ? heroImages.map((hero: any) => hero.image_url || '/placeholder.svg')
+    : [centre?.image_url || '/placeholder.svg']
+  ).filter(Boolean);
+
+  // Auto-scroll hero images like a carousel
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveImageIndex((prev) => (prev + 1) % images.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [images.length]);
 
   if (isLoading) {
     return (
@@ -108,19 +231,6 @@ const CentreDetail = () => {
       </Layout>
     );
   }
-
-  const images = [
-    centre.hero?.image_url || centre.image_url || '/placeholder.svg',
-    '/placeholder.svg', // Additional placeholder images
-    '/placeholder.svg'
-  ].filter(Boolean);
-
-  const mockStats = [
-    { title: 'Bénéficiaires', value: 250, suffix: '+', icon: Users },
-    { title: 'Programmes', value: 8, suffix: '', icon: BookOpen },
-    { title: 'Années d\'expérience', value: 15, suffix: '', icon: Calendar },
-    { title: 'Employés', value: centre.directors?.length || 12, suffix: '', icon: User }
-  ];
 
   return (
     <Layout>
@@ -176,63 +286,127 @@ const CentreDetail = () => {
               </p>
             )}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="p-6">
-              <CardContent className="p-0">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Target className="h-5 w-5 text-green-600" />
-                  Notre Mission
-                </h3>
-                <p className="text-gray-600">
-                  Ce centre se consacre à offrir des opportunités d'éducation et de
-                  développement aux communautés locales. Nous croyons en un avenir où
-                  chaque individu a accès à des ressources pour atteindre son potentiel.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6">
-              <CardContent className="p-0">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Award className="h-5 w-5 text-green-600" />
-                  Nos Services
-                </h3>
-                <p className="text-gray-600">
-                  Nous proposons une gamme complète de services incluant la formation
-                  professionnelle, l'accompagnement des familles, et des programmes
-                  de développement communautaire adaptés aux besoins locaux.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </section>
+
+      {/* Video Section */}
+      {centre.videos && (
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Découvrez notre centre
+              </h2>
+            </div>
+            <div className="max-w-4xl mx-auto">
+              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
+                {centre.videos.video_type === "youtube" && centre.videos.youtube_id && (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${centre.videos.youtube_id}`}
+                    title={centre.videos.title}
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                )}
+                {centre.videos.video_type === "upload" && centre.videos.video_url && (
+                  <video
+                    src={centre.videos.video_url}
+                    controls
+                    className="w-full h-full"
+                    title={centre.videos.title}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Impact Section with Animated Counters */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Notre Impact en Chiffres
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            {mockStats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <div className="text-center">
-                    <stat.icon className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                    <Counter end={stat.value} suffix={stat.suffix} />
+      {relatedImpacts.length > 0 && (
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Notre Impact en Chiffres
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {relatedImpacts.map((impact: any) => (
+                <div key={impact.id} className="text-center">
+                  <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <Counter end={impact.number} suffix="+" />
                   </div>
+                  <h3 className="text-xl font-semibold mb-2">{impact.title}</h3>
+                  {impact.subtitle && (
+                    <p className="text-gray-600 mb-3">{impact.subtitle}</p>
+                  )}
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{stat.title}</h3>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* Derniers Articles Section */}
+      {latestArticles.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-12">
+              <div className="text-center md:text-left w-full">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Derniers articles
+                </h2>
+              </div>
+              <div className="hidden md:block ml-4">
+                <Button 
+                  variant="link" 
+                  className="text-green-600 hover:text-green-700"
+                  onClick={() => navigate('/actualites')}
+                >
+                  Voir tous les articles
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {latestArticles.map((article: any) => (
+                <Card key={article.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg'})` }}></div>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">{article.title}</h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{article.excerpt || (article.content?.substring(0, 150) + '...')}</p>
+                    <Button asChild variant="outline" className="w-full mt-2">
+                      <a href={`/actualites/${article.id}`}>Lire l'article</a>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Latest Article Section */}
+      {latestArticle && (
+        <section className="py-16 bg-white">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Dernière Actualité liée à ce centre
+              </h2>
+            </div>
+            <Card className="mb-8">
+              <CardContent className="p-6 text-center">
+                <h3 className="font-bold text-2xl mb-2">{latestArticle.title}</h3>
+                <p className="text-gray-600 mb-4">{latestArticle.excerpt || latestArticle.content?.substring(0, 150) + '...'}</p>
+                <Button asChild className="bg-green-600 hover:bg-green-700">
+                  <a href={`/actualites/${latestArticle.id}`}>Lire l'article</a>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
 
       {/* Directors Section */}
       {centre.directors && centre.directors.length > 0 && (
@@ -262,30 +436,6 @@ const CentreDetail = () => {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Video Section */}
-      {centre.videos?.youtube_id && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Découvrez notre centre
-              </h2>
-            </div>
-            
-            <div className="max-w-4xl mx-auto">
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <iframe
-                  src={`https://www.youtube.com/embed/${centre.videos.youtube_id}`}
-                  title={centre.videos.title}
-                  className="w-full h-full"
-                  allowFullScreen
-                />
-              </div>
             </div>
           </div>
         </section>

@@ -20,7 +20,7 @@ interface CentreFormData {
   phone: string;
   email: string;
   image_url: string;
-  hero_id: string;
+  tag_id: string;
   video_id: string;
   sort_order: number;
   active: boolean;
@@ -51,23 +51,21 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
       phone: "",
       email: "",
       image_url: "",
-      hero_id: "none",
+      tag_id: "none",
       video_id: "none",
       sort_order: 0,
       active: true,
     },
   });
 
-  // Fetch heroes for selection
-  const { data: heroes = [] } = useQuery({
-    queryKey: ['heroes'],
+  // Fetch tags for selection
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('hero')
-        .select('id, title')
-        .eq('active', true)
-        .order('sort_order');
-      
+        .from('tags')
+        .select('id, name, color')
+        .order('name');
       if (error) throw error;
       return data;
     }
@@ -98,8 +96,8 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         phone: centre.phone || "",
         email: centre.email || "",
         image_url: centre.image_url || "",
-        hero_id: centre.hero_id || "none",
-        video_id: centre.video_id || "none",
+        tag_id: centre.tag_id !== null && centre.tag_id !== undefined ? centre.tag_id : "none",
+        video_id: centre.video_id !== null && centre.video_id !== undefined ? centre.video_id : "none",
         sort_order: centre.sort_order || 0,
         active: centre.active || false,
       });
@@ -204,7 +202,7 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         phone: data.phone || null,
         email: data.email || null,
         image_url: imageUrl || null,
-        hero_id: data.hero_id === "none" ? null : data.hero_id,
+        tag_id: data.tag_id === "none" ? null : data.tag_id,
         video_id: data.video_id === "none" ? null : data.video_id,
         sort_order: data.sort_order,
         active: data.active,
@@ -530,27 +528,27 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
                   <CardTitle className="text-lg">Relations</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Hero Selection */}
+                  {/* Tag Selection */}
                   <FormField
                     control={form.control}
-                    name="hero_id"
+                    name="tag_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Image héro</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
+                        <FormLabel>Tag</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner une image héro" />
+                              <SelectValue placeholder="Sélectionner un tag" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">Aucun</SelectItem>
-                            {heroes.map((hero) => (
-                              <SelectItem key={hero.id} value={hero.id}>
-                                {hero.title}
+                            {tags.map((tag) => (
+                              <SelectItem key={tag.id} value={tag.id}>
+                                <span style={{ color: tag.color }}>{tag.name}</span>
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -559,7 +557,6 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
                       </FormItem>
                     )}
                   />
-
                   {/* Video Selection */}
                   <FormField
                     control={form.control}
@@ -568,8 +565,8 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
                       <FormItem>
                         <FormLabel>Vidéo</FormLabel>
                         <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
+                          value={field.value}
+                          onValueChange={field.onChange}
                         >
                           <FormControl>
                             <SelectTrigger>
