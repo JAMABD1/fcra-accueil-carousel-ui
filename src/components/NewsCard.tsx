@@ -13,10 +13,11 @@ interface NewsCardProps {
   image: string;
   excerpt: string;
   tags: string[];
+  tagObjects?: Array<{ id: string; name: string; color: string }>;
   featured?: boolean;
 }
 
-const NewsCard = ({ id, title, date, author, image, excerpt, tags, featured = false }: NewsCardProps) => {
+const NewsCard = ({ id, title, date, author, image, excerpt, tags, tagObjects = [], featured = false }: NewsCardProps) => {
   const navigate = useNavigate();
 
   const handleReadMore = () => {
@@ -35,11 +36,27 @@ const NewsCard = ({ id, title, date, author, image, excerpt, tags, featured = fa
         <div className={featured ? "md:w-1/2" : ""}>
           <CardContent className="p-6">
             <div className="flex flex-wrap gap-2 mb-3">
-              {tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
+              {tagObjects.length > 0 ? (
+                tagObjects.map((tag) => (
+                  <Badge 
+                    key={tag.id} 
+                    variant="outline" 
+                    className="text-xs"
+                    style={{ 
+                      borderColor: tag.color,
+                      color: tag.color
+                    }}
+                  >
+                    {tag.name}
+                  </Badge>
+                ))
+              ) : (
+                tags.map((tag) => (
+                  <Badge key={tag} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))
+              )}
             </div>
             
             <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">

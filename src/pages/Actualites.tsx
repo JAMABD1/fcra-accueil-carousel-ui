@@ -27,6 +27,25 @@ const Actualites = () => {
     }
   });
 
+  // Fetch all tags for mapping
+  const { data: allTagsData = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Create a mapping of tag IDs to tag objects
+  const tagIdToTag = allTagsData.reduce((acc, tag) => {
+    acc[tag.id] = tag;
+    return acc;
+  }, {} as Record<string, any>);
+
   // Transform database articles to match the expected format
   const transformedArticles = articles.map(article => ({
     id: article.id,
@@ -40,18 +59,21 @@ const Actualites = () => {
     image: article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg',
     excerpt: article.excerpt || article.content.substring(0, 200) + '...',
     tags: article.tags || [],
+    tagObjects: (article.tags || []).map(tagId => tagIdToTag[tagId]).filter(Boolean),
     content: article.content,
     featured: article.featured || false
   }));
 
-  // Get all unique tags from articles
-  const allTags = [...new Set(transformedArticles.flatMap(article => article.tags))];
+  // Get all unique tag names from articles
+  const allTags = [...new Set(transformedArticles.flatMap(article => 
+    article.tagObjects.map(tag => tag.name)
+  ))];
 
   // Filter articles based on search term and selected tag
   const filteredNews = transformedArticles.filter(article => {
     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          article.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = selectedTag === "" || article.tags.includes(selectedTag);
+    const matchesTag = selectedTag === "" || article.tagObjects.some(tag => tag.name === selectedTag);
     return matchesSearch && matchesTag;
   });
 
@@ -142,6 +164,7 @@ const Actualites = () => {
               <NewsCard
                 key={article.id}
                 {...article}
+                tagObjects={article.tagObjects}
                 featured={article.featured || index === 0}
               />
             ))}

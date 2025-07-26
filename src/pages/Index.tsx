@@ -8,6 +8,24 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
+// YouTube Video Component
+const YouTubeVideo = ({ videoId }: { videoId: string }) => {
+  return (
+    <div className="w-full max-w-4xl mx-auto mb-8">
+      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+        <iframe
+          className="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="YouTube video player"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      </div>
+    </div>
+  );
+};
+
 const Index = () => {
   const navigate = useNavigate();
   
@@ -175,6 +193,7 @@ const Index = () => {
           </div>
 
           <div className="text-center mt-8">
+            <YouTubeVideo videoId="bklq4ZVkfIk" />
             <Button 
               className="bg-green-600 hover:bg-green-700 px-8 py-3"
               onClick={() => {

@@ -637,6 +637,60 @@ export interface Database {
             referencedColumns: ["id"]
           }
         ]
+      },
+      library: {
+        Row: {
+          author: string | null
+          category: string
+          created_at: string
+          description: string | null
+          downloads: number | null
+          featured: boolean | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          downloads?: number | null
+          featured?: boolean | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id?: string
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          downloads?: number | null
+          featured?: boolean | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

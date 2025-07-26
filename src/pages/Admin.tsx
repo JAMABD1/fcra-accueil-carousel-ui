@@ -51,6 +51,7 @@ import CentresManager from "@/components/admin/CentresManager";
 import CoordonnesManager from "@/components/admin/CoordonnesManager";
 import { ActivitiesManager } from "@/components/admin/ActivitiesManager";
 import SchoolsManager from "@/components/admin/SchoolsManager";
+import LibraryManager from "@/components/admin/LibraryManager";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
@@ -266,6 +267,9 @@ const Admin = () => {
         
       case "schools":
         return <SchoolsManager />;
+        
+      case "library":
+        return <LibraryManager />;
         
       default:
         return (

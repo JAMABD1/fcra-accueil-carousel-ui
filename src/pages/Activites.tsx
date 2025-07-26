@@ -25,7 +25,7 @@ const Activites = () => {
           *,
           videos(id, title),
           photos(id, title),
-          tags(id, name, color)
+          tags!tag_id(id, name, color)
         `)
         .eq('active', true)
         .order('sort_order', { ascending: true });

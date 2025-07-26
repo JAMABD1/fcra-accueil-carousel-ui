@@ -30,6 +30,7 @@ interface School {
     email: string;
     address: string;
   } | null;
+
 }
 
 const Ecoles = () => {
@@ -53,7 +54,7 @@ const Ecoles = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as School[];
+      return data;
     }
   });
 
@@ -119,13 +120,7 @@ const Ecoles = () => {
                       {school.type}
                     </Badge>
                   </div>
-                  {school.tag_id && (
-                    <div className="absolute top-4 right-4">
-                      <Badge className="bg-blue-600 text-white border-0 shadow-lg capitalize">
-                        {school.tag_id}
-                      </Badge>
-                    </div>
-                  )}
+
                 </div>
                 
                 <CardContent className="p-6">

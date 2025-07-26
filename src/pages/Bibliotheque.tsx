@@ -1,101 +1,178 @@
 
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, Calendar, Search, FileText, Book, Users, Settings } from "lucide-react";
+import { Download, Calendar, Search, FileText, Book, Users, Settings, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Tables } from "@/integrations/supabase/types";
+
+type LibraryItem = Tables<"library">;
 
 const Bibliotheque = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-
-  const documents = [
-    {
-      id: 1,
-      name: "Guide de l'Étudiant 2024",
-      description: "Manuel complet pour les nouveaux étudiants avec toutes les informations nécessaires.",
-      format: "PDF",
-      size: "2.5 MB",
-      date: "10 Déc 2024",
-      downloads: 245,
-      category: "guide",
-      icon: Book
-    },
-    {
-      id: 2,
-      name: "Formulaire d'Inscription",
-      description: "Dossier d'inscription pour l'année académique 2024-2025.",
-      format: "PDF",
-      size: "1.2 MB",
-      date: "5 Déc 2024",
-      downloads: 567,
-      category: "formulaire",
-      icon: FileText
-    },
-    {
-      id: 3,
-      name: "Calendrier Académique",
-      description: "Planning des cours et examens pour l'année 2024-2025.",
-      format: "PDF",
-      size: "800 KB",
-      date: "1 Déc 2024",
-      downloads: 189,
-      category: "calendrier",
-      icon: Calendar
-    },
-    {
-      id: 4,
-      name: "Règlement Intérieur",
-      description: "Règles et procédures de l'établissement à respecter.",
-      format: "PDF",
-      size: "1.8 MB",
-      date: "25 Nov 2024",
-      downloads: 123,
-      category: "reglement",
-      icon: Settings
-    },
-    {
-      id: 5,
-      name: "Brochure des Formations",
-      description: "Présentation détaillée de toutes nos formations disponibles.",
-      format: "PDF",
-      size: "3.2 MB",
-      date: "20 Nov 2024",
-      downloads: 334,
-      category: "formation",
-      icon: Book
-    },
-    {
-      id: 6,
-      name: "Guide des Associations Étudiantes",
-      description: "Informations sur les différentes associations et clubs étudiants.",
-      format: "PDF",
-      size: "1.5 MB",
-      date: "15 Nov 2024",
-      downloads: 156,
-      category: "association",
-      icon: Users
-    }
-  ];
+  const [documents, setDocuments] = useState<LibraryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   const categories = [
     { value: "all", label: "Toutes les catégories" },
-    { value: "guide", label: "Guides" },
-    { value: "formulaire", label: "Formulaires" },
-    { value: "calendrier", label: "Calendriers" },
-    { value: "reglement", label: "Règlements" },
-    { value: "formation", label: "Formations" },
-    { value: "association", label: "Associations" }
+    { value: "jurisprudence", label: "Jurisprudence (Fiqh)" },
+    { value: "sagesse", label: "Sagesse (Hikma)" },
+    { value: "theologie", label: "Théologie (Aqida)" },
+    { value: "hadith", label: "Hadith" },
+    { value: "tafsir", label: "Exégèse (Tafsir)" },
+    { value: "histoire", label: "Histoire Islamique" },
+    { value: "biographie", label: "Biographies (Sira)" },
+    { value: "spiritualite", label: "Spiritualité (Tasawwuf)" },
+    { value: "education", label: "Éducation Islamique" },
+    { value: "general", label: "Général" }
   ];
 
+  // Fetch documents from Supabase
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('library')
+          .select('*')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setDocuments(data || []);
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les documents.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, [toast]);
+
   const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.author?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || doc.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleDownload = async (docItem: LibraryItem) => {
+    try {
+      // Increment download count
+      const { error: updateError } = await supabase
+        .from('library')
+        .update({ downloads: (docItem.downloads || 0) + 1 })
+        .eq('id', docItem.id);
+
+      if (updateError) throw updateError;
+
+      // Get the file URL from Supabase storage
+      const { data } = supabase.storage
+        .from('library')
+        .getPublicUrl(docItem.file_name);
+
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = data.publicUrl;
+      link.download = docItem.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Téléchargement",
+        description: "Le document a été téléchargé avec succès.",
+      });
+
+      // Update local state
+      setDocuments(prev => prev.map(doc => 
+        doc.id === docItem.id 
+          ? { ...doc, downloads: (doc.downloads || 0) + 1 }
+          : doc
+      ));
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de télécharger le document.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return FileText;
+    if (fileType.includes('word') || fileType.includes('document')) return FileText;
+    if (fileType.includes('excel') || fileType.includes('spreadsheet')) return FileText;
+    if (fileType.includes('zip') || fileType.includes('compressed')) return FileText;
+    return FileText;
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const iconMap: Record<string, any> = {
+      jurisprudence: Book,
+      sagesse: Book,
+      theologie: Book,
+      hadith: Book,
+      tafsir: Book,
+      histoire: Book,
+      biographie: Book,
+      spiritualite: Book,
+      education: Book,
+      general: FileText
+    };
+    return iconMap[category] || FileText;
+  };
+
+  const getCategoryBadge = (category: string) => {
+    const categoryColors: Record<string, string> = {
+      jurisprudence: "bg-blue-100 text-blue-800",
+      sagesse: "bg-green-100 text-green-800",
+      theologie: "bg-purple-100 text-purple-800",
+      hadith: "bg-indigo-100 text-indigo-800",
+      tafsir: "bg-yellow-100 text-yellow-800",
+      histoire: "bg-orange-100 text-orange-800",
+      biographie: "bg-pink-100 text-pink-800",
+      spiritualite: "bg-teal-100 text-teal-800",
+      education: "bg-emerald-100 text-emerald-800",
+      general: "bg-gray-100 text-gray-800"
+    };
+
+    return (
+      <Badge className={categoryColors[category] || categoryColors.general}>
+        {categories.find(cat => cat.value === category)?.label || category}
+      </Badge>
+    );
+  };
 
   return (
     <Layout>
@@ -136,47 +213,65 @@ const Bibliotheque = () => {
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredDocuments.map((doc) => {
-              const IconComponent = doc.icon;
-              return (
-                <Card key={doc.id} className="hover:shadow-lg transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="bg-green-100 p-3 rounded-lg">
-                        <IconComponent className="w-8 h-8 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-2">{doc.name}</h3>
-                        <p className="text-gray-600 mb-3 text-sm">{doc.description}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                            {doc.format}
-                          </span>
-                          <span>{doc.size}</span>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{doc.date}</span>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              <p className="text-gray-500 mt-2">Chargement des documents...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredDocuments.map((doc) => {
+                const IconComponent = getCategoryIcon(doc.category);
+                return (
+                  <Card key={doc.id} className="hover:shadow-lg transition-all duration-300">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="bg-green-100 p-3 rounded-lg">
+                          <IconComponent className="w-8 h-8 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-lg">{doc.title}</h3>
+                            {doc.featured && (
+                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                            )}
+                          </div>
+                          <p className="text-gray-600 mb-3 text-sm">{doc.description}</p>
+                          <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              {doc.file_type.split('/')[1]?.toUpperCase() || 'PDF'}
+                            </span>
+                            <span>{formatFileSize(doc.file_size)}</span>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              <span>{formatDate(doc.created_at)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-gray-500">
+                                {doc.downloads || 0} téléchargements
+                              </p>
+                              {getCategoryBadge(doc.category)}
+                            </div>
+                            <Button 
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleDownload(doc)}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Télécharger
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-500">
-                            {doc.downloads} téléchargements
-                          </p>
-                          <Button className="bg-green-600 hover:bg-green-700">
-                            <Download className="w-4 h-4 mr-2" />
-                            Télécharger
-                          </Button>
-                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
-          {filteredDocuments.length === 0 && (
+          {!isLoading && filteredDocuments.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">
                 Aucun document trouvé{searchTerm && ` pour "${searchTerm}"`}
