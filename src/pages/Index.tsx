@@ -159,22 +159,30 @@ const Index = () => {
               À propos de FCRA
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              FCRA est une organisation à but non lucratif qui se consacre à aider les
-              communautés locales à travers des initiatives éducatives et sociales. Notre
-              mission est de créer un impact durable en offrant des ressources et un
-              soutien à ceux qui en ont besoin.
+            Fifanampiana Centre Rassoul Akram (FCRA) est un centre à but 
+            non lucratif dédié à l’entraide, à l’éducation, au développement 
+            humain et à la promotion des valeurs de solidarité. Fondé avec la
+             conviction que chaque individu mérite une chance équitable de s’épanouir, notre centre œuvre pour un avenir meilleur à travers des actions concrètes 
+            dans les domaines éducatif, social, spirituel et communautaire.
+            </p>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Nous accueillons les enfants, les jeunes et les familles dans un environnement bienveillant, où l’écoute, le respect et
+             la transmission des savoirs sont au cœur de notre engagement.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="p-6">
               <CardContent className="p-0">
-                <h3 className="text-xl font-semibold mb-4">Notre Mission</h3>
+                <h3 className="text-xl font-semibold mb-4">Notre Missions</h3>
                 <p className="text-gray-600">
-                  Notre mission est d'offrir des opportunités d'éducation et de
-                  développement aux jeunes et adultes dans des situations
-                  vulnérables. Nous croyons en un avenir où chaque individu
-                  a accès à des ressources pour atteindre son potentiel.
+                 <ul className="list-disc list-inside">
+                  <li>Offrir un accompagnement éducatif et spirituel aux enfants et aux jeunes</li>
+                  <li>Soutenir les familles en situation de vulnérabilité à travers des actions de solidarité</li>
+                  <li>Promouvoir les valeurs de paix, de respect et d’entraide entre les membres de la communauté</li>
+                  <li>Créer un espace d’échange, de dialogue, d’ouverture et de cohésion sociale</li>
+      
+                 </ul>
                 </p>
               </CardContent>
             </Card>
@@ -183,19 +191,66 @@ const Index = () => {
               <CardContent className="p-0">
                 <h3 className="text-xl font-semibold mb-4">Notre Vision</h3>
                 <p className="text-gray-600">
-                  FCRA envisage un monde où l'éducation est accessible à
-                  tous, où les jeunes trouvent des opportunités égales pour réussir
-                  et où la communauté s'entraide pour construire un avenir
-                  meilleur.
+                Bâtir une société solidaire, éclairée et harmonieuse, où chaque individu 
+                trouve sa place et peut contribuer au bien commun. Nous rêvons d’un monde où les valeurs humaines et spirituelles guident l’action sociale, où l’éducation est un levier d’émancipation, 
+                et où la fraternité dépasse les différences.
                 </p>
               </CardContent>
             </Card>
+            <Card className="p-6">
+              <CardContent className="p-0">
+                <h3 className="text-xl font-semibold mb-4">Notre Valeurs</h3>
+                <p className="text-gray-600">
+                <ul className="list-disc list-inside">
+                  <li ><span className="font-bold">Solidarité :</span> L’union et le soutien mutuel sont au cœur de toutes nos actions.</li>
+                  <li > <span className="font-bold">Respect :</span> Nous valorisons la dignité de chaque personne, sans distinction.</li>
+                  <li > <span className="font-bold">Foi et spiritualité :</span> Nous nous inspirons des principes moraux pour orienter nos engagements.</li>
+                  
+                  <li > <span className="font-bold">Engagement :</span> Nous travaillons avec sincérité, persévérance et responsabilité.</li>
+                  <li > <span className="font-bold">Éducation :</span> L’accès à la connaissance est la clé du changement et de la liberté.</li>
+                  
+                </ul>
+                </p>
+              </CardContent>
+            </Card>
+
           </div>
 
-          <div className="text-center mt-8">
+          <div className="mt-8 flex flex-col items-center justify-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              Notre Histoire
+            </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+       <div className="col-span-1">
+      
+     <p className="text-gray-600">
+     Fondé en 2009, le Fifanampiana Centre Rassoul Akram (FCRA) est né d’une volonté profonde de répondre aux besoins urgents de la communauté en matière d’éducation, d’entraide 
+     sociale, et de développement humain.
+     </p>
+     <p className="text-gray-600">
+     Depuis sa création, le FCRA s’engage à transmettre les valeurs universelles de sagesse, de solidarité et de paix, 
+     en s’appuyant sur quatre piliers fondamentaux :
+     </p>
+     <ul className="list-disc list-inside m-3">
+       <li>Le soutien aux orphelins et aux familles vulnérables, à travers des actions concrètes d’aide humanitaire et sociale ;</li>
+     <li>La formation des jeunes, pour les préparer à devenir des citoyens responsables, instruits et engagés ;</li>
+     <li>Le dialogue interreligieux, dans un esprit d’ouverture, de respect et de cohésion sociale ;</li>
+     <li>Les projets communautaires durables, visant à renforcer l’autonomie et la résilience des populations locales.</li>
+     </ul>
+     <p className="text-gray-600">
+     Les projets communautaires durables, visant à renforcer l’autonomie et la résilience des populations locales.
+     </p>
+      </div>
+
+            <div className="col-span-1">
             <YouTubeVideo videoId="bklq4ZVkfIk" />
+            </div>
+            </div>
+
+
             <Button 
-              className="bg-green-600 hover:bg-green-700 px-8 py-3"
+              className="bg-green-600 hover:bg-green-700 px-8 py-3 mt-4 "
               onClick={() => {
                 const section = document.getElementById('sections');
                 if (section) {
@@ -205,6 +260,7 @@ const Index = () => {
             >
               Découvrez nos projets
             </Button>
+
           </div>
         </div>
       </section>
