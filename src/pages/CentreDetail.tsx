@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, BookOpen, Phone, Mail, Building2, Target, TrendingUp, Award, Calendar, User, Play } from "lucide-react";
 import { useState, useEffect } from "react";
 import Counter from "@/components/Counter";
+import CenterDetail1 from "@/components/CenterHistory1";
+import CenterDetail2 from "@/components/CenterHistory2";
+import CenterDetail3 from "@/components/CenterHistory3";
+import CenterDetail4 from "@/components/CenterHistory4";
 
 interface DatabaseCenter {
   id: string;
@@ -23,6 +27,7 @@ interface DatabaseCenter {
   active: boolean | null;
   created_at: string;
   updated_at: string;
+  hero_id?: string | null;
   hero?: {
     id: string;
     title: string;
@@ -83,13 +88,14 @@ const CentreDetail = () => {
         address: data.address ?? null,
         phone: data.phone ?? null,
         email: data.email ?? null,
-        image_url: data?.image_url ?? null,
-        tag_id: data?.tag_id ?? null,
+        image_url: (data as any).image_url ?? null,
+        tag_id: (data as any).tag_id ?? null,
         video_id: data.video_id ?? null,
         sort_order: data.sort_order ?? null,
         active: data.active ?? null,
         created_at: data.created_at,
         updated_at: data.updated_at,
+        hero_id: (data as any).hero_id ?? null,
         videos: data.videos ?? null,
         directors: data.directors ?? [],
       } as DatabaseCenter;
@@ -289,38 +295,35 @@ const CentreDetail = () => {
         </div>
       </section>
 
+      {/* Dynamic Center Detail Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Dynamic Component with Missions, Vision, Values and History */}
+          {(() => {
+            const sortOrder = centre.sort_order || 1;
+            // Extract video URL or video ID from centre data
+            const videoUrl = centre.videos?.video_url || null;
+            const videoId = centre.videos?.youtube_id || null;
+            
+            switch (sortOrder) {
+              case 1:
+                return <CenterDetail1 videoUrl={videoUrl} videoId={videoId} />;
+              case 2:
+                return <CenterDetail2 videoUrl={videoUrl} videoId={videoId} />;
+              case 3:
+                return <CenterDetail3 videoUrl={videoUrl} videoId={videoId} />;
+              case 4:
+                return <CenterDetail4 videoUrl={videoUrl} videoId={videoId} />;
+              default:
+                return <CenterDetail1 videoUrl={videoUrl} videoId={videoId} />;
+            }
+          })()}
+        </div>
+      </section>
+
       {/* Video Section */}
-      {centre.videos && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Découvrez notre centre
-              </h2>
-            </div>
-            <div className="max-w-4xl mx-auto">
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                {centre.videos.video_type === "youtube" && centre.videos.youtube_id && (
-                  <iframe
-                    src={`https://www.youtube.com/embed/${centre.videos.youtube_id}`}
-                    title={centre.videos.title}
-                    className="w-full h-full"
-                    allowFullScreen
-                  />
-                )}
-                {centre.videos.video_type === "upload" && centre.videos.video_url && (
-                  <video
-                    src={centre.videos.video_url}
-                    controls
-                    className="w-full h-full"
-                    title={centre.videos.title}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      
+
 
       {/* Impact Section with Animated Counters */}
       {relatedImpacts.length > 0 && (
@@ -387,26 +390,7 @@ const CentreDetail = () => {
       )}
 
       {/* Latest Article Section */}
-      {latestArticle && (
-        <section className="py-16 bg-white">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Dernière Actualité liée à ce centre
-              </h2>
-            </div>
-            <Card className="mb-8">
-              <CardContent className="p-6 text-center">
-                <h3 className="font-bold text-2xl mb-2">{latestArticle.title}</h3>
-                <p className="text-gray-600 mb-4">{latestArticle.excerpt || latestArticle.content?.substring(0, 150) + '...'}</p>
-                <Button asChild className="bg-green-600 hover:bg-green-700">
-                  <a href={`/actualites/${latestArticle.id}`}>Lire l'article</a>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-      )}
+      
 
       {/* Directors Section */}
       {centre.directors && centre.directors.length > 0 && (
@@ -453,7 +437,7 @@ const CentreDetail = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {centre.address && (
               <Card className="p-6 text-center">
                 <CardContent className="p-0">
@@ -466,17 +450,7 @@ const CentreDetail = () => {
               </Card>
             )}
 
-            {centre.phone && (
-              <Card className="p-6 text-center">
-                <CardContent className="p-0">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Phone className="h-8 w-8 text-green-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Téléphone</h3>
-                  <p className="text-gray-600">{centre.phone}</p>
-                </CardContent>
-              </Card>
-            )}
+            
 
             {centre.email && (
               <Card className="p-6 text-center">

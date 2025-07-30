@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import MadagascarMap from "@/components/MadagascarMap";
+import CenterHistory1 from "@/components/CenterHistory1";
+import CenterHistory2 from "@/components/CenterHistory2";
+import CenterHistory3 from "@/components/CenterHistory3";
+import CenterHistory4 from "@/components/CenterHistory4";
 import { MapPin, Users, BookOpen, Heart, ArrowLeft, Play, Calendar, User, ExternalLink, Phone, Mail, Building2, Target, TrendingUp, Award, Search, Building } from "lucide-react";
 
 interface DatabaseCenter {
@@ -286,6 +290,100 @@ const Centres = () => {
               </Card>
             </div>
 
+            {/* Missions, Vision, Values Section */}
+            <section className="mb-8">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Notre Engagement
+                </h2>
+                <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                  Chaque centre FCRA s'engage à offrir un accompagnement holistique 
+                  et personnalisé pour l'épanouissement de chaque individu.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <Card className="p-6">
+                  <CardContent className="p-0">
+                    <h3 className="text-xl font-semibold mb-4">Notre Mission</h3>
+                    <p className="text-gray-600">
+                      <ul className="list-disc list-inside">
+                        <li>Offrir un accompagnement éducatif et spirituel aux enfants et aux jeunes</li>
+                        <li>Soutenir les familles en situation de vulnérabilité à travers des actions de solidarité</li>
+                        <li>Promouvoir les valeurs de paix, de respect et d'entraide entre les membres de la communauté</li>
+                        <li>Créer un espace d'échange, de dialogue, d'ouverture et de cohésion sociale</li>
+                      </ul>
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="p-6">
+                  <CardContent className="p-0">
+                    <h3 className="text-xl font-semibold mb-4">Notre Vision</h3>
+                    <p className="text-gray-600">
+                      Bâtir une société solidaire, éclairée et harmonieuse, où chaque individu 
+                      trouve sa place et peut contribuer au bien commun. Nous rêvons d'un monde où les valeurs humaines et spirituelles guident l'action sociale, où l'éducation est un levier d'émancipation, 
+                      et où la fraternité dépasse les différences.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="p-6">
+                  <CardContent className="p-0">
+                    <h3 className="text-xl font-semibold mb-4">Nos Valeurs</h3>
+                    <p className="text-gray-600">
+                      <ul className="list-disc list-inside">
+                        <li><span className="font-bold">Solidarité :</span> L'union et le soutien mutuel sont au cœur de toutes nos actions.</li>
+                        <li><span className="font-bold">Respect :</span> Nous valorisons la dignité de chaque personne, sans distinction.</li>
+                        <li><span className="font-bold">Foi et spiritualité :</span> Nous nous inspirons des principes moraux pour orienter nos engagements.</li>
+                        <li><span className="font-bold">Engagement :</span> Nous travaillons avec sincérité, persévérance et responsabilité.</li>
+                        <li><span className="font-bold">Éducation :</span> L'accès à la connaissance est la clé du changement et de la liberté.</li>
+                      </ul>
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+
+            {/* History and Video Section */}
+            <section className="mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Dynamic History Component */}
+                {(() => {
+                  const sortOrder = dbCentres.find(c => c.id === selectedCenter.id)?.sort_order || 1;
+                  switch (sortOrder) {
+                    case 1:
+                      return <CenterHistory1 />;
+                    case 2:
+                      return <CenterHistory2 />;
+                    case 3:
+                      return <CenterHistory3 />;
+                    case 4:
+                      return <CenterHistory4 />;
+                    default:
+                      return <CenterHistory1 />;
+                  }
+                })()}
+
+                {/* Video */}
+                {selectedCenter.video && (
+                  <div className="col-span-1">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                      Présentation Vidéo
+                    </h3>
+                    <div className="aspect-video">
+                      <iframe
+                        src={selectedCenter.video}
+                        title={`Vidéo de ${selectedCenter.name}`}
+                        className="w-full h-full rounded-lg"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
             {/* Services */}
             <Card className="mb-8">
               <CardHeader>
@@ -354,27 +452,7 @@ const Centres = () => {
               </Card>
             )}
 
-            {/* Video */}
-            {selectedCenter.video && (
-              <Card className="mb-8">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Play className="h-5 w-5" />
-                    Présentation Vidéo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="aspect-video">
-                    <iframe
-                      src={selectedCenter.video}
-                      title={`Vidéo de ${selectedCenter.name}`}
-                      className="w-full h-full rounded-lg"
-                      allowFullScreen
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
           </div>
         </div>
       </Layout>
