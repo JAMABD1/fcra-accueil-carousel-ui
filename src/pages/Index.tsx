@@ -87,8 +87,9 @@ const Index = () => {
       })
     : [];
 
-  // Filter sections to only those with tag 'home'
-  const sectionsHome = homeTag
+  // Filter sections to only those with tag 'featured'
+  const featuredTag = tags.find(t => t.name === 'featured');
+  const sectionsFeatured = featuredTag
     ? sections.filter(section => {
         let tagIds: string[] = [];
         const sectionAny = section as any;
@@ -97,7 +98,7 @@ const Index = () => {
         } else if (sectionAny.tags_id) {
           tagIds = [sectionAny.tags_id];
         }
-        return tagIds.includes(homeTag.id);
+        return tagIds.includes(featuredTag.id);
       })
     : [];
 
@@ -311,7 +312,7 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {sectionsHome.map((section) => (
+            {sectionsFeatured.map((section) => (
               <Card key={section.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-48 bg-cover bg-center" style={{
                   backgroundImage: `url(${section.image_url})`
