@@ -36,13 +36,14 @@ const CenterDetail1 = ({ videoUrl, videoId }: CenterDetail1Props) => {
 
           <Card className="p-6">
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Activités principales</h3>
+              <h3 className="text-xl font-semibold mb-4">Infrastructures  principales</h3>
               <p className="text-gray-600">
               <ul className="list-disc list-inside">
-                  <li>Éducation  de la petite enfance au lycée</li>
-                  <li>Formation professionnelle (INFOPRO)</li>
-                  <li>Enseignement universitaire</li>
-                  <li>Actions sociales et humanitaires sous diverses formes</li>
+                  <li> Établissements scolaires complets</li>
+                  <li>Transports scolaires, cantines scolaires</li>
+                  <li>Centre de formation professionnelle (INFOPRO)</li>
+                  <li>Espaces sportifs et culturels</li>
+                  <li>Infrastructures sanitaires : Dispensaire SHABBIR</li>
                 </ul>
               </p>
             </CardContent>
