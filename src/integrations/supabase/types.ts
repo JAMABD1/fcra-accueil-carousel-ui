@@ -692,6 +692,54 @@ export interface Database {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          id: string
+          title: string
+          subtitle: string | null
+          description: string | null
+          image_url: string
+          tag_ids: string[] | null
+          sort_order: number | null
+          active: boolean | null
+          website_url: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          subtitle?: string | null
+          description?: string | null
+          image_url: string
+          tag_ids?: string[] | null
+          sort_order?: number | null
+          active?: boolean | null
+          website_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          subtitle?: string | null
+          description?: string | null
+          image_url?: string
+          tag_ids?: string[] | null
+          sort_order?: number | null
+          active?: boolean | null
+          website_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

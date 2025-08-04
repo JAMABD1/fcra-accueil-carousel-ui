@@ -9,6 +9,10 @@ import { useState } from "react";
 import Counter from "@/components/Counter";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import Layout from "@/components/Layout";
+import EducationSection from "@/components/EducationSection";
+import SanteSection from "@/components/SanteSection";
+import ReligionSection from "@/components/ReligionSection";
+import PartnersCarousel from "@/components/PartnersCarousel";
 
 interface Section {
   id: string;
@@ -335,15 +339,24 @@ const SectionDetail = () => {
             </h2>
           </div>
           
-          <div className="max-w-4xl mx-auto">
-            <Card className="p-6">
-              <CardContent className="p-0">
-                <div className="prose prose-lg max-w-none">
-                  <div dangerouslySetInnerHTML={{ __html: section.description || '' }} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Conditional rendering based on sort_order */}
+          {section.sort_order === 2 ? (
+            <EducationSection />
+          ) : section.sort_order === 4 ? (
+            <SanteSection />
+          ) : section.sort_order === 5 ? (
+            <ReligionSection />
+          ) : (
+            <div className="max-w-4xl mx-auto">
+              <Card className="p-6">
+                <CardContent className="p-0">
+                  <div className="prose prose-lg max-w-none">
+                    <div dangerouslySetInnerHTML={{ __html: section.description || '' }} />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
 
@@ -378,6 +391,12 @@ const SectionDetail = () => {
             </div>
           </div>
         )}
+
+        {/* Partners Carousel */}
+        <PartnersCarousel 
+          filterTags={sectionTagNames}
+          maxPartners={8}
+        />
 
         {/* Related Articles - Derniers Actualités */}
         {relatedArticles.length > 0 && (

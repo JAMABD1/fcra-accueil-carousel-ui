@@ -52,6 +52,7 @@ import CoordonnesManager from "@/components/admin/CoordonnesManager";
 import { ActivitiesManager } from "@/components/admin/ActivitiesManager";
 import SchoolsManager from "@/components/admin/SchoolsManager";
 import LibraryManager from "@/components/admin/LibraryManager";
+import PartnersManager from "@/components/admin/PartnersManager";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
@@ -70,6 +71,7 @@ const adminMenuItems = [
   { title: "Vidéos", icon: Video, id: "videos" },
   { title: "Photos", icon: Image, id: "photos" },
   { title: "Bibliothèque", icon: BookOpen, id: "library" },
+  { title: "Partenaires", icon: Users, id: "partners" },
   { title: "Paramètres", icon: Settings, id: "settings" },
 ];
 
@@ -270,6 +272,9 @@ const Admin = () => {
         
       case "library":
         return <LibraryManager />;
+        
+      case "partners":
+        return <PartnersManager />;
         
       default:
         return (

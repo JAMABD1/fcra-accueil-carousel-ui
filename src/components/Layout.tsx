@@ -41,7 +41,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
-              <div className="text-green-600 font-bold text-xl">FCRA</div>
+              <img 
+                src="/image/logo.png" 
+                alt="FCRA Logo" 
+                className="h-8 w-auto"
+              />
             </Link>
 
             {/* Desktop Navigation */}
