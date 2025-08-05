@@ -12,6 +12,7 @@ import Layout from "@/components/Layout";
 import EducationSection from "@/components/EducationSection";
 import SanteSection from "@/components/SanteSection";
 import ReligionSection from "@/components/ReligionSection";
+import OrphelinatSection from "@/components/OrphelinatSection";
 import PartnersCarousel from "@/components/PartnersCarousel";
 
 interface Section {
@@ -340,7 +341,9 @@ const SectionDetail = () => {
           </div>
           
           {/* Conditional rendering based on sort_order */}
-          {section.sort_order === 2 ? (
+          {section.sort_order === 1 ? (
+            <OrphelinatSection />
+          ) : section.sort_order === 2 ? (
             <EducationSection />
           ) : section.sort_order === 4 ? (
             <SanteSection />

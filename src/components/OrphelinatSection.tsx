@@ -1,101 +1,116 @@
 import { Card, CardContent } from "@/components/ui/card";
 
-interface EducationSectionProps {
+interface OrphelinatSectionProps {
   videoUrl?: string;
   videoId?: string;
 }
 
-const EducationSection = ({ videoUrl, videoId }: EducationSectionProps) => {
+const OrphelinatSection = ({ videoUrl, videoId }: OrphelinatSectionProps) => {
   return (
     <>
-      {/* Educational Establishments Section */}
+      {/* Main Orphanage Section */}
       <section className="mb-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Des établissements scolaires d'excellence
+            Notre engagement envers les orphelins
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card className="p-6">
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Lycée Privé La Sagesse - Antaniavo</h3>
+              <h3 className="text-xl font-semibold mb-4">Au cœur des actions du FCRA</h3>
               <p className="text-gray-600 mb-4">
-                Parmi les piliers de cet engagement figure le Lycée Privé La Sagesse à Antaniavo, 
-                qui célèbre cette année ses 10 ans d'existence. Avec un taux de réussite de 100 % 
-                aux examens officiels (CEPE, BEPC, Baccalauréat), cet établissement accueille plus 
-                de 300 élèves, accompagnés au quotidien par une équipe de 40 professionnels dévoués.
+                L'accueil et la prise en charge des orphelins occupent une place essentielle. 
+                À Madagascar, nous gérons quatre centres d'orphelinat situés à Antaniavo, 
+                Andakana, Manakara et Sakoana, offrant un refuge sûr, stable et bienveillant 
+                à des enfants privés de soutien familial.
               </p>
             </CardContent>
           </Card>
 
           <Card className="p-6">
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Complexe scolaire La Sagesse Universelle - Andakana</h3>
+              <h3 className="text-xl font-semibold mb-4">Plus de 230 enfants pris en charge</h3>
               <p className="text-gray-600 mb-4">
-                À Andakana, le complexe scolaire La Sagesse Universelle est le plus grand centre 
-                éducatif du FCRA. Doté d'infrastructures modernes, il symbolise l'ambition du FCRA 
-                de former une jeunesse instruite, confiante et tournée vers l'avenir.
+                Actuellement, plus de 230 enfants — filles et garçons — bénéficient d'un 
+                accompagnement global au sein de nos structures : hébergement, alimentation, 
+                soins, éducation et encadrement affectif. Chaque centre est pensé comme un 
+                véritable foyer, où les enfants peuvent s'épanouir, apprendre et se construire 
+                un avenir digne et prometteur.
               </p>
             </CardContent>
           </Card>
 
           <Card className="p-6">
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">École Al Mhadi School - Manakara</h3>
+              <h3 className="text-xl font-semibold mb-4">Notre objectif fondamental</h3>
               <p className="text-gray-600 mb-4">
-                À Manakara, l'École Al Mhadi School, et à Sakoana, l'École La Sagesse, 
-                poursuivent le même objectif : offrir un accès équitable à une éducation de 
-                qualité à des centaines de jeunes chaque année.
+                Notre objectif est simple mais fondamental : redonner à chaque enfant la 
+                sécurité, la dignité et l'amour dont il a besoin pour grandir sereinement.
               </p>
             </CardContent>
           </Card>
 
           <Card className="p-6">
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Un environnement propice à l'épanouissement</h3>
+              <h3 className="text-xl font-semibold mb-4">Un engagement total</h3>
               <p className="text-gray-600 mb-4">
-                Au-delà des salles de classe, les établissements du FCRA proposent un environnement complet :
-              </p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1">
-                <li>Cantines scolaires équilibrées</li>
-                <li>Laboratoires scientifiques</li>
-                <li>Infrastructures sportives (terrain de football, basketball, piscine)</li>
-                <li>Service de transport scolaire</li>
-              </ul>
-              <p className="text-gray-600 mt-4">
-                Tout est pensé pour favoriser l'épanouissement global de chaque élève.
+                Au sein de notre orphelinat, chaque enfant bénéficie d'une prise en charge 
+                globale, humaine et respectueuse, couvrant tous les aspects essentiels de la vie.
               </p>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Scouting Section */}
+      {/* Services Section */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="col-span-1">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Le scoutisme, une école de la vie
+              Un engagement total pour le bien-être et l'épanouissement des enfants
             </h3>
-            <p className="text-gray-600 mb-4">
-              Depuis 2018, le scoutisme est intégré à la formation des enfants du FCRA, 
-              à l'initiative de l'animateur Al Moutardha. Cette activité éducative développe 
-              chez les jeunes l'esprit d'entraide, de discipline et de responsabilité.
-            </p>
-            <p className="text-gray-600 mb-4">
-              Les enfants, filles et garçons, sont répartis en trois branches selon leur âge 
-              et leur niveau d'autonomie :
-            </p>
-            <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
-              <li>Branche Jaune</li>
-              <li>Branche Noire</li>
-              <li>Branche Rouge</li>
-            </ul>
-            <p className="text-gray-600">
-              Chaque branche propose des activités adaptées pour renforcer le développement 
-              personnel et social des enfants.
-            </p>
+            
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">🍲 Une alimentation saine et équilibrée</h4>
+                <p className="text-gray-600 mb-4">
+                  Nous assurons chaque jour des repas sains, variés et préparés dans le respect 
+                  strict des normes d'hygiène. L'alimentation joue un rôle central dans la santé 
+                  et le développement des enfants. C'est pourquoi nous veillons à leur offrir des 
+                  plats nutritifs, adaptés à leur âge et à leurs besoins.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">🎓 Une éducation complète et gratuite</h4>
+                <p className="text-gray-600 mb-4">
+                  L'éducation est au cœur de notre mission. Tous les frais scolaires sont pris 
+                  en charge par le centre :
+                </p>
+                <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
+                  <li>Écolages</li>
+                  <li>Fournitures scolaires</li>
+                  <li>Uniformes, vêtements et chaussures</li>
+                </ul>
+                <p className="text-gray-600">
+                  Nous accompagnons les enfants tout au long de leur parcours éducatif, en leur 
+                  offrant un environnement stable, propice à l'apprentissage et à la réussite.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">🕊 Des valeurs spirituelles pour guider leur vie</h4>
+                <p className="text-gray-600">
+                  En plus de leur éducation académique, nous transmettons aux enfants les 
+                  principes de la sagesse universelle à travers l'enseignement religieux. 
+                  Ces valeurs, fondées sur le respect, la compassion, la tolérance et la foi, 
+                  sont partagées quotidiennement et aident chaque enfant à grandir avec des 
+                  repères solides, un sens de la responsabilité, et une ouverture d'esprit.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Video/Audio Content */}
@@ -104,7 +119,7 @@ const EducationSection = ({ videoUrl, videoId }: EducationSectionProps) => {
               <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
                 <iframe
                   src={`https://www.youtube.com/embed/${videoId}`}
-                  title="Scoutisme FCRA"
+                  title="Orphelinat FCRA"
                   className="w-full h-full"
                   allowFullScreen
                 />
@@ -123,25 +138,8 @@ const EducationSection = ({ videoUrl, videoId }: EducationSectionProps) => {
           </div>
         </div>
       </section>
-
-      {/* Teacher Training Section */}
-      <section className="mb-8">
-        <Card className="p-6">
-          <CardContent className="p-0">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Formation continue des enseignants
-            </h3>
-            <p className="text-gray-600">
-              Pour maintenir un haut niveau d'exigence, le FCRA organise régulièrement des 
-              séminaires de formation continue pour son personnel éducatif. Ces sessions 
-              permettent de renouveler les compétences pédagogiques et d'adapter les méthodes 
-              d'enseignement aux besoins évolutifs des apprenants.
-            </p>
-          </CardContent>
-        </Card>
-      </section>
     </>
   );
 };
 
-export default EducationSection; 
+export default OrphelinatSection; 
