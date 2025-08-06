@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
+import PhotoCarousel from "./PhotoCarousel";
 
 interface SanteSectionProps {
-  videoUrl?: string;
-  videoId?: string;
+  photos?: string[];
 }
 
-const SanteSection = ({ videoUrl, videoId }: SanteSectionProps) => {
+const SanteSection = ({ photos }: SanteSectionProps) => {
   return (
     <>
       {/* Medical Facilities Section */}
@@ -108,28 +108,12 @@ const SanteSection = ({ videoUrl, videoId }: SanteSectionProps) => {
             </p>
           </div>
 
-          {/* Video/Audio Content */}
+          {/* Photo Carousel */}
           <div className="col-span-1">
-            {videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoId}`}
-                  title="Services de santé FCRA"
-                  className="w-full h-full"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {videoUrl && !videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <video controls className="w-full h-full">
-                  <source src={videoUrl} type="video/mp4" />
-                  <source src={videoUrl} type="video/webm" />
-                  <source src={videoUrl} type="video/ogg" />
-                  Votre navigateur ne supporte pas l'élément vidéo.
-                </video>
-              </div>
-            )}
+            <PhotoCarousel 
+              photos={photos || []} 
+              title="Services de santé FCRA"
+            />
           </div>
         </div>
       </section>

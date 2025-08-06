@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { X, Upload, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
+import TagSelector from "./TagSelector";
 
 interface Photo {
   id: string;
@@ -23,6 +24,7 @@ interface Photo {
   category: string;
   featured: boolean;
   status: string;
+  tag_ids: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +41,7 @@ interface PhotoFormData {
   category: string;
   featured: boolean;
   status: string;
+  tag_ids: string[];
 }
 
 export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) => {
@@ -56,6 +59,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       category: "General",
       featured: false,
       status: "published",
+      tag_ids: [],
     },
   });
 
@@ -67,6 +71,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         category: photo.category,
         featured: photo.featured,
         status: photo.status,
+        tag_ids: photo.tag_ids || [],
       });
     } else {
       form.reset({
@@ -75,6 +80,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         category: "General",
         featured: false,
         status: "published",
+        tag_ids: [],
       });
     }
   }, [photo, form]);
@@ -156,6 +162,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
           category: data.category,
           featured: data.featured,
           status: data.status,
+          tag_ids: data.tag_ids.length > 0 ? data.tag_ids : null,
         };
 
         if (photo) {
@@ -226,6 +233,13 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <PhotoBasicFields form={form} />
+            
+            {/* Tag Selection */}
+            <TagSelector
+              control={form.control}
+              name="tag_ids"
+              label="Tags"
+            />
             
             {/* Bulk Image Upload */}
             <div className="space-y-4">

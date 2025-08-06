@@ -1,59 +1,78 @@
 import { Card, CardContent } from "@/components/ui/card";
+import PhotoCarousel from "./PhotoCarousel";
 
 interface CenterDetail1Props {
-  videoUrl?: string;
-  videoId?: string;
+  photos?: string[];
 }
 
-const CenterDetail1 = ({ videoUrl, videoId }: CenterDetail1Props) => {
+const CenterDetail1 = ({ photos }: CenterDetail1Props) => {
   return (
     <>
-      {/* Missions, Vision, Values Section */}
+      {/* Mission Section */}
       <section className="mb-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Notre Engagement
-          </h2>
-         
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Mission et objectifs</h3>
-              <p className="text-gray-600">
-                <ul className="list-disc list-inside">
-                  
-                  <li>L’entraide</li>
-                  <li>L’éducation</li>
-                  <li>Le développement humain</li>
-                  <li>Les valeurs de solidarité</li>
-                </ul>
-                C’est un lieu d’accueil, de formation, d'accompagnement social et d’espoir pour des milliers de bénéficiaires.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="col-span-1">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Notre Mission
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Le FCRA s'engage à fournir des services sociaux, éducatifs et sanitaires 
+              de qualité aux communautés locales, en particulier aux plus vulnérables. 
+              Notre mission est de créer un impact positif durable dans la vie des personnes 
+              que nous servons.
+            </p>
+            <p className="text-gray-600">
+              Nous nous efforçons de promouvoir le développement communautaire à travers 
+              des programmes intégrés qui répondent aux besoins essentiels de la population.
+            </p>
+          </div>
 
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Infrastructures  principales</h3>
-              <p className="text-gray-600">
-              <ul className="list-disc list-inside">
-                  <li> Établissements scolaires complets</li>
-                  <li>Transports scolaires, cantines scolaires</li>
-                  <li>Centre de formation professionnelle (INFOPRO)</li>
-                  <li>Espaces sportifs et culturels</li>
-                  <li>Infrastructures sanitaires : Dispensaire SHABBIR</li>
-                </ul>
-              </p>
-            </CardContent>
-          </Card>
-
-         
+          {/* Photo Carousel */}
+          <div className="col-span-1">
+            <PhotoCarousel 
+              photos={photos || []} 
+              title="Mission du Centre"
+            />
+          </div>
         </div>
       </section>
 
-      {/* History Section with Audio/Video */}
+      {/* Vision Section */}
+      <section className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="col-span-1">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Notre Vision
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Nous aspirons à être un centre de référence pour le développement communautaire, 
+              reconnu pour l'excellence de nos services et notre engagement envers 
+              l'amélioration de la qualité de vie des populations locales.
+            </p>
+            <p className="text-gray-600">
+              Notre vision est de créer des communautés autonomes et résilientes, 
+              où chaque individu a accès aux ressources nécessaires pour s'épanouir.
+            </p>
+          </div>
+
+          <div className="col-span-1">
+            <Card className="p-6">
+              <CardContent className="p-0">
+                <h4 className="text-lg font-semibold mb-4">Nos Valeurs</h4>
+                <ul className="list-disc list-inside text-gray-600 space-y-2">
+                  <li>Compassion et empathie</li>
+                  <li>Intégrité et transparence</li>
+                  <li>Excellence dans nos services</li>
+                  <li>Respect de la dignité humaine</li>
+                  <li>Innovation et adaptation</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* History Section */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* History Text */}
@@ -63,33 +82,17 @@ const CenterDetail1 = ({ videoUrl, videoId }: CenterDetail1Props) => {
             </h3>
 
             <p>
-            Créé en 2012, le centre est actif depuis plus d’une décennie dans le soutien aux populations vulnérables.
+            Créé en 2012, le centre est actif depuis plus d'une décennie dans le soutien aux populations vulnérables.
             </p>
 
           </div>
 
-          {/* Audio/Video Content */}
+          {/* Photo Carousel */}
           <div className="col-span-1">
-            {videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoId}`}
-                  title="Histoire du Centre"
-                  className="w-full h-full"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {videoUrl && !videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <video controls className="w-full h-full">
-                  <source src={videoUrl} type="video/mp4" />
-                  <source src={videoUrl} type="video/webm" />
-                  <source src={videoUrl} type="video/ogg" />
-                  Votre navigateur ne supporte pas l'élément vidéo.
-                </video>
-              </div>
-            )}
+            <PhotoCarousel 
+              photos={photos || []} 
+              title="Histoire du Centre"
+            />
           </div>
         </div>
       </section>

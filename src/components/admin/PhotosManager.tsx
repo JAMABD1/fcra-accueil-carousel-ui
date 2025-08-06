@@ -19,8 +19,15 @@ interface Photo {
   category: string;
   featured: boolean;
   status: string;
+  tag_ids: string[] | null;
   created_at: string;
   updated_at: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string | null;
 }
 
 const PhotosManager = () => {
@@ -40,6 +47,18 @@ const PhotosManager = () => {
       
       if (error) throw error;
       return data as Photo[];
+    },
+  });
+
+  const { data: tags = [] } = useQuery({
+    queryKey: ["tags"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tags")
+        .select("*");
+      
+      if (error) throw error;
+      return data as Tag[];
     },
   });
 
@@ -72,6 +91,11 @@ const PhotosManager = () => {
     photo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     photo.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getTagNames = (tagIds: string[] | null) => {
+    if (!tagIds || tagIds.length === 0) return [];
+    return tags.filter(tag => tagIds.includes(tag.id));
+  };
 
   const handleEdit = (photo: Photo) => {
     setSelectedPhoto(photo);
@@ -117,72 +141,96 @@ const PhotosManager = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredPhotos.map((photo) => (
-          <Card key={photo.id} className="overflow-hidden">
-            <div className="relative aspect-video">
-              <img
-                src={photo.thumbnail_url || photo.image_url}
-                alt={photo.title}
-                className="w-full h-full object-cover"
-              />
-              {photo.featured && (
-                <Badge className="absolute top-2 left-2 bg-yellow-500">
-                  Vedette
+        {filteredPhotos.map((photo) => {
+          const photoTags = getTagNames(photo.tag_ids);
+          return (
+            <Card key={photo.id} className="overflow-hidden">
+              <div className="relative aspect-video">
+                <img
+                  src={photo.thumbnail_url || photo.image_url}
+                  alt={photo.title}
+                  className="w-full h-full object-cover"
+                />
+                {photo.featured && (
+                  <Badge className="absolute top-2 left-2 bg-yellow-500">
+                    Vedette
+                  </Badge>
+                )}
+                <Badge 
+                  className="absolute top-2 right-2"
+                  variant={photo.status === 'published' ? 'default' : 'secondary'}
+                >
+                  {photo.status === 'published' ? 'Publié' : 'Brouillon'}
                 </Badge>
-              )}
-              <Badge 
-                className="absolute top-2 right-2"
-                variant={photo.status === 'published' ? 'default' : 'secondary'}
-              >
-                {photo.status === 'published' ? 'Publié' : 'Brouillon'}
-              </Badge>
-            </div>
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-sm mb-1 line-clamp-2">{photo.title}</h3>
-              <p className="text-xs text-muted-foreground mb-2">{photo.category}</p>
-              {photo.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                  {photo.description}
-                </p>
-              )}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  {new Date(photo.created_at).toLocaleDateString()}
-                </span>
-                <div className="flex items-center space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(photo)}
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer la photo</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir supprimer cette photo ? Cette action est irréversible.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(photo.id)}>
-                          Supprimer
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-sm mb-1 line-clamp-2">{photo.title}</h3>
+                <p className="text-xs text-muted-foreground mb-2">{photo.category}</p>
+                {photo.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                    {photo.description}
+                  </p>
+                )}
+                {/* Tags Display */}
+                {photoTags.length > 0 && (
+                  <div className="mb-3">
+                    <div className="flex flex-wrap gap-1">
+                      {photoTags.map((tag) => (
+                        <Badge
+                          key={tag.id}
+                          variant="outline"
+                          style={{
+                            backgroundColor: tag.color + '10',
+                            color: tag.color,
+                            borderColor: tag.color
+                          }}
+                          className="text-xs"
+                        >
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(photo.created_at).toLocaleDateString()}
+                  </span>
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(photo)}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer la photo</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir supprimer cette photo ? Cette action est irréversible.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(photo.id)}>
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredPhotos.length === 0 && (

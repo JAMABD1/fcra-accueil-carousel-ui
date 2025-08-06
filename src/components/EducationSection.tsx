@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
+import PhotoCarousel from "./PhotoCarousel";
 
 interface EducationSectionProps {
-  videoUrl?: string;
-  videoId?: string;
+  photos?: string[];
 }
 
-const EducationSection = ({ videoUrl, videoId }: EducationSectionProps) => {
+const EducationSection = ({ photos }: EducationSectionProps) => {
   return (
     <>
       {/* Educational Establishments Section */}
@@ -98,28 +98,12 @@ const EducationSection = ({ videoUrl, videoId }: EducationSectionProps) => {
             </p>
           </div>
 
-          {/* Video/Audio Content */}
+          {/* Photo Carousel */}
           <div className="col-span-1">
-            {videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoId}`}
-                  title=" FCRA"
-                  className="w-full h-full"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {videoUrl && !videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <video controls className="w-full h-full">
-                  <source src={videoUrl} type="video/mp4" />
-                  <source src={videoUrl} type="video/webm" />
-                  <source src={videoUrl} type="video/ogg" />
-                  Votre navigateur ne supporte pas l'élément vidéo.
-                </video>
-              </div>
-            )}
+            <PhotoCarousel 
+              photos={photos || []} 
+              title="Éducation FCRA"
+            />
           </div>
           
         </div>
@@ -144,6 +128,5 @@ const EducationSection = ({ videoUrl, videoId }: EducationSectionProps) => {
     </>
   );
 };
-
 
 export default EducationSection; 

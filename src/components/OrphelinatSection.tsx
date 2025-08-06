@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
+import PhotoCarousel from "./PhotoCarousel";
 
 interface OrphelinatSectionProps {
-  videoUrl?: string;
-  videoId?: string;
+  photos?: string[];
 }
 
-const OrphelinatSection = ({ videoUrl, videoId }: OrphelinatSectionProps) => {
+const OrphelinatSection = ({ photos }: OrphelinatSectionProps) => {
   return (
     <>
       {/* Main Orphanage Section */}
@@ -74,7 +74,7 @@ const OrphelinatSection = ({ videoUrl, videoId }: OrphelinatSectionProps) => {
             
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">🍲 Une alimentation saine et équilibrée</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">�� Une alimentation saine et équilibrée</h4>
                 <p className="text-gray-600 mb-4">
                   Nous assurons chaque jour des repas sains, variés et préparés dans le respect 
                   strict des normes d'hygiène. L'alimentation joue un rôle central dans la santé 
@@ -113,28 +113,12 @@ const OrphelinatSection = ({ videoUrl, videoId }: OrphelinatSectionProps) => {
             </div>
           </div>
 
-          {/* Video/Audio Content */}
+          {/* Photo Carousel */}
           <div className="col-span-1">
-            {videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoId}`}
-                  title="Orphelinat FCRA"
-                  className="w-full h-full"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {videoUrl && !videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <video controls className="w-full h-full">
-                  <source src={videoUrl} type="video/mp4" />
-                  <source src={videoUrl} type="video/webm" />
-                  <source src={videoUrl} type="video/ogg" />
-                  Votre navigateur ne supporte pas l'élément vidéo.
-                </video>
-              </div>
-            )}
+            <PhotoCarousel 
+              photos={photos || []} 
+              title="Orphelinat FCRA"
+            />
           </div>
         </div>
       </section>

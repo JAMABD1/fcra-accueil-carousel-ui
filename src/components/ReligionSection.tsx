@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
+import PhotoCarousel from "./PhotoCarousel";
 
 interface ReligionSectionProps {
-  videoUrl?: string;
-  videoId?: string;
+  photos?: string[];
 }
 
-const ReligionSection = ({ videoUrl, videoId }: ReligionSectionProps) => {
+const ReligionSection = ({ photos }: ReligionSectionProps) => {
   return (
     <>
       {/* Religious Activities Section */}
@@ -118,28 +118,12 @@ const ReligionSection = ({ videoUrl, videoId }: ReligionSectionProps) => {
             </p>
           </div>
 
-          {/* Video/Audio Content */}
+          {/* Photo Carousel */}
           <div className="col-span-1">
-            {videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoId}`}
-                  title="Activités spirituelles FCRA"
-                  className="w-full h-full"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {videoUrl && !videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                <video controls className="w-full h-full">
-                  <source src={videoUrl} type="video/mp4" />
-                  <source src={videoUrl} type="video/webm" />
-                  <source src={videoUrl} type="video/ogg" />
-                  Votre navigateur ne supporte pas l'élément vidéo.
-                </video>
-              </div>
-            )}
+            <PhotoCarousel 
+              photos={photos || []} 
+              title="Activités spirituelles FCRA"
+            />
           </div>
         </div>
       </section>

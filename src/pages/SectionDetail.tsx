@@ -1,26 +1,26 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import Layout from "@/components/Layout";
+import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ImageIcon, Users, Target, Newspaper } from "lucide-react";
-import { useState } from "react";
-import Counter from "@/components/Counter";
-import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
-import Layout from "@/components/Layout";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Target, Newspaper, ImageIcon } from "lucide-react";
+import OrphelinatSection from "@/components/OrphelinatSection";
 import EducationSection from "@/components/EducationSection";
 import SanteSection from "@/components/SanteSection";
 import ReligionSection from "@/components/ReligionSection";
-import OrphelinatSection from "@/components/OrphelinatSection";
 import PartnersCarousel from "@/components/PartnersCarousel";
+import Counter from "@/components/Counter";
+import { fetchPhotosByTags } from "@/lib/utils";
 
 interface Section {
   id: string;
   title: string;
   subtitle: string | null;
   description: string | null;
-  image_url: string | null;
+  image_url: string;
   hero_id: string | null;
   hero_ids: string[];
   tag_name: string | null;
@@ -147,34 +147,16 @@ const SectionDetail = () => {
     }
   });
 
-
-
-  // Fetch related heroes based on shared tags
-  const { data: relatedHeroes = [] } = useQuery({
-    queryKey: ['related-heroes', section?.tag_ids],
+  // Fetch photos based on section tags
+  const { data: sectionPhotos = [] } = useQuery({
+    queryKey: ['section-photos', section?.tag_ids],
     queryFn: async () => {
-      if (!section || !section.tag_ids || section.tag_ids.length === 0) return [];
-      
-      const { data, error } = await supabase
-        .from('hero')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      
-      // Filter heroes that share at least one tag with the section
-      const filteredHeroes = data.filter((hero: any) => {
-        const heroTagIds = hero.tag_ids || [];
-        return section.tag_ids.some(tagId => heroTagIds.includes(tagId));
-      });
-      
-      return filteredHeroes.map((hero: any) => ({
-        ...hero,
-        tag_ids: hero.tag_ids || [],
-      })) as Hero[];
+      if (!section || !section.tag_ids || section.tag_ids.length === 0) {
+        return [];
+      }
+      return await fetchPhotosByTags(section.tag_ids, 10);
     },
-    enabled: !!section
+    enabled: !!section && !!section.tag_ids && section.tag_ids.length > 0
   });
 
   // Fetch related impacts based on shared tags
@@ -342,13 +324,13 @@ const SectionDetail = () => {
           
           {/* Conditional rendering based on sort_order */}
           {section.sort_order === 1 ? (
-            <OrphelinatSection />
+            <OrphelinatSection photos={sectionPhotos} />
           ) : section.sort_order === 2 ? (
-            <EducationSection />
+            <EducationSection photos={sectionPhotos} />
           ) : section.sort_order === 4 ? (
-            <SanteSection />
+            <SanteSection photos={sectionPhotos} />
           ) : section.sort_order === 5 ? (
-            <ReligionSection />
+            <ReligionSection photos={sectionPhotos} />
           ) : (
             <div className="max-w-4xl mx-auto">
               <Card className="p-6">
@@ -441,65 +423,17 @@ const SectionDetail = () => {
                           </>
                         )}
                       </div>
-                      
-                      <h3 className="font-bold text-xl mb-3 line-clamp-2">{article.title}</h3>
-                      
+                      <h3 className="text-xl font-semibold mb-2 line-clamp-2">{article.title}</h3>
                       {article.excerpt && (
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-3">{article.excerpt}</p>
+                        <p className="text-gray-600 mb-4 line-clamp-3">{article.excerpt}</p>
                       )}
-                      
-                      {article.tags && article.tags.length > 0 && (
-                        <div className="mb-4">
-                          <div className="flex flex-wrap gap-1">
-                            {article.tags.slice(0, 3).map((tagName, index) => {
-                              const tag = tags.find(t => t.name === tagName);
-                              return (
-                                <Badge 
-                                  key={index}
-                                  variant="outline"
-                                  style={{ 
-                                    borderColor: tag?.color || '#3B82F6',
-                                    color: tag?.color || '#3B82F6'
-                                  }}
-                                  className="text-xs"
-                                >
-                                  {tagName}
-                                </Badge>
-                              );
-                            })}
-                            {article.tags.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{article.tags.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      
-                                             <Button 
-                         variant="outline" 
-                         size="sm"
-                         className="w-full"
-                         onClick={() => navigate(`/actualites/${article.id}`)}
-                       >
-                         Lire la suite
-                       </Button>
+                      <Button asChild variant="outline" className="w-full">
+                        <a href={`/actualites/${article.id}`}>Lire l'article</a>
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-              
-              {relatedArticles.length === 6 && (
-                <div className="text-center mt-8">
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/actualites')}
-                    className="px-8 py-3"
-                  >
-                    Voir toutes les actualités
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
         )}
