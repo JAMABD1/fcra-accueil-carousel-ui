@@ -11,6 +11,8 @@ import OrphelinatSection from "@/components/OrphelinatSection";
 import EducationSection from "@/components/EducationSection";
 import SanteSection from "@/components/SanteSection";
 import ReligionSection from "@/components/ReligionSection";
+import InfoproSection from "@/components/InfoproSection";
+import UniversitesSection from "@/components/UniversitesSection";
 import PartnersCarousel from "@/components/PartnersCarousel";
 import Counter from "@/components/Counter";
 import { fetchPhotosByTags } from "@/lib/utils";
@@ -331,6 +333,10 @@ const SectionDetail = () => {
             <SanteSection photos={sectionPhotos} />
           ) : section.sort_order === 5 ? (
             <ReligionSection photos={sectionPhotos} />
+          ) : section.sort_order === 6 ? (
+            <InfoproSection photos={sectionPhotos} />
+          ) : section.sort_order === 7 ? (
+            <UniversitesSection photos={sectionPhotos} />
           ) : (
             <div className="max-w-4xl mx-auto">
               <Card className="p-6">
