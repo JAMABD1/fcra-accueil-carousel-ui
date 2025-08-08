@@ -20,6 +20,7 @@ interface Photo {
   featured: boolean;
   status: string;
   tag_ids: string[] | null;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +44,7 @@ const PhotosManager = () => {
       const { data, error } = await supabase
         .from("photos")
         .select("*")
+        .order("published_at", { ascending: false })
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -194,7 +196,7 @@ const PhotosManager = () => {
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {new Date(photo.created_at).toLocaleDateString()}
+                    {new Date(photo.published_at || photo.created_at).toLocaleDateString()}
                   </span>
                   <div className="flex items-center space-x-1">
                     <Button

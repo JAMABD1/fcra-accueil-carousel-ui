@@ -17,6 +17,7 @@ interface Photo {
   category: string;
   featured: boolean;
   status: string;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +32,8 @@ const Photos = () => {
         .from("photos")
         .select("*")
         .eq("status", "published")
+        .neq("category", "General")
+        .order("published_at", { ascending: false })
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -106,7 +109,7 @@ const Photos = () => {
                      <div className="flex items-center justify-between text-sm text-gray-500">
                        <div className="flex items-center gap-1">
                          <Calendar className="w-4 h-4" />
-                         <span>{new Date(photo.created_at).toLocaleDateString()}</span>
+                          <span>{new Date(photo.published_at || photo.created_at).toLocaleDateString()}</span>
                        </div>
                        {photo.featured && (
                          <div className="flex items-center gap-1">

@@ -16,14 +16,27 @@ const Actualites = () => {
   const { data: articles = [], isLoading, error } = useQuery({
     queryKey: ['articles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('articles')
+          .select('*')
+          .eq('status', 'published')
+          .order('published_at', { ascending: false })
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+      } catch (err: any) {
+        if (err?.code === 'PGRST204' || String(err?.message || '').includes('published_at')) {
+          const { data, error } = await supabase
+            .from('articles')
+            .select('*')
+            .eq('status', 'published')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return data;
+        }
+        throw err;
+      }
     }
   });
 
@@ -50,7 +63,7 @@ const Actualites = () => {
   const transformedArticles = articles.map(article => ({
     id: article.id,
     title: article.title,
-    date: new Date(article.created_at).toLocaleDateString('fr-FR', {
+    date: new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'

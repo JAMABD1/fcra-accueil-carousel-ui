@@ -52,13 +52,16 @@ const OrphelinatSection = ({ photos }: OrphelinatSectionProps) => {
             </CardContent>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-6">  
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Un engagement total</h3>
-              <p className="text-gray-600 mb-4">
-                Au sein de notre orphelinat, chaque enfant bénéficie d'une prise en charge 
-                globale, humaine et respectueuse, couvrant tous les aspects essentiels de la vie.
-              </p>
+            <h4 className="text-lg font-semibold text-gray-900 mb-2">🕊 Des valeurs spirituelles pour guider leur vie</h4>
+                <p className="text-gray-600">
+                  En plus de leur éducation académique, nous transmettons aux enfants les 
+                  principes de la sagesse universelle à travers l'enseignement religieux. 
+                  Ces valeurs, fondées sur le respect, la compassion, la tolérance et la foi, 
+                  sont partagées quotidiennement et aident chaque enfant à grandir avec des 
+                  repères solides, un sens de la responsabilité, et une ouverture d'esprit.
+                </p>  
             </CardContent>
           </Card>
         </div>
@@ -101,14 +104,7 @@ const OrphelinatSection = ({ photos }: OrphelinatSectionProps) => {
               </div>
 
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">🕊 Des valeurs spirituelles pour guider leur vie</h4>
-                <p className="text-gray-600">
-                  En plus de leur éducation académique, nous transmettons aux enfants les 
-                  principes de la sagesse universelle à travers l'enseignement religieux. 
-                  Ces valeurs, fondées sur le respect, la compassion, la tolérance et la foi, 
-                  sont partagées quotidiennement et aident chaque enfant à grandir avec des 
-                  repères solides, un sens de la responsabilité, et une ouverture d'esprit.
-                </p>
+                
               </div>
             </div>
           </div>

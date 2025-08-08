@@ -5,18 +5,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
-interface PhotoFormData {
+interface PhotoFormDataBasic {
   title: string;
   description: string;
   category: string;
   featured: boolean;
   status: string;
-  image: FileList | null;
-  thumbnail: FileList | null;
 }
 
 interface PhotoBasicFieldsProps {
-  form: UseFormReturn<PhotoFormData>;
+  form: UseFormReturn<PhotoFormDataBasic> | UseFormReturn<any>;
 }
 
 const categories = [

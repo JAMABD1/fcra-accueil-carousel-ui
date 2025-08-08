@@ -29,21 +29,16 @@ const PhotoCarousel = ({
   const [count, setCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
 
-  // Sample placeholder photos for testing when no photos are provided
-  const placeholderPhotos = [
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop",
-  ];
+  const displayPhotos = photos && photos.length > 0 ? photos : [];
 
-  const displayPhotos = photos && photos.length > 0 ? photos : placeholderPhotos;
-
-  // Update count when photos change
+  // Update count when photos change and reset to beginning
   useEffect(() => {
     if (!api) return;
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
-  }, [api]);
+    // Reset to first slide when photos change
+    api.scrollTo(0);
+  }, [api, displayPhotos]);
 
   // Handle carousel select
   useEffect(() => {
@@ -54,16 +49,21 @@ const PhotoCarousel = ({
     });
   }, [api]);
 
-  // Auto-play functionality
+  // Auto-play functionality with looping
   useEffect(() => {
-    if (!isPlaying || !api || count <= 1) return;
+    if (!isPlaying || !api || displayPhotos.length <= 1) return;
 
     const timer = setInterval(() => {
-      api.scrollNext();
+      // Check if we're at the last slide, if so, go back to first
+      if (current >= displayPhotos.length) {
+        api.scrollTo(0);
+      } else {
+        api.scrollNext();
+      }
     }, interval);
 
     return () => clearInterval(timer);
-  }, [isPlaying, api, count, interval]);
+  }, [isPlaying, api, displayPhotos.length, interval, current]);
 
   // Pause auto-play on hover
   const handleMouseEnter = useCallback(() => {
@@ -80,6 +80,20 @@ const PhotoCarousel = ({
       api.scrollTo(index);
     }
   }, [api]);
+
+  // Show loading state when no photos are available
+  if (displayPhotos.length === 0) {
+    return (
+      <div 
+        className={`relative aspect-video rounded-lg overflow-hidden shadow-lg bg-gray-100 flex items-center justify-center ${className}`}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+          <p className="text-gray-500 text-sm">Loading photos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 

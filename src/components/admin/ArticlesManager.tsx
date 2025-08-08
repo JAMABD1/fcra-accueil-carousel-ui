@@ -37,6 +37,7 @@ export interface Article {
   tags: string[] | null;
   featured: boolean | null;
   status: string | null;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -13,6 +13,11 @@ import { X, Upload, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import TagSelector from "./TagSelector";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 interface Photo {
   id: string;
@@ -25,6 +30,7 @@ interface Photo {
   featured: boolean;
   status: string;
   tag_ids: string[] | null;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,6 +48,7 @@ interface PhotoFormData {
   featured: boolean;
   status: string;
   tag_ids: string[];
+  published_at: Date | null;
 }
 
 export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) => {
@@ -60,6 +67,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       featured: false,
       status: "published",
       tag_ids: [],
+      published_at: null,
     },
   });
 
@@ -72,6 +80,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         featured: photo.featured,
         status: photo.status,
         tag_ids: photo.tag_ids || [],
+        published_at: photo.published_at ? new Date(photo.published_at) : null,
       });
     } else {
       form.reset({
@@ -81,6 +90,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         featured: false,
         status: "published",
         tag_ids: [],
+        published_at: null,
       });
     }
   }, [photo, form]);
@@ -163,6 +173,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
           featured: data.featured,
           status: data.status,
           tag_ids: data.tag_ids.length > 0 ? data.tag_ids : null,
+          published_at: data.published_at ? format(data.published_at, 'yyyy-MM-dd') : null,
         };
 
         if (photo) {
@@ -239,6 +250,40 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
               control={form.control}
               name="tag_ids"
               label="Tags"
+            />
+
+            {/* Publication Date */}
+            <FormField
+              control={form.control}
+              name="published_at"
+              render={({ field }) => (
+                <FormItem className="max-w-sm">
+                  <FormLabel>Date de publication</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={`w-full justify-between ${!field.value ? "text-muted-foreground" : ""}`}
+                          type="button"
+                        >
+                          {field.value ? format(field.value, "dd/MM/yyyy") : <span>Sélectionner une date</span>}
+                          <CalendarIcon className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ?? undefined}
+                        onSelect={(date) => field.onChange(date ?? null)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
             
             {/* Bulk Image Upload */}

@@ -106,13 +106,28 @@ const Index = () => {
   const { data: articles = [] } = useQuery({
     queryKey: ['articles-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('articles')
+          .select('*')
+          .eq('status', 'published')
+          .order('published_at', { ascending: false })
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+      } catch (err: any) {
+        // Fallback when published_at column doesn't exist yet
+        if (err?.code === 'PGRST204' || String(err?.message || '').includes('published_at')) {
+          const { data, error } = await supabase
+            .from('articles')
+            .select('*')
+            .eq('status', 'published')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return data;
+        }
+        throw err;
+      }
     }
   });
 
@@ -120,7 +135,7 @@ const Index = () => {
   const transformedArticles = articles.map(article => ({
     id: article.id,
     title: article.title,
-    date: new Date(article.created_at).toLocaleDateString('fr-FR', {
+    date: new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -367,7 +382,16 @@ const Index = () => {
                   backgroundImage: `url(${article.image})`
                 }}></div>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
+                  <h3
+                    className="text-lg font-semibold mb-2 cursor-pointer text-green-700 hover:underline"
+                    onClick={() =>
+                      navigate(`/actualites/${article.id}`, {
+                        state: { focus: 'images' }
+                      })
+                    }
+                  >
+                    {article.title}
+                  </h3>
                   <p className="text-gray-600 text-sm mb-2">{article.date} — {article.author}</p>
                   <p className="text-gray-600 text-sm">{article.excerpt}</p>
                 </CardContent>

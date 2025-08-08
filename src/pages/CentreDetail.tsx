@@ -4,9 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Phone, Mail, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Mail } from "lucide-react";
 import CenterDetail1 from "@/components/CenterHistory1";
 import CenterDetail2 from "@/components/CenterHistory2";
 import CenterDetail3 from "@/components/CenterHistory3";
@@ -28,12 +27,6 @@ interface DatabaseCenter {
   active: boolean | null;
   created_at: string;
   updated_at: string;
-  hero_id?: string | null;
-  hero?: {
-    id: string;
-    title: string;
-    image_url: string;
-  } | null;
   videos?: {
     id: string;
     title: string;
@@ -69,19 +62,14 @@ const CentreDetail = () => {
         .from('centres')
         .select(`
           *,
-          hero:hero_id (
-            id,
-            title,
-            image_url
-          ),
-          videos:video_id (
+          videos (
             id,
             title,
             video_type,
             youtube_id,
             video_url
           ),
-          directors:directors!directors_centre_id_fkey (
+          directors (
             id,
             name,
             job,
@@ -201,7 +189,7 @@ const CentreDetail = () => {
     <Layout>
       <div className="min-h-screen bg-gray-50">
         {/* Hero Carousel */}
-        {centre.hero && (
+        {centerTagNames.length > 0 && (
           <TaggedHeroCarousel 
             filterTags={centerTagNames}
             showButtons={false}

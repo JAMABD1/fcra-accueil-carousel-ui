@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
@@ -15,9 +15,12 @@ import { Calendar, User, ArrowLeft, Share2, Facebook, Twitter } from "lucide-rea
 import { Article } from "@/components/admin/ArticlesManager";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useEffect, useRef } from "react";
 
 const ArticleDetail = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const imagesRef = useRef<HTMLDivElement | null>(null);
 
   // Fetch article from Supabase
   const { data: article, isLoading } = useQuery({
@@ -35,6 +38,25 @@ const ArticleDetail = () => {
     enabled: !!id
   });
 
+  // Fetch tags to map IDs -> names
+  const { data: allTags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('id, name')
+        .order('name');
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    }
+  });
+
+  const displayTags = (article?.tags || []).map((tagIdOrName) => {
+    // If it's already a name (not found as an ID), keep as-is
+    const found = allTags.find(t => t.id === tagIdOrName);
+    return found ? found.name : (tagIdOrName as string);
+  });
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: '2-digit',
@@ -42,6 +64,16 @@ const ArticleDetail = () => {
       year: 'numeric'
     });
   };
+
+  // If navigated with a focus hint from the index, focus the carousel area on load
+  useEffect(() => {
+    if ((location.state as any)?.focus === 'images' && imagesRef.current) {
+      const id = requestAnimationFrame(() => {
+        imagesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return () => cancelAnimationFrame(id);
+    }
+  }, [location.state, article]);
 
   if (isLoading) {
     return (
@@ -93,7 +125,7 @@ const ArticleDetail = () => {
           <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
             {/* Image Carousel */}
             {article.images && article.images.length > 0 && (
-              <div className="relative">
+              <div className="relative" ref={imagesRef}>
                 <Carousel className="w-full">
                   <CarouselContent>
                     {article.images.map((imageUrl, index) => (
@@ -120,9 +152,9 @@ const ArticleDetail = () => {
                 {/* Article Title Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {article.tags?.map((tag) => (
-                      <Badge key={tag} className="bg-green-600 text-white">
-                        {tag}
+                    {displayTags.map((tagName) => (
+                      <Badge key={tagName} className="bg-green-600 text-white">
+                        {tagName}
                       </Badge>
                     ))}
                   </div>
@@ -132,7 +164,7 @@ const ArticleDetail = () => {
                   <div className="flex items-center gap-6 text-sm opacity-90">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      <span>{formatDate(article.created_at)}</span>
+                      <span>{formatDate((article as any).published_at || article.created_at)}</span>
                     </div>
                     {article.author && (
                       <div className="flex items-center gap-2">
@@ -149,9 +181,9 @@ const ArticleDetail = () => {
             {(!article.images || article.images.length === 0) && (
               <div className="p-8 bg-gradient-to-r from-green-500 to-green-600 text-white">
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {article.tags?.map((tag) => (
-                    <Badge key={tag} className="bg-white/20 text-white border-white/30">
-                      {tag}
+                  {displayTags.map((tagName) => (
+                    <Badge key={tagName} className="bg-white/20 text-white border-white/30">
+                      {tagName}
                     </Badge>
                   ))}
                 </div>
@@ -161,7 +193,7 @@ const ArticleDetail = () => {
                 <div className="flex items-center gap-6 text-sm opacity-90">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    <span>{formatDate(article.created_at)}</span>
+                    <span>{formatDate((article as any).published_at || article.created_at)}</span>
                   </div>
                   {article.author && (
                     <div className="flex items-center gap-2">

@@ -2,6 +2,11 @@
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { Control } from "react-hook-form";
 
 interface ArticleFormData {
@@ -13,6 +18,7 @@ interface ArticleFormData {
   tags: string[];
   featured: boolean;
   status: string;
+  published_at: Date | null;
 }
 
 interface ArticleSettingsProps {
@@ -62,6 +68,38 @@ const ArticleSettings = ({ control }: ArticleSettingsProps) => {
                 onCheckedChange={field.onChange}
               />
             </FormControl>
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name="published_at"
+        render={({ field }) => (
+          <FormItem className="flex flex-col">
+            <FormLabel>Date de publication</FormLabel>
+            <Popover>
+              <PopoverTrigger asChild>
+                <FormControl>
+                  <Button
+                    variant={"outline"}
+                    className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                  >
+                    {field.value ? format(field.value, "dd/MM/yyyy") : <span>Sélectionner une date</span>}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </FormControl>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={field.value ?? undefined}
+                  onSelect={(date) => field.onChange(date ?? null)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <FormMessage />
           </FormItem>
         )}
       />

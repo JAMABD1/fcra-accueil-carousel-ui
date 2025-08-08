@@ -24,6 +24,7 @@ interface ArticleFormData {
   tags: string[];
   featured: boolean;
   status: string;
+  published_at: Date | null;
 }
 
 interface ArticleFormModalProps {
@@ -48,6 +49,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
       tags: [],
       featured: false,
       status: "draft",
+      published_at: null,
     },
   });
 
@@ -63,6 +65,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         tags: article.tags || [],
         featured: article.featured || false,
         status: article.status || "draft",
+        published_at: article.published_at ? new Date(article.published_at) : null,
       });
       // Set existing images for preview
       if (article.images && article.images.length > 0) {
@@ -135,6 +138,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         tags: data.tags, // should be array of IDs
         featured: data.featured,
         status: data.status,
+        published_at: data.published_at ? new Date(data.published_at).toISOString() : null,
       };
 
       if (isEditing && article) {
@@ -364,7 +368,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
                   <CardTitle className="text-lg">Paramètres de publication</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ArticleSettings control={form.control} />
+              <ArticleSettings control={form.control} />
                 </CardContent>
               </Card>
             </TabsContent>
