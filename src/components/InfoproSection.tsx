@@ -1,21 +1,35 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import PhotoCarousel from "./PhotoCarousel";
+import { Lightbox } from "./Lightbox";
 
 interface InfoproSectionProps {
   photos?: string[];
 }
 
 const InfoproSection = ({ photos }: InfoproSectionProps) => {
+  const displayPhotos = photos && photos.length > 0 ? photos : ["/placeholder.svg"];
+  const previewPhotos = displayPhotos.slice(0, 4);
+
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const openLightbox = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsLightboxOpen(true);
+  };
+
   return (
     <>
-      {/* INFOPRO Section */}
+      {/* Title */}
       <section className="mb-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
             INFOPRO – Institut de Formation Professionnelle
           </h2>
-          <p className="text-xl text-gray-600">
-            Préparer les jeunes à un avenir professionnel durable
+          <p className="text-gray-600 max-w-3xl mx-auto">
+            Préparer les jeunes à un avenir professionnel durable avec des formations pratiques et accessibles.
           </p>
         </div>
 
@@ -79,8 +93,8 @@ const InfoproSection = ({ photos }: InfoproSectionProps) => {
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="mb-8">
+      {/* Values + main imagery */}
+      <section className="mb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="col-span-1">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -98,14 +112,39 @@ const InfoproSection = ({ photos }: InfoproSectionProps) => {
             </p>
           </div>
 
-          {/* Photo Carousel */}
+          {/* Main carousel */}
           <div className="col-span-1">
-            <PhotoCarousel 
-              photos={photos || []} 
-              title="INFOPRO - Formation Professionnelle"
-            />
+            <PhotoCarousel photos={displayPhotos} title="INFOPRO - Formation Professionnelle" />
+            <div className="flex justify-end mt-3">
+              <Button
+                variant="outline"
+                onClick={() => openLightbox(0)}
+              >
+                Voir la galerie
+              </Button>
+            </div>
           </div>
-          
+        </div>
+      </section>
+
+      {/* Thumbnail gallery */}
+      <section className="mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {previewPhotos.map((src, i) => (
+            <button
+              key={i}
+              onClick={() => openLightbox(i)}
+              className="group relative overflow-hidden rounded-lg shadow-md aspect-[4/3] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600"
+            >
+              <img
+                src={src}
+                alt={`Galerie ${i + 1}`}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+            </button>
+          ))}
         </div>
       </section>
 
@@ -124,6 +163,15 @@ const InfoproSection = ({ photos }: InfoproSectionProps) => {
           </CardContent>
         </Card>
       </section>
+
+      {/* Lightbox */}
+      <Lightbox
+        images={displayPhotos}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        initialIndex={currentImageIndex}
+        title="INFOPRO - Formation Professionnelle"
+      />
     </>
   );
 };

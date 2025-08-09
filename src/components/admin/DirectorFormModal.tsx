@@ -117,8 +117,8 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
         name: data.name,
         job: data.job || null,
         responsibility: data.responsibility || null,
-        image_url: imageUrl,
-        centre_id: data.centre_id === "none" ? null : data.centre_id,
+        image_url: imageUrl || null,
+        centre_id: !data.centre_id || data.centre_id === "none" ? null : data.centre_id,
         is_director: data.is_director,
         sort_order: data.sort_order,
         active: data.active,
@@ -127,6 +127,9 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
       console.log('Saving director data:', directorData);
 
       if (isEditing && director) {
+        if (!director.id) {
+          throw new Error('Invalid director id for update');
+        }
         const { error } = await supabase
           .from('directors')
           .update(directorData)
