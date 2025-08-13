@@ -17,6 +17,7 @@ export async function fetchPhotosByTags(tagIds: string[], limit: number = 10) {
       .from('photos')
       .select('*')
       .eq('status', 'published')
+      .overlaps('tag_ids', tagIds)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -25,16 +26,10 @@ export async function fetchPhotosByTags(tagIds: string[], limit: number = 10) {
       return [];
     }
 
-    // Filter photos that have at least one matching tag
-    const filteredPhotos = data.filter((photo: any) => {
-      const photoTagIds = photo.tag_ids || [];
-      return tagIds.some(tagId => photoTagIds.includes(tagId));
-    });
-
     // Extract all image URLs from the images array of each photo
     const allImageUrls: string[] = [];
     
-    filteredPhotos.forEach((photo: any) => {
+    (data || []).forEach((photo: any) => {
       // Use the images array if it exists and has items
       if (photo.images && Array.isArray(photo.images) && photo.images.length > 0) {
         // Add all images from the images array

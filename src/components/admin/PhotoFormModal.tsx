@@ -56,6 +56,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -82,6 +83,11 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         tag_ids: photo.tag_ids || [],
         published_at: photo.published_at ? new Date(photo.published_at) : null,
       });
+      // Initialize current images from existing photo
+      const initialImages = (photo.images && photo.images.length > 0)
+        ? photo.images
+        : (photo.image_url ? [photo.image_url] : []);
+      setCurrentImages(initialImages);
     } else {
       form.reset({
         title: "",
@@ -92,6 +98,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         tag_ids: [],
         published_at: null,
       });
+      setCurrentImages([]);
     }
   }, [photo, form]);
 
@@ -109,6 +116,10 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
     const newUrls = previewUrls.filter((_, i) => i !== index);
     setSelectedFiles(newFiles);
     setPreviewUrls(newUrls);
+  };
+
+  const removeExistingImage = (index: number) => {
+    setCurrentImages((imgs) => imgs.filter((_, i) => i !== index));
   };
 
   const uploadFile = async (file: File, bucket: string, path: string) => {
@@ -137,7 +148,9 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       setUploadProgress(0);
 
       try {
-        let imageUrls: string[] = [];
+        let uploadedUrls: string[] = [];
+        // Start from currently kept images (after any deletions in UI)
+        let workingImages: string[] = [...currentImages];
         let mainImageUrl = photo?.image_url;
 
         // Upload all selected images
@@ -148,27 +161,33 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
             const file = selectedFiles[i];
             const imagePath = `images/${Date.now()}-${i}-${file.name}`;
             const uploadedUrl = await uploadFile(file, 'photos', imagePath);
-            imageUrls.push(uploadedUrl);
+            uploadedUrls.push(uploadedUrl);
             
             // Update progress
             setUploadProgress(Math.round(((i + 1) / totalFiles) * 80));
           }
           
-          // Set the first image as the main image
-          mainImageUrl = imageUrls[0];
-        } else if (photo && photo.images) {
-          // Keep existing images if no new files selected
-          imageUrls = photo.images;
+          // If there were no existing images, we'll set main after merging
         }
 
         setUploadProgress(90);
+
+        // Merge existing kept images + newly uploaded ones
+        const finalImages = [...workingImages, ...uploadedUrls];
+
+        if (finalImages.length === 0) {
+          throw new Error('Aucune image restante. Ajoutez au moins une image avant d\'enregistrer.');
+        }
+
+        // Determine main image from final set
+        mainImageUrl = finalImages[0];
 
         const photoData = {
           title: data.title,
           description: data.description || null,
           image_url: mainImageUrl!,
-          thumbnail_url: imageUrls.length > 0 ? imageUrls[0] : photo?.thumbnail_url,
-          images: imageUrls.length > 0 ? imageUrls : null,
+          thumbnail_url: finalImages[0] || photo?.thumbnail_url,
+          images: finalImages,
           category: data.category,
           featured: data.featured,
           status: data.status,
@@ -208,6 +227,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       });
       setSelectedFiles([]);
       setPreviewUrls([]);
+      setCurrentImages([]);
       onClose();
     },
     onError: (error) => {
@@ -304,13 +324,22 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
               </div>
 
               {/* Existing Images Preview */}
-              {photo && photo.images && photo.images.length > 0 && (
+              {photo && currentImages && currentImages.length > 0 && (
                 <div className="space-y-2">
                   <Label>Images existantes</Label>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {photo.images.map((imageUrl, index) => (
-                      <Card key={index} className="overflow-hidden">
+                    {currentImages.map((imageUrl, index) => (
+                      <Card key={index} className="overflow-hidden relative">
                         <CardContent className="p-2">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={() => removeExistingImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                           <img
                             src={imageUrl}
                             alt={`Existing ${index + 1}`}

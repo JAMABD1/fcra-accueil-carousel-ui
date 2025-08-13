@@ -18,9 +18,7 @@ interface PhotoBasicFieldsProps {
 }
 
 const categories = [
-  "Formation",
-  "Équipe", 
-  "Infrastructure",
+  "Visite",
   "Étudiants",
   "Événement",
   "General"
