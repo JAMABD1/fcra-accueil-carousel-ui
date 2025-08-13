@@ -3,14 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+// Table view removed; using cards grid instead
 import {
   Dialog,
   DialogContent,
@@ -18,7 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Search, Edit, Trash2, Play, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Play } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import VideoFormModal from "./VideoFormModal";
@@ -40,6 +34,12 @@ interface Video {
   updated_at: string;
 }
 
+interface Tag {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 const VideosManager = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,9 @@ const VideosManager = () => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchVideos = async () => {
     try {
@@ -71,7 +73,19 @@ const VideosManager = () => {
   };
 
   useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tags')
+          .select('*');
+        if (error) throw error;
+        setAllTags(data || []);
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      }
+    };
     fetchVideos();
+    fetchTags();
   }, []);
 
   const filteredVideos = videos.filter(video =>
@@ -133,6 +147,16 @@ const VideosManager = () => {
     }
   };
 
+  const resolveTagDisplay = (value: string) => {
+    const tag = allTags.find(t => t.id === value || t.name === value);
+    return tag?.name || value;
+  };
+
+  const resolveTagColor = (value: string) => {
+    const tag = allTags.find(t => t.id === value || t.name === value);
+    return tag?.color || undefined;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -187,74 +211,53 @@ const VideosManager = () => {
             </div>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titre</TableHead>
-                  <TableHead>Auteur</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead>Durée</TableHead>
-                  <TableHead>Taille</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVideos.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      <div className="text-muted-foreground">
-                        {searchTerm ? "Aucune vidéo trouvée" : "Aucune vidéo créée"}
+          {filteredVideos.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12">
+              {searchTerm ? "Aucune vidéo trouvée" : "Aucune vidéo créée"}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredVideos.map((video) => {
+                const createdDate = new Date(video.created_at).toLocaleDateString();
+                return (
+                  <Card key={video.id} className="overflow-hidden">
+                    <div className="relative aspect-video bg-muted">
+                      {video.thumbnail_url ? (
+                        <img
+                          src={video.thumbnail_url}
+                          alt={video.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Play className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2 flex items-center gap-2">
+                        {video.featured && (
+                          <Badge className="bg-yellow-500">Vedette</Badge>
+                        )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredVideos.map((video) => (
-                    <TableRow key={video.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          {video.featured && (
-                            <Badge variant="default" className="text-xs">★</Badge>
-                          )}
-                          <span className="truncate max-w-[200px]" title={video.title}>
-                            {video.title}
-                          </span>
+                      <div className="absolute top-2 right-2">
+                        {getStatusBadge(video.status)}
+                      </div>
+                    </div>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold truncate" title={video.title}>{video.title}</h3>
+                          <p className="text-xs text-muted-foreground">{video.author || 'N/A'}</p>
                         </div>
-                      </TableCell>
-                      <TableCell>{video.author || "N/A"}</TableCell>
-                      <TableCell>{getStatusBadge(video.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {video.tags?.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {video.tags && video.tags.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{video.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatDuration(video.duration)}</TableCell>
-                      <TableCell>{formatFileSize(video.file_size)}</TableCell>
-                      <TableCell>
-                        {new Date(video.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => window.open(video.video_url, '_blank')}
-                            title="Voir la vidéo"
+                            onClick={() => video.id && navigate(`/videos/${video.id}`)}
+                            title="Lire"
                           >
                             <Play className="h-4 w-4" />
                           </Button>
-                          <Dialog open={isEditModalOpen && selectedVideo?.id === video.id} 
+                          <Dialog open={isEditModalOpen && selectedVideo?.id === video.id}
                                   onOpenChange={(open) => {
                                     setIsEditModalOpen(open);
                                     if (!open) setSelectedVideo(null);
@@ -286,17 +289,39 @@ const VideosManager = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(video.id)}
+                            title="Supprimer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {video.tags?.map((value, index) => {
+                          const name = resolveTagDisplay(value);
+                          const color = resolveTagColor(value);
+                          return (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs"
+                              style={color ? { backgroundColor: `${color}10`, color, borderColor: color } : undefined}
+                            >
+                              {name}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Durée: {formatDuration(video.duration)}</span>
+                        <span>Taille: {formatFileSize(video.file_size)}</span>
+                        <span>{createdDate}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

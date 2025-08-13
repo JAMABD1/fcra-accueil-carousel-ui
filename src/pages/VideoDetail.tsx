@@ -9,6 +9,39 @@ import { supabase } from "@/integrations/supabase/client";
 
 const VideoDetail = () => {
   const { id } = useParams();
+  
+  const sanitizeFacebookIframe = (iframeHtml: string) => {
+    let html = iframeHtml.trim();
+    // Force responsive sizing
+    html = html.replace(/width="[^"]*"/gi, 'width="100%"');
+    html = html.replace(/height="[^"]*"/gi, 'height="100%"');
+    
+    if (html.match(/style="[^"]*"/i)) {
+      html = html.replace(
+        /style="([^"]*)"/i,
+        (_m, styles) => {
+          const base = styles
+            .replace(/\s*width\s*:\s*[^;]*;?/gi, '')
+            .replace(/\s*height\s*:\s*[^;]*;?/gi, '')
+            .replace(/\s*border\s*:\s*[^;]*;?/gi, '')
+            .replace(/\s*overflow\s*:\s*[^;]*;?/gi, '')
+            .trim();
+          const enforced = 'width:100%;height:100%;border:none;overflow:hidden;';
+          const merged = base ? `${base};${enforced}` : enforced;
+          return `style="${merged}"`;
+        }
+      );
+    } else {
+      html = html.replace(/<iframe/i, '<iframe style="width:100%;height:100%;border:none;overflow:hidden;"');
+    }
+    // Ensure allowfullscreen attribute
+    if (!/allowfullscreen/gi.test(html)) {
+      html = html.replace(/<iframe/i, '<iframe allowfullscreen="true"');
+    }
+    // Remove fixed attributes that can cause scrollbars
+    html = html.replace(/scrolling="[^"]*"/gi, 'scrolling="no"');
+    return html;
+  };
 
   // Fetch video from Supabase
   const { data: video, isLoading } = useQuery({
@@ -92,6 +125,10 @@ const VideoDetail = () => {
                       className="w-full h-full"
                       allowFullScreen
                     />
+                  ) : video.video_type === 'facebook' && 'facebook_iframe' in video && (video as any).facebook_iframe ? (
+                    <div className="absolute inset-0">
+                      <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: sanitizeFacebookIframe((video as any).facebook_iframe) }} />
+                    </div>
                   ) : video.video_type === 'upload' && video.video_url ? (
                     <video
                       src={video.video_url}

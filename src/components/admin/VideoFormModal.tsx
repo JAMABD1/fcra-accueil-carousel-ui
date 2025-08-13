@@ -20,6 +20,7 @@ interface VideoFormData {
   video_type: string;
   video: FileList | null;
   youtube_id: string;
+  facebook_iframe: string;
   thumbnail: FileList | null;
   author: string;
   tags: string[];
@@ -35,6 +36,7 @@ interface Video {
   video_url: string | null;
   video_type: string | null;
   youtube_id: string | null;
+  facebook_iframe: string | null;
   thumbnail_url: string | null;
   author: string | null;
   tags: string[] | null;
@@ -64,6 +66,7 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
       video_type: "upload",
       video: null,
       youtube_id: "",
+      facebook_iframe: "",
       thumbnail: null,
       author: "",
       tags: [],
@@ -83,6 +86,7 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
         video_type: video.video_type || "upload",
         video: null,
         youtube_id: video.youtube_id || "",
+        facebook_iframe: video.facebook_iframe || "",
         thumbnail: null,
         author: video.author || "",
         tags: video.tags || [],
@@ -153,7 +157,7 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
           fileSize = videoFile.size;
           setUploadProgress(50);
         }
-      } else {
+      } else if (data.video_type === "youtube") {
         // Handle YouTube video
         if (!data.youtube_id) {
           toast({
@@ -165,6 +169,18 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
           return;
         }
         videoUrl = null; // No video URL for YouTube videos
+        setUploadProgress(50);
+      } else if (data.video_type === "facebook") {
+        if (!data.facebook_iframe) {
+          toast({
+            title: "Erreur",
+            description: "Le code iframe Facebook est requis pour les vidéos Facebook.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        videoUrl = null;
         setUploadProgress(50);
       }
 
@@ -185,6 +201,7 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
         video_type: data.video_type,
         video_url: videoUrl,
         youtube_id: data.video_type === "youtube" ? extractYouTubeId(data.youtube_id) : null,
+        facebook_iframe: data.video_type === "facebook" ? data.facebook_iframe : null,
         thumbnail_url: thumbnailUrl,
         author: data.author,
         tags: data.tags,
@@ -336,6 +353,7 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
                       <SelectContent>
                         <SelectItem value="upload">Télécharger une vidéo</SelectItem>
                         <SelectItem value="youtube">Vidéo YouTube</SelectItem>
+                        <SelectItem value="facebook">Vidéo Facebook</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -353,6 +371,26 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
                       <FormControl>
                         <Input 
                           placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ ou dQw4w9WgXcQ"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {videoType === "facebook" && (
+                <FormField
+                  control={form.control}
+                  name="facebook_iframe"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code iframe Facebook</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Collez ici le code iframe Facebook fourni"
+                          rows={4}
                           {...field}
                         />
                       </FormControl>
