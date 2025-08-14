@@ -9,6 +9,8 @@ interface TaggedHeroCarouselProps {
   height?: string; // Custom height, defaults to 70vh
   className?: string; // Additional CSS classes
   heightClass?: string; // Tailwind height class
+  onLearnMore?: () => void; // Click handler for "En savoir plus"
+  onJoinUs?: () => void; // Click handler for "Nous rejoindre"
 }
 
 const TaggedHeroCarousel = ({ 
@@ -16,7 +18,9 @@ const TaggedHeroCarousel = ({
   showButtons = true, 
   height = "70vh",
   className = "",
-  heightClass = "" 
+  heightClass = "",
+  onLearnMore,
+  onJoinUs,
 }: TaggedHeroCarouselProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -174,6 +178,13 @@ const TaggedHeroCarousel = ({
                             ? "bg-green-600 hover:bg-green-700"
                             : "border-white text-black hover:bg-white hover:text-gray-900"
                         }`}
+                        onClick={() => {
+                          if (button.text === "En savoir plus") {
+                            onLearnMore && onLearnMore();
+                          } else if (button.text === "Nous rejoindre") {
+                            onJoinUs && onJoinUs();
+                          }
+                        }}
                       >
                         {button.text}
                       </Button>

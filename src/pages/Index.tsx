@@ -132,21 +132,24 @@ const Index = () => {
   });
 
   // Transform articles for display
-  const transformedArticles = articles.map(article => ({
-    id: article.id,
-    title: article.title,
-    date: new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }),
-    author: article.author || 'Admin FCRA',
-    image: article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg',
-    excerpt: article.excerpt || article.content.substring(0, 200) + '...',
-    tags: article.tags || [],
-    content: article.content,
-    featured: article.featured || false
-  }));
+  const transformedArticles = articles.map(article => {
+    const publishedAt = (article as any).published_at ?? article.created_at;
+    return {
+      id: article.id,
+      title: article.title,
+      date: new Date(publishedAt).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      author: article.author || 'Admin FCRA',
+      image: article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg',
+      excerpt: article.excerpt || article.content.substring(0, 200) + '...',
+      tags: article.tags || [],
+      content: article.content,
+      featured: article.featured || false
+    };
+  });
 
   // Get 3 most recent articles
   const latestArticles = transformedArticles.slice(0, 3);
@@ -165,10 +168,21 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero Carousel */}
-      <TaggedHeroCarousel filterTags={["home"]} />
+      <TaggedHeroCarousel 
+        filterTags={["home"]}
+        onLearnMore={() => {
+          const about = document.getElementById('apropos');
+          if (about) {
+            const rect = about.getBoundingClientRect();
+            const offset = 100; // scroll to a bit below the top
+            window.scrollTo({ top: window.scrollY + rect.top - offset, behavior: 'smooth' });
+          }
+        }}
+        onJoinUs={() => navigate('/administrations')}
+      />
 
       {/* About Section */}
-      <section className="py-16 bg-white">
+      <section id="apropos" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">

@@ -10,17 +10,19 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { Calendar, User, ArrowLeft, Share2, Facebook, Twitter } from "lucide-react";
 import { Article } from "@/components/admin/ArticlesManager";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const ArticleDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const imagesRef = useRef<HTMLDivElement | null>(null);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi | undefined>(undefined);
 
   // Fetch article from Supabase
   const { data: article, isLoading } = useQuery({
@@ -75,6 +77,19 @@ const ArticleDetail = () => {
     }
   }, [location.state, article]);
 
+  // Auto-advance images every 1.5s
+  useEffect(() => {
+    if (!carouselApi || !article?.images || article.images.length <= 1) return;
+    const timer = setInterval(() => {
+      if (carouselApi.canScrollNext()) {
+        carouselApi.scrollNext();
+      } else {
+        carouselApi.scrollTo(0);
+      }
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [carouselApi, article?.images]);
+
   if (isLoading) {
     return (
       <Layout>
@@ -126,7 +141,7 @@ const ArticleDetail = () => {
             {/* Image Carousel */}
             {article.images && article.images.length > 0 && (
               <div className="relative" ref={imagesRef}>
-                <Carousel className="w-full">
+                <Carousel className="w-full" setApi={setCarouselApi} opts={{ loop: true }}>
                   <CarouselContent>
                     {article.images.map((imageUrl, index) => (
                       <CarouselItem key={index}>
@@ -136,15 +151,15 @@ const ArticleDetail = () => {
                             alt={`${article.title} - Image ${index + 1}`}
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+                          <div className="absolute inset-0 bg-black bg-opacity-40 pointer-events-none"></div>
                         </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
                   {article.images.length > 1 && (
                     <>
-                      <CarouselPrevious className="left-4" />
-                      <CarouselNext className="right-4" />
+                      <CarouselPrevious className="left-4 z-10" />
+                      <CarouselNext className="right-4 z-10" />
                     </>
                   )}
                 </Carousel>

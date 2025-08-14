@@ -185,9 +185,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <div>
               <h4 className="font-semibold mb-4">Contact</h4>
               <div className="space-y-2 text-gray-300">
-                <p>📞 0344679192</p>
                 <p>✉️ jao.lazabdallah83@gmail.com</p>
-                <p>📍 Antananarivo</p>
+                <p>📍 Antaniavo , Antohomadinika Antananarivo Madagascar </p>
               </div>
             </div>
             <div>
