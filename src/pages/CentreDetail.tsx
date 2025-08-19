@@ -5,7 +5,7 @@ import Layout from "@/components/Layout";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Phone, Mail } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import CenterDetail1 from "@/components/CenterHistory1";
 import CenterDetail2 from "@/components/CenterHistory2";
 import CenterDetail3 from "@/components/CenterHistory3";
@@ -99,16 +99,49 @@ const CentreDetail = () => {
     }
   });
 
-  // Fetch photos based on center tag
-  const { data: centerPhotos = [] } = useQuery({
-    queryKey: ['center-photos', centre?.tag_id],
+  // Fetch photos for different sections based on center tag
+  const { data: missionPhotos = [] } = useQuery({
+    queryKey: ['mission-photos', centre?.tag_id],
     queryFn: async () => {
       if (!centre || !centre.tag_id) {
         return [];
       }
-      return await fetchPhotosByTags([centre.tag_id], 10);
+      // Get the center tag name first
+      const centerTag = tags.find(tag => tag.id === centre.tag_id);
+      if (!centerTag) return [];
+      
+      // Create mission tag name
+      const missionTagName = `${centerTag.name}-mission`;
+      const missionTag = tags.find(tag => tag.name === missionTagName);
+      
+      if (missionTag) {
+        return await fetchPhotosByTags([missionTag.id], 5);
+      }
+      return [];
     },
-    enabled: !!centre && !!centre.tag_id
+    enabled: !!centre && !!centre.tag_id && tags.length > 0
+  });
+
+  const { data: historyPhotos = [] } = useQuery({
+    queryKey: ['history-photos', centre?.tag_id],
+    queryFn: async () => {
+      if (!centre || !centre.tag_id) {
+        return [];
+      }
+      // Get the center tag name first
+      const centerTag = tags.find(tag => tag.id === centre.tag_id);
+      if (!centerTag) return [];
+      
+      // Create history tag name
+      const historyTagName = `${centerTag.name}-histoire`;
+      const historyTag = tags.find(tag => tag.name === historyTagName);
+      
+      if (historyTag) {
+        return await fetchPhotosByTags([historyTag.id], 5);
+      }
+      return [];
+    },
+    enabled: !!centre && !!centre.tag_id && tags.length > 0
   });
 
   // Fetch related impacts based on center tag
@@ -212,33 +245,13 @@ const CentreDetail = () => {
             </div>
 
             {/* Center Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
               {centre.address && (
                 <Card>
                   <CardContent className="p-6 text-center">
                     <MapPin className="h-8 w-8 text-green-600 mx-auto mb-4" />
                     <h3 className="font-semibold mb-2">Adresse</h3>
                     <p className="text-gray-600">{centre.address}</p>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {centre.phone && (
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <Phone className="h-8 w-8 text-green-600 mx-auto mb-4" />
-                    <h3 className="font-semibold mb-2">Téléphone</h3>
-                    <p className="text-gray-600">{centre.phone}</p>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {centre.email && (
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <Mail className="h-8 w-8 text-green-600 mx-auto mb-4" />
-                    <h3 className="font-semibold mb-2">Email</h3>
-                    <p className="text-gray-600">{centre.email}</p>
                   </CardContent>
                 </Card>
               )}
@@ -255,15 +268,15 @@ const CentreDetail = () => {
               
               switch (sortOrder) {
                 case 1:
-                  return <CenterDetail1 photos={centerPhotos} />;
+                  return <CenterDetail1 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
                 case 2:
-                  return <CenterDetail2 photos={centerPhotos} />;
+                  return <CenterDetail2 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
                 case 3:
-                  return <CenterDetail3 photos={centerPhotos} />;
+                  return <CenterDetail3 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
                 case 4:
-                  return <CenterDetail4 photos={centerPhotos} />;
+                  return <CenterDetail4 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
                 default:
-                  return <CenterDetail1 photos={centerPhotos} />;
+                  return <CenterDetail1 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
               }
             })()}
           </div>

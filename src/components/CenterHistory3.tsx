@@ -2,10 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import PhotoCarousel from "./PhotoCarousel";
 
 interface CenterDetail3Props {
-  photos?: string[];
+  missionPhotos?: string[];
+  historyPhotos?: string[];
 }
 
-const CenterDetail3 = ({ photos }: CenterDetail3Props) => {
+const CenterDetail3 = ({ missionPhotos, historyPhotos }: CenterDetail3Props) => {
   return (
     <>
       {/* Mission Section */}
@@ -27,10 +28,10 @@ const CenterDetail3 = ({ photos }: CenterDetail3Props) => {
             </p>
           </div>
 
-          {/* Photo Carousel */}
+          {/* Mission Photos */}
           <div className="col-span-1">
             <PhotoCarousel 
-              photos={photos || []} 
+              photos={missionPhotos || []} 
               title="Mission du Centre"
             />
           </div>
@@ -84,10 +85,10 @@ const CenterDetail3 = ({ photos }: CenterDetail3Props) => {
 
           </div>
 
-          {/* Photo Carousel */}
+          {/* History Photos */}
           <div className="col-span-1">
             <PhotoCarousel 
-              photos={photos || []} 
+              photos={historyPhotos || []} 
               title="Histoire du Centre"
             />
           </div>
