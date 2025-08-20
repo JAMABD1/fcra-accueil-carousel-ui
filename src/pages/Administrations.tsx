@@ -122,6 +122,46 @@ const Administrations = () => {
             </div>
           )}
 
+          {/* Founders Section */}
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+              Fondateurs
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <div className="text-center">
+                <div className="w-40 h-40 mx-auto mb-4 rounded-full overflow-hidden bg-gray-200">
+                  <img 
+                    src="/image/founder1.jpg" 
+                    alt="Sheick Roshan Jamil" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Sheick Roshan Jamil
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Co-fondateur et Ex-Président
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-40 h-40 mx-auto mb-4 rounded-full overflow-hidden bg-gray-200">
+                  <img 
+                    src="/image/founder2.jpg" 
+                    alt="Abdoul Moumin" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Abdoul Moumin
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Co-fondateur 
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Departments Section */}
          
 
