@@ -24,8 +24,6 @@ import {
 import { Plus, Edit, Trash2, Eye, Search, FileText, Clock, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ArticleFormModal from "./ArticleFormModal";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 export interface Article {
   id: string;

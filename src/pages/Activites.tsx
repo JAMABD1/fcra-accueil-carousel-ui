@@ -9,6 +9,29 @@ import { Badge } from "@/components/ui/badge";
 import SearchBar from "@/components/SearchBar";
 import { BookOpen, Users, Heart, Briefcase, Stethoscope, Sprout, Activity, Calendar, FileText, Video, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+
+// Utility function to strip markdown and create a preview
+const createMarkdownPreview = (markdown: string, maxLength: number = 150): string => {
+  if (!markdown) return '';
+  
+  // Remove markdown formatting for preview
+  const plainText = markdown
+    .replace(/#{1,6}\s+/g, '') // Remove headers
+    .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+    .replace(/\*([^*]+)\*/g, '$1') // Remove italic
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links, keep text
+    .replace(/`([^`]+)`/g, '$1') // Remove code formatting
+    .replace(/>\s+/g, '') // Remove blockquotes
+    .replace(/[-*+]\s+/g, '') // Remove list markers
+    .replace(/\d+\.\s+/g, '') // Remove numbered list markers
+    .replace(/\n+/g, ' ') // Replace newlines with spaces
+    .trim();
+  
+  return plainText.length > maxLength 
+    ? plainText.substring(0, maxLength) + '...' 
+    : plainText;
+};
 
 const Activites = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,7 +210,7 @@ const Activites = () => {
                       
                       {activity.description && (
                         <p className="text-gray-600 mb-4 line-clamp-3">
-                          {activity.description}
+                          {createMarkdownPreview(activity.description, 150)}
                         </p>
                       )}
 

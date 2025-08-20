@@ -12,6 +12,8 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import SimpleMDE from "react-simplemde-editor";
+import "easymde/dist/easymde.min.css";
 
 type Activity = Tables<"activities">;
 
@@ -201,12 +203,27 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
 
               <div>
                 <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
+                <SimpleMDE
                   value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  placeholder="Activity description"
-                  rows={4}
+                  onChange={(value) => handleInputChange("description", value)}
+                  options={{
+                    spellChecker: false,
+                    minHeight: "200px",
+                    placeholder: "Description complète de l'activité (Markdown supporté)",
+                    status: false,
+                    lineWrapping: true,
+                    previewRender: (plainText: string) => {
+                      // Preserve line breaks in preview
+                      return plainText.replace(/\n/g, '<br>');
+                    },
+                    toolbar: [
+                      "bold", "italic", "heading", "|",
+                      "quote", "unordered-list", "ordered-list", "|",
+                      "link", "image", "|",
+                      "preview", "side-by-side", "fullscreen", "|",
+                      "guide"
+                    ]
+                  }}
                 />
               </div>
             </CardContent>

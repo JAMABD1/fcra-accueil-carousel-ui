@@ -88,7 +88,19 @@ const ArticleBasicFields = ({ control }: ArticleBasicFieldsProps) => {
                   spellChecker: false,
                   minHeight: "200px",
                   placeholder: "Contenu complet de l'article (Markdown supporté)",
-                  status: false
+                  status: false,
+                  lineWrapping: true,
+                  previewRender: (plainText: string) => {
+                    // Preserve line breaks in preview
+                    return plainText.replace(/\n/g, '<br>');
+                  },
+                  toolbar: [
+                    "bold", "italic", "heading", "|",
+                    "quote", "unordered-list", "ordered-list", "|",
+                    "link", "image", "|",
+                    "preview", "side-by-side", "fullscreen", "|",
+                    "guide"
+                  ]
                 }}
               />
             </FormControl>

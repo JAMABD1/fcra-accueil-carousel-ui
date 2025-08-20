@@ -38,13 +38,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       {/* Header - Sticky */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+          <div className="flex justify-between items-center h-20">
+            {/* Logo - Made more prominent */}
+            <Link to="/" className="flex items-center hover:opacity-80 transition-all duration-300 p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200">
               <img 
                 src="/image/logo.png" 
                 alt="FCRA Logo" 
-                className="h-8 w-auto"
+                className="h-12 w-auto drop-shadow-sm transition-all duration-300 hover:scale-110 animate-fade-in"
               />
             </Link>
 
@@ -104,7 +104,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-gray-100"
+              className="md:hidden p-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-gray-100 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -114,7 +114,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="md:hidden border-t bg-white">
-              <div className="px-2 pt-2 pb-3 space-y-1">
+              <div className="px-2 pt-4 pb-4 space-y-2">
                 {navItems.map((item) => (
                   <Link
                     key={item.path}
