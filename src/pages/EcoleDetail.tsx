@@ -1,19 +1,18 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
+import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { ArrowLeft, MapPin, Phone, Mail, Users, GraduationCap, Building, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
+import EcolesDetail1 from "@/components/EcolesHistory1";
+import EcolesDetail2 from "@/components/EcolesHistory2";
+import EcolesDetail3 from "@/components/EcolesHistory3";
+import EcolesDetail4 from "@/components/EcolesHistory4";
 import Counter from "@/components/Counter";
+import { fetchPhotosByTags } from "@/lib/utils";
 
 interface School {
   id: string;
@@ -87,6 +86,20 @@ const EcoleDetail = () => {
       };
     },
     enabled: !!id
+  });
+
+  // Fetch tags
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data as any[];
+    }
   });
 
   // Fetch coordonnees for this school
@@ -166,6 +179,51 @@ const EcoleDetail = () => {
     enabled: !!school?.tag_id
   });
 
+  // Fetch photos for different sections based on school tag
+  const { data: missionPhotos = [] } = useQuery({
+    queryKey: ['mission-photos', school?.tag_id],
+    queryFn: async () => {
+      if (!school || !school.tag_id) {
+        return [];
+      }
+      // Get the school tag name first
+      const schoolTag = tags.find(tag => tag.id === school.tag_id);
+      if (!schoolTag) return [];
+      
+      // Create mission tag name
+      const missionTagName = `${schoolTag.name}-mission`;
+      const missionTag = tags.find(tag => tag.name === missionTagName);
+      
+      if (missionTag) {
+        return await fetchPhotosByTags([missionTag.id], 5);
+      }
+      return [];
+    },
+    enabled: !!school && !!school.tag_id && tags.length > 0
+  });
+
+  const { data: historyPhotos = [] } = useQuery({
+    queryKey: ['history-photos', school?.tag_id],
+    queryFn: async () => {
+      if (!school || !school.tag_id) {
+        return [];
+      }
+      // Get the school tag name first
+      const schoolTag = tags.find(tag => tag.id === school.tag_id);
+      if (!schoolTag) return [];
+      
+      // Create history tag name
+      const historyTagName = `${schoolTag.name}-histoire`;
+      const historyTag = tags.find(tag => tag.name === historyTagName);
+      
+      if (historyTag) {
+        return await fetchPhotosByTags([historyTag.id], 5);
+      }
+      return [];
+    },
+    enabled: !!school && !!school.tag_id && tags.length > 0
+  });
+
   // Fetch up to 3 latest articles with the same tag as the school
   const { data: latestArticles = [] } = useQuery({
     queryKey: ['latest-articles-by-tag', school?.tag_id],
@@ -218,41 +276,25 @@ const EcoleDetail = () => {
     );
   }
 
-  const video: any = school && typeof school.video === 'object' && !('code' in school.video) ? school.video : null;
+  const video: any = school && school.video && typeof school.video === 'object' && !('code' in school.video) ? school.video : null;
+
+  // Get school tag name for hero filtering
+  const schoolTag = tags.find(tag => tag.id === school.tag_id);
+  const schoolTagNames = schoolTag ? [schoolTag.name] : [];
 
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="relative h-96 md:h-[500px] overflow-hidden">
-        <div className="absolute inset-0 transition-all duration-1000">
-          <img 
-            src={school.image_url} 
-            alt={school.name}
-            className="w-full h-full object-cover"
+      <div className="min-h-screen bg-gray-50">
+        {/* Hero Carousel */}
+        {schoolTagNames.length > 0 && (
+          <TaggedHeroCarousel 
+            filterTags={schoolTagNames}
+            showButtons={false}
+            heightClass="h-96 md:h-[500px]"
           />
-          <div className="absolute inset-0 bg-black bg-opacity-50" />
-        </div>
-        <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Badge className="bg-green-600 text-white">
-              {school.type}
-            </Badge>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">
-            {school.name}
-          </h1>
-          {school.subtitle && (
-            <p className="text-lg md:text-xl mb-2 max-w-2xl mx-auto">{school.subtitle}</p>
-          )}
-          {/* Show full address from coordonne if available */}
-          {coordonne?.address && (
-            <p className="text-lg md:text-xl mb-6 max-w-2xl flex items-center justify-center gap-2">
-              <MapPin className="h-5 w-5" />
-              {coordonne.address}
-            </p>
-          )}
-        </div>
-      </section>
+        )}
+
+      
 
       {/* About Section */}
       <section className="py-16 bg-white">
@@ -267,6 +309,29 @@ const EcoleDetail = () => {
               </p>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Dynamic Ecoles Detail Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Dynamic Component with Missions, Vision, Values and History */}
+          {(() => {
+            const sortOrder = school.sort_order || 1;
+            
+            switch (sortOrder) {
+              case 1:
+                return <EcolesDetail1 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
+              case 2:
+                return <EcolesDetail2 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
+              case 3:
+                return <EcolesDetail3 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
+              case 4:
+                return <EcolesDetail4 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
+              default:
+                return <EcolesDetail1 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
+            }
+          })()}
         </div>
       </section>
 
@@ -457,9 +522,10 @@ const EcoleDetail = () => {
             </div>
           </div>
         </section>
-      )}
+              )}
+      </div>
     </Layout>
-  );
-};
+    );
+  };
 
 export default EcoleDetail; 

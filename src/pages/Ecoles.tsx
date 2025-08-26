@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { MapPin, GraduationCap, BookOpen, Building2, Search, Award } from "lucide-react";
+import { MapPin, GraduationCap, BookOpen, Building2 } from "lucide-react";
 
 interface School {
   id: string;
@@ -24,56 +24,26 @@ interface School {
   sort_order: number | null;
   subtitle: string | null;
   coordonne_id: string | null;
-  coordonnes?: {
-    id: string;
-    phone: string;
-    email: string;
-    address: string;
-  } | null;
-
 }
 
 const Ecoles = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedType, setSelectedType] = useState("all");
 
   const { data: schools = [], isLoading } = useQuery({
     queryKey: ['schools-public'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schools')
-        .select(`
-          *,
-          coordonnes (
-            id,
-            phone,
-            email,
-            address
-          )
-        `)
+        .select('*')
+        .eq('active', true)
+        .order('sort_order')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as any[];
     }
   });
 
-  // Filter schools based on search term and type
-  const filteredSchools = schools.filter(school => {
-    const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      school.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      school.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      school.subtitle?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = selectedType === "all" || school.type === selectedType;
-    
-    return matchesSearch && matchesType;
-  });
 
-  // Statistics
-  const totalSchools = schools.length;
-  const schoolTypes = [...new Set(schools.map(school => school.type))];
-  const schoolsWithCoordinates = schools.filter(school => school.coordonnes).length;
 
   if (isLoading) {
     return (
@@ -94,7 +64,7 @@ const Ecoles = () => {
 
   return (
     <Layout>
-      <div className="py-16 bg-white min-h-screen">
+      <div className="py-16 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-12">
@@ -105,6 +75,8 @@ const Ecoles = () => {
               Découvrez nos établissements scolaires dédiés à l'excellence éducative et au développement de chaque élève
             </p>
           </div>
+
+
 
           {/* Schools Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
