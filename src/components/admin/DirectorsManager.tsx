@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getDirectors, deleteRecord } from "@/lib/db/queries";
+import { directors } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,15 +15,15 @@ import { useToast } from "@/hooks/use-toast";
 export interface Director {
   id: string;
   name: string;
-  image_url: string | null;
+  imageUrl: string | null;
   job: string | null;
   responsibility: string | null;
-  sort_order: number | null;
-  centre_id: string | null;
-  is_director: boolean | null;
+  sortOrder: number | null;
+  centreId: string | null;
+  isDirector: boolean | null;
   active: boolean | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   centres?: {
     id: string;
     name: string;
@@ -40,20 +41,7 @@ const DirectorsManager = () => {
   const { data: directors = [], isLoading, refetch } = useQuery({
     queryKey: ['directors'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('directors')
-        .select(`
-          *,
-          centres (
-            id,
-            name
-          )
-        `)
-        .order('sort_order')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Director[];
+      return await getDirectors();
     }
   });
 
@@ -67,8 +55,8 @@ const DirectorsManager = () => {
   // Statistics
   const totalDirectors = directors.length;
   const activeDirectors = directors.filter(d => d.active).length;
-  const mainDirectors = directors.filter(d => d.is_director).length;
-  const withCentres = directors.filter(d => d.centre_id).length;
+  const mainDirectors = directors.filter(d => d.isDirector).length;
+  const withCentres = directors.filter(d => d.centreId).length;
 
   const handleEdit = (director: Director) => {
     setSelectedDirector(director);
@@ -77,12 +65,7 @@ const DirectorsManager = () => {
 
   const handleDelete = async (director: Director) => {
     try {
-      const { error } = await supabase
-        .from('directors')
-        .delete()
-        .eq('id', director.id);
-
-      if (error) throw error;
+      await deleteRecord(directors, director.id);
 
       toast({
         title: "Directeur supprimé",

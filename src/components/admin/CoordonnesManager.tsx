@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getCoordonnes, deleteRecord, getTags } from "@/lib/db/queries";
+import { coordonnes } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +16,12 @@ export interface Coordonne {
   phone: string | null;
   email: string | null;
   address: string | null;
-  tags_id: string | null;
-  google_map_url: string | null;
-  sort_order: number | null;
+  tagsId: string | null;
+  googleMapUrl: string | null;
+  sortOrder: number | null;
   active: boolean | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   tags?: {
     id: string;
     name: string;
@@ -39,21 +40,7 @@ const CoordonnesManager = () => {
   const { data: coordonnes = [], isLoading, refetch } = useQuery({
     queryKey: ['coordonnes'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('coordonnes')
-        .select(`
-          *,
-          tags (
-            id,
-            name,
-            color
-          )
-        `)
-        .order('sort_order')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Coordonne[];
+      return await getCoordonnes();
     }
   });
 
@@ -77,12 +64,7 @@ const CoordonnesManager = () => {
 
   const handleDelete = async (coordonne: Coordonne) => {
     try {
-      const { error } = await supabase
-        .from('coordonnes')
-        .delete()
-        .eq('id', coordonne.id);
-
-      if (error) throw error;
+      await deleteRecord(coordonnes, coordonne.id);
 
       toast({
         title: "Coordonnée supprimée",

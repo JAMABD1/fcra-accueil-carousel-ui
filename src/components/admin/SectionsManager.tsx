@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getSections, deleteRecord, getTags } from "@/lib/db/queries";
+import { sections } from "@/lib/db/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,15 +23,15 @@ export interface Section {
   title: string;
   subtitle: string | null;
   description: string | null;
-  image_url: string;
-  hero_id: string | null;
-  hero_ids: string[];
-  tag_name: string | null;
-  tag_ids: string[];
-  sort_order: number | null;
+  imageUrl: string;
+  heroId: string | null;
+  heroIds: string[];
+  tagName: string | null;
+  tagIds: string[];
+  sortOrder: number | null;
   active: boolean | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   hero?: {
     id: string;
     title: string;
@@ -54,32 +55,10 @@ const SectionsManager = () => {
   const queryClient = useQueryClient();
 
   // Fetch sections with hero information
-  const { data: sections = [], isLoading } = useQuery({
+  const { data: sectionsData = [], isLoading } = useQuery({
     queryKey: ['sections'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sections')
-        .select(`
-          *,
-          hero:hero_id (
-            id,
-            title
-          )
-        `)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      
-      // Transform the data to match our interface
-      const transformedData = data.map((section: any) => ({
-        ...section,
-        hero_ids: section.hero_ids || [],
-        tag_ids: section.tag_ids || [],
-        heroes: [], // We'll fetch these separately if needed
-        tags: [], // We'll fetch these separately if needed
-      }));
-      
-      return transformedData as Section[];
+      return await getSections();
     }
   });
 
@@ -87,24 +66,14 @@ const SectionsManager = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
   // Delete section mutation
   const deleteSectionMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('sections')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteRecord(sections, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections'] });
@@ -125,16 +94,16 @@ const SectionsManager = () => {
 
   // Calculate statistics
   const stats = {
-    total: sections.length,
-    active: sections.filter(s => s.active).length,
-    inactive: sections.filter(s => !s.active).length,
-    withHero: sections.filter(s => s.hero_id).length,
+    total: sectionsData.length,
+    active: sectionsData.filter(s => s.active).length,
+    inactive: sectionsData.filter(s => !s.active).length,
+    withHero: sectionsData.filter(s => s.heroId).length,
   };
 
-  const filteredSections = sections.filter(section =>
+  const filteredSections = sectionsData.filter(section =>
     section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     section.subtitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    section.tag_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    section.tagName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     section.hero?.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -346,7 +315,7 @@ const SectionsManager = () => {
                       <TableCell>
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                           <img 
-                            src={section.image_url} 
+                            src={section.imageUrl} 
                             alt={section.title}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -360,12 +329,12 @@ const SectionsManager = () => {
                         {section.subtitle || 'Aucun sous-titre'}
                       </TableCell>
                       <TableCell>
-                        {getTagsBadges(section.tag_ids, section.tag_name)}
+                        {getTagsBadges(section.tagIds, section.tagName)}
                       </TableCell>
                         
-                      <TableCell>{section.sort_order || 0}</TableCell>
+                      <TableCell>{section.sortOrder || 0}</TableCell>
                       <TableCell>{getStatusBadge(section.active)}</TableCell>
-                      <TableCell>{formatDate(section.created_at)}</TableCell>
+                      <TableCell>{formatDate(section.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button

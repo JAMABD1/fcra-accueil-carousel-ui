@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getTags, getVideos } from "@/lib/db/queries";
+import { uploadImage } from "@/lib/storage/r2";
+import { centres } from "@/lib/db/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
@@ -62,27 +64,15 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, color')
-        .order('name');
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
   // Fetch videos for selection
   const { data: videos = [] } = useQuery({
-    queryKey: ['videos'],
+    queryKey: ['videos-active'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('id, title, video_type')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+      return await getVideos({ status: 'published' });
     }
   });
 
@@ -95,56 +85,43 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         address: centre.address || "",
         phone: centre.phone || "",
         email: centre.email || "",
-        image_url: centre.image_url || "",
-        tag_id: centre.tag_id !== null && centre.tag_id !== undefined ? centre.tag_id : "none",
-        video_id: centre.video_id !== null && centre.video_id !== undefined ? centre.video_id : "none",
-        sort_order: centre.sort_order || 0,
+        image_url: centre.imageUrl || "",
+        tag_id: centre.tagId !== null && centre.tagId !== undefined ? centre.tagId : "none",
+        video_id: centre.videoId !== null && centre.videoId !== undefined ? centre.videoId : "none",
+        sort_order: centre.sortOrder || 0,
         active: centre.active || false,
       });
       setImagePreview(centre.image_url || "");
     }
   }, [centre, form]);
 
-  // Upload image to Supabase storage
-  const uploadImage = async (file: File): Promise<string> => {
+  // Upload image to R2 storage
+  const uploadCentreImage = async (file: File): Promise<string> => {
     try {
       setUploadError("");
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `centre-${Date.now()}.${fileExt}`;
-      
-      console.log('Uploading file:', fileName, 'to bucket: centres');
-      
-      const { data, error } = await supabase.storage
-        .from('centres')
-        .upload(fileName, file);
 
-      if (error) {
-        console.error('Upload error:', error);
-        let errorMsg = `Erreur d'upload: ${error.message}`;
-        
+      console.log('Uploading file to R2:', file.name);
+
+      const result = await uploadImage(file, 'centres', 'centre');
+
+      if (!result.success) {
+        console.error('Upload error:', result.error);
+        let errorMsg = `Erreur d'upload: ${result.error}`;
+
         // Provide more specific error messages
-        if (error.message?.includes('bucket')) {
-          errorMsg = 'Le bucket de stockage "centres" n\'existe pas ou n\'est pas accessible';
-        } else if (error.message?.includes('size')) {
+        if (result.error?.includes('size')) {
           errorMsg = 'Le fichier est trop volumineux (maximum 10MB)';
-        } else if (error.message?.includes('type')) {
+        } else if (result.error?.includes('type')) {
           errorMsg = 'Type de fichier non supporté (uniquement JPEG, PNG, WebP, GIF)';
         }
-        
+
         setUploadError(errorMsg);
         throw new Error(errorMsg);
       }
 
-      console.log('Upload successful:', data);
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('centres')
-        .getPublicUrl(fileName);
-
-      console.log('Public URL:', publicUrl);
+      console.log('Upload successful, public URL:', result.url);
       setUploadError(""); // Clear any previous errors
-      return publicUrl;
+      return result.url!;
     } catch (error) {
       console.error('Upload function error:', error);
       const errorMsg = `Erreur lors de l'upload: ${error instanceof Error ? error.message : 'Erreur inconnue'}`;
@@ -186,7 +163,7 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
       if (imageFile && uploadMode === "upload") {
         setIsUploading(true);
         try {
-          imageUrl = await uploadImage(imageFile);
+          imageUrl = await uploadCentreImage(imageFile);
         } catch (error) {
           console.error('Image upload failed:', error);
           throw new Error(`Erreur d'upload d'image: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
@@ -201,26 +178,17 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         address: data.address || null,
         phone: data.phone || null,
         email: data.email || null,
-        image_url: imageUrl || null,
-        tag_id: data.tag_id === "none" ? null : data.tag_id,
-        video_id: data.video_id === "none" ? null : data.video_id,
-        sort_order: data.sort_order,
+        imageUrl: imageUrl || null,
+        tagId: data.tag_id === "none" ? null : data.tag_id,
+        videoId: data.video_id === "none" ? null : data.video_id,
+        sortOrder: data.sort_order,
         active: data.active,
       };
 
       if (isEditing && centre) {
-        const { error } = await supabase
-          .from('centres')
-          .update(centreData)
-          .eq('id', centre.id);
-        
-        if (error) throw error;
+        await updateRecord(centres, centre.id, centreData);
       } else {
-        const { error } = await supabase
-          .from('centres')
-          .insert([centreData]);
-        
-        if (error) throw error;
+        await createRecord(centres, centreData);
       }
     },
     onSuccess: () => {

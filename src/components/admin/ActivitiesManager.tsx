@@ -6,11 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { getActivities, deleteRecord } from "@/lib/db/queries";
+import { activities } from "@/lib/db/schema";
 import { ActivityFormModal } from "./ActivityFormModal";
 
-type Activity = Tables<"activities">;
+// Define Activity type locally
+interface Activity {
+  id: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  videoId: string | null;
+  photoId: string | null;
+  tagId: string | null;
+  sortOrder: number | null;
+  active: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const ActivitiesManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,29 +34,13 @@ export const ActivitiesManager = () => {
   const { data: activities, isLoading } = useQuery({
     queryKey: ["activities"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("activities")
-        .select(`
-          *,
-          videos(title),
-          photos(title),
-          tags(name, color)
-        `)
-        .order("sort_order");
-      
-      if (error) throw error;
-      return data;
+      return await getActivities();
     },
   });
 
   const deleteActivity = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("activities")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
+      await deleteRecord(activities, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });

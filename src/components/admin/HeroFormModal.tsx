@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getTags } from "@/lib/db/queries";
+import * as schema from "@/lib/db/schema";
+import { uploadImage } from "@/lib/storage/r2";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -50,39 +52,26 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
   const { data: tags = [], isLoading: tagsLoading, error: tagsError } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      console.log('Fetching tags...');
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      console.log('Tags query result:', { data, error });
-      if (error) {
-        console.error('Tags fetch error:', error);
-        throw error;
-      }
-      return data;
+      return await getTags();
     }
   });
-
-  console.log('Tags in component:', tags);
 
   // Set form values when editing
   useEffect(() => {
     if (hero) {
-      let tagIds = [];
+      let tagIds: string[] = [];
       
       // Handle both JSON string and array formats
-      if (hero.tag_ids) {
-        if (typeof hero.tag_ids === 'string') {
+      if (hero.tagIds) {
+        if (typeof hero.tagIds === 'string') {
           try {
-            tagIds = JSON.parse(hero.tag_ids);
+            tagIds = JSON.parse(hero.tagIds);
           } catch (e) {
-            console.error('Error parsing hero tag_ids:', e);
+            console.error('Error parsing hero tagIds:', e);
             tagIds = [];
           }
-        } else if (Array.isArray(hero.tag_ids)) {
-          tagIds = hero.tag_ids;
+        } else if (Array.isArray(hero.tagIds)) {
+          tagIds = hero.tagIds;
         }
       }
       
@@ -92,8 +81,18 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
         subtitle: hero.subtitle || "",
         image: null,
         tag_ids: tagIds,
-        sort_order: hero.sort_order || 0,
-        active: hero.active || false,
+        sort_order: hero.sortOrder || 0,
+        active: hero.active ?? true,
+      });
+    } else {
+      setSelectedTags([]);
+      form.reset({
+        title: "",
+        subtitle: "",
+        image: null,
+        tag_ids: [],
+        sort_order: 0,
+        active: true,
       });
     }
   }, [hero, form]);
@@ -106,48 +105,29 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
       // Upload image if provided
       if (data.image && data.image.length > 0) {
         const file = data.image[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('hero')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('hero')
-          .getPublicUrl(filePath);
-
-        imageUrl = publicUrl;
+        const result = await uploadImage(file, 'hero', 'hero');
+        if (!result.success) {
+          throw new Error(result.error || 'Upload failed');
+        }
+        imageUrl = result.url!;
       } else if (isEditing && hero) {
         // Keep existing image when editing
-        imageUrl = hero.image_url;
+        imageUrl = hero.imageUrl;
       }
 
       const heroData = {
         title: data.title,
         subtitle: data.subtitle || null,
-        image_url: imageUrl,
-        tag_ids: data.tag_ids, // Store as proper JSON array, not string
-        sort_order: data.sort_order,
+        imageUrl: imageUrl,
+        tagIds: data.tag_ids,
+        sortOrder: data.sort_order,
         active: data.active,
       };
 
       if (isEditing && hero) {
-        const { error } = await supabase
-          .from('hero')
-          .update(heroData)
-          .eq('id', hero.id);
-        
-        if (error) throw error;
+        await updateRecord(schema.hero, hero.id, heroData);
       } else {
-        const { error } = await supabase
-          .from('hero')
-          .insert([heroData]);
-        
-        if (error) throw error;
+        await createRecord(schema.hero, heroData);
       }
     },
     onSuccess: () => {
@@ -397,7 +377,7 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
                     <FormControl>
                       <HeroImageUpload
                         onChange={field.onChange}
-                        existingImage={hero?.image_url}
+                    existingImage={hero?.imageUrl}
                       />
                     </FormControl>
                     <FormMessage />

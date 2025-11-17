@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getCentres, deleteRecord, getTags } from "@/lib/db/queries";
+import { centres } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,13 +18,13 @@ export interface Centre {
   address: string | null;
   phone: string | null;
   email: string | null;
-  image_url: string | null;
-  tag_id: string | null;
-  video_id: string | null;
-  sort_order: number | null;
+  imageUrl: string | null;
+  tagId: string | null;
+  videoId: string | null;
+  sortOrder: number | null;
   active: boolean | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   hero?: {
     id: string;
     title: string;
@@ -54,59 +55,29 @@ const CentresManager = () => {
   const { data: centres = [], isLoading, refetch } = useQuery({
     queryKey: ['centres'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('centres')
-        .select(`
-          *,
-          videos (
-            id,
-            title,
-            video_type,
-            youtube_id
-          ),
-          directors (
-            id,
-            name,
-            job,
-            image_url
-          )
-        `)
-        .order('sort_order')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return (data as any[]).map((centre) => ({
-        id: centre.id,
-        name: centre.name,
-        description: centre.description ?? null,
-        address: centre.address ?? null,
-        phone: centre.phone ?? null,
-        email: centre.email ?? null,
-        image_url: centre.image_url ?? null,
-        tag_id: centre.tag_id ?? null,
-        video_id: centre.video_id ?? null,
-        sort_order: centre.sort_order ?? null,
-        active: centre.active ?? null,
-        created_at: centre.created_at,
-        updated_at: centre.updated_at,
-        videos: centre.videos ?? null,
-        directors: centre.directors ?? [],
-      })) as Centre[];
+      return await getCentres();
     }
   });
 
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  // Helper to safely compare text fields
+  const matchesSearch = (value?: string | null) =>
+    normalizedSearch === "" || (value && value.toLowerCase().includes(normalizedSearch));
+
   // Filter centres based on search term
-  const filteredCentres = centres.filter(centre =>
-    centre.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    centre.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    centre.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    centre.directors?.some(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredCentres = centres.filter(centre => {
+    const nameMatch = matchesSearch(centre.name);
+    const descriptionMatch = matchesSearch(centre.description);
+    const addressMatch = matchesSearch(centre.address);
+    const directorMatch = centre.directors?.some(d => matchesSearch(d.name)) ?? false;
+    return nameMatch || descriptionMatch || addressMatch || directorMatch;
+  });
 
   // Statistics
   const totalCentres = centres.length;
   const activeCentres = centres.filter(c => c.active).length;
-  const withVideos = centres.filter(c => c.video_id).length;
+  const withVideos = centres.filter(c => c.videoId || (c as any).video_id || c.videos).length;
 
   const handleEdit = (centre: Centre) => {
     setSelectedCentre(centre);
@@ -115,12 +86,7 @@ const CentresManager = () => {
 
   const handleDelete = async (centre: Centre) => {
     try {
-      const { error } = await supabase
-        .from('centres')
-        .delete()
-        .eq('id', centre.id);
-
-      if (error) throw error;
+      await deleteRecord(centres, centre.id);
 
       toast({
         title: "Centre supprimé",
@@ -210,6 +176,7 @@ const CentresManager = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onSearch={() => {}}
+        placeholder="Rechercher des centres..."
       />
 
       {/* Centres Grid */}
@@ -219,7 +186,7 @@ const CentresManager = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-lg">{centre.name}</CardTitle>
+                  <CardTitle className="text-lg">{centre.name || "Nom non renseigné"}</CardTitle>
                   <div className="flex items-center space-x-2 mt-1">
                     {centre.active ? (
                       <Badge variant="secondary" className="bg-green-100 text-green-700">
@@ -282,8 +249,10 @@ const CentresManager = () => {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {centre.description && (
+                {centre.description ? (
                   <p className="text-sm text-gray-600 line-clamp-2">{centre.description}</p>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">Description non renseignée</p>
                 )}
                 
                 {centre.address && (
@@ -329,11 +298,14 @@ const CentresManager = () => {
                   )}
                 </div>
 
-                {centre.sort_order !== null && (
+                {(() => {
+                  const orderValue = (centre as any).sortOrder ?? (centre as any).sort_order;
+                  return orderValue !== null && orderValue !== undefined ? (
                   <div className="text-xs text-gray-500">
-                    Ordre: {centre.sort_order}
+                      Ordre: {orderValue}
                   </div>
-                )}
+                  ) : null;
+                })()}
               </div>
             </CardContent>
           </Card>

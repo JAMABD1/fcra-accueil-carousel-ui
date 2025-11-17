@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { eq } from "drizzle-orm";
+import { sections } from "@/lib/db/schema";
+import { db } from "@/lib/db/client";
 import Layout from "@/components/Layout";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Button } from "@/components/ui/button";
@@ -16,17 +18,17 @@ import UniversitesSection from "@/components/UniversitesSection";
 import PartnersCarousel from "@/components/PartnersCarousel";
 import Counter from "@/components/Counter";
 import { fetchPhotosByTags } from "@/lib/utils";
+import { getTags, getImpactItems, getArticles, getPartners } from "@/lib/db/queries";
 
 interface Section {
   id: string;
   title: string;
   subtitle: string | null;
   description: string | null;
-  image_url: string;
+  image_url: string | null;
   hero_id: string | null;
-  hero_ids: string[];
   tag_name: string | null;
-  tag_ids: string[];
+  tag_ids: string[] | null;
   sort_order: number | null;
   active: boolean | null;
   created_at: string;
@@ -87,50 +89,9 @@ const SectionDetail = () => {
     queryKey: ['section', id],
     queryFn: async () => {
       if (!id) throw new Error('Section ID is required');
-      
-      const { data, error } = await supabase
-        .from('sections')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      
-      // Handle both JSON string and array formats for hero_ids and tag_ids
-      let heroIds = [];
-      let tagIds = [];
-      
-      if ((data as any).hero_ids) {
-        if (typeof (data as any).hero_ids === 'string') {
-          try {
-            heroIds = JSON.parse((data as any).hero_ids);
-          } catch (e) {
-            console.error('Error parsing hero_ids:', e);
-            heroIds = [];
-          }
-        } else if (Array.isArray((data as any).hero_ids)) {
-          heroIds = (data as any).hero_ids;
-        }
-      }
-      
-      if ((data as any).tag_ids) {
-        if (typeof (data as any).tag_ids === 'string') {
-          try {
-            tagIds = JSON.parse((data as any).tag_ids);
-          } catch (e) {
-            console.error('Error parsing tag_ids:', e);
-            tagIds = [];
-          }
-        } else if (Array.isArray((data as any).tag_ids)) {
-          tagIds = (data as any).tag_ids;
-        }
-      }
-      
-      return {
-        ...data,
-        hero_ids: heroIds,
-        tag_ids: tagIds,
-      } as Section;
+
+      const result = await db.select().from(sections).where(eq(sections.id, id)).limit(1);
+      return result[0];
     },
     enabled: !!id
   });
@@ -139,13 +100,7 @@ const SectionDetail = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Tag[];
+      return await getTags();
     }
   });
 
@@ -167,46 +122,41 @@ const SectionDetail = () => {
     queryFn: async () => {
       if (!section || !section.tag_ids || section.tag_ids.length === 0) return [];
       
-      const { data, error } = await supabase
-        .from('impact')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
+      const impacts = await getImpactItems(true);
       
-      if (error) throw error;
-      
-      // Process impacts to handle tag_ids properly
-      const processedImpacts = data.map((impact: any) => {
+      // Process impacts to handle tagIds properly
+      const processedImpacts = impacts.map((impact: any) => {
         let tagIds = [];
         
-        // Handle both JSON string and array formats for tag_ids
-        if (impact.tag_ids) {
-          if (typeof impact.tag_ids === 'string') {
+        // Handle both JSON string and array formats for tagIds (check both snake_case and camelCase)
+        const impactTagIds = impact.tag_ids || impact.tagIds;
+        if (impactTagIds) {
+          if (typeof impactTagIds === 'string') {
             try {
-              tagIds = JSON.parse(impact.tag_ids);
+              tagIds = JSON.parse(impactTagIds);
             } catch (e) {
-              console.error('Error parsing impact tag_ids:', e);
+              console.error('Error parsing impact tagIds:', e);
               tagIds = [];
             }
-          } else if (Array.isArray(impact.tag_ids)) {
-            tagIds = impact.tag_ids;
+          } else if (Array.isArray(impactTagIds)) {
+            tagIds = impactTagIds;
           }
         }
         
-        // If no tag_ids but has tags_id, add it to the array
-        if (tagIds.length === 0 && impact.tags_id) {
-          tagIds = [impact.tags_id];
+        // If no tagIds but has tagsId, add it to the array
+        if (tagIds.length === 0 && (impact.tags_id || impact.tagsId)) {
+          tagIds = [impact.tags_id || impact.tagsId];
         }
         
         return {
           ...impact,
-          tag_ids: tagIds,
+          tagIds: tagIds,
         };
       });
       
       // Filter impacts that share at least one tag with the section
       const filteredImpacts = processedImpacts.filter((impact: any) => {
-        return section.tag_ids.some(tagId => impact.tag_ids.includes(tagId));
+        return section.tag_ids.some(tagId => impact.tagIds.includes(tagId));
       });
       
       return filteredImpacts as Impact[];
@@ -220,14 +170,7 @@ const SectionDetail = () => {
     queryFn: async () => {
       if (!section || !section.tag_ids || section.tag_ids.length === 0) return [];
       
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(20); // Get more to filter, then limit to 6
-      
-      if (error) throw error;
+      const articles = await getArticles({ status: 'published', limit: 20 });
       
       // Get tag names from section
       const sectionTagNames = section.tag_ids
@@ -237,7 +180,7 @@ const SectionDetail = () => {
       if (sectionTagNames.length === 0) return [];
       
       // Filter articles that have at least one matching tag
-      const filteredArticles = data.filter((article: any) => {
+      const filteredArticles = articles.filter((article: any) => {
         const articleTags = article.tags || [];
         return sectionTagNames.some(tagName => 
           articleTags.includes(tagName)
@@ -298,9 +241,11 @@ const SectionDetail = () => {
   }
 
   // Get tag names for filtering heroes
-  const sectionTagNames = section?.tag_ids.map(tagId => 
-    tags.find(tag => tag.id === tagId)?.name
-  ).filter(Boolean) || [];
+  const sectionTagNames = (section?.tag_ids && Array.isArray(section.tag_ids))
+    ? section.tag_ids
+        .map(tagId => tags.find(tag => tag.id === tagId)?.name)
+        .filter(Boolean) as string[]
+    : [];
 
   return (
     <Layout>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getTags } from "@/lib/db/queries";
+import { partners } from "@/lib/db/schema";
+import { uploadImage } from "@/lib/storage/r2";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -61,13 +63,7 @@ const PartnerFormModal = ({ partner, isOpen, onClose }: PartnerFormModalProps) =
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
@@ -94,15 +90,15 @@ const PartnerFormModal = ({ partner, isOpen, onClose }: PartnerFormModalProps) =
         title: partner.title,
         subtitle: partner.subtitle || "",
         description: partner.description || "",
-        image_url: partner.image_url,
-        website_url: partner.website_url || "",
-        contact_email: partner.contact_email || "",
-        contact_phone: partner.contact_phone || "",
-        sort_order: partner.sort_order || 0,
+        image_url: partner.imageUrl,
+        website_url: partner.websiteUrl || "",
+        contact_email: partner.contactEmail || "",
+        contact_phone: partner.contactPhone || "",
+        sort_order: partner.sortOrder || 0,
         active: partner.active || true,
-        tag_ids: partner.tag_ids || [],
+        tag_ids: partner.tagIds || [],
       });
-      setSelectedTags(partner.tag_ids || []);
+      setSelectedTags(partner.tagIds || []);
     } else {
       form.reset({
         title: "",
@@ -124,25 +120,22 @@ const PartnerFormModal = ({ partner, isOpen, onClose }: PartnerFormModalProps) =
   const partnerMutation = useMutation({
     mutationFn: async (data: PartnerFormData) => {
       const partnerData = {
-        ...data,
-        tag_ids: selectedTags,
+        title: data.title,
+        subtitle: data.subtitle || null,
+        description: data.description || null,
+        imageUrl: data.image_url || null,
+        websiteUrl: data.website_url || null,
+        contactEmail: data.contact_email || null,
+        contactPhone: data.contact_phone || null,
+        sortOrder: data.sort_order,
+        active: data.active,
+        tagIds: selectedTags,
       };
 
       if (partner) {
-        // Update existing partner
-        const { error } = await supabase
-          .from('partners')
-          .update(partnerData)
-          .eq('id', partner.id);
-        
-        if (error) throw error;
+        await updateRecord(partners, partner.id, partnerData);
       } else {
-        // Create new partner
-        const { error } = await supabase
-          .from('partners')
-          .insert([partnerData]);
-        
-        if (error) throw error;
+        await createRecord(partners, partnerData);
       }
     },
     onSuccess: () => {
@@ -177,17 +170,12 @@ const PartnerFormModal = ({ partner, isOpen, onClose }: PartnerFormModalProps) =
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('partners')
-        .upload(filePath, file);
+      const result = await uploadImage(file, 'partners', 'partner');
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('partners')
-        .getPublicUrl(filePath);
-
-      form.setValue('image_url', publicUrl);
+      form.setValue('image_url', result.url!);
       toast({
         title: "Image uploadée",
         description: "L'image a été uploadée avec succès.",

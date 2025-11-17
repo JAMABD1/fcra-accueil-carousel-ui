@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getHeroItems, deleteRecord, getTags } from "@/lib/db/queries";
+import { hero } from "@/lib/db/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,12 +22,12 @@ export interface Hero {
   id: string;
   title: string;
   subtitle: string | null;
-  image_url: string;
-  tag_ids: string[];
-  sort_order: number | null;
+  imageUrl: string;
+  tagIds: string[] | string | null;
+  sortOrder: number | null;
   active: boolean | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   tags?: {
     id: string;
     name: string;
@@ -45,13 +46,7 @@ const HeroManager = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
@@ -59,51 +54,14 @@ const HeroManager = () => {
   const { data: heroes = [], isLoading } = useQuery({
     queryKey: ['heroes'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('hero')
-        .select('*')
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      
-      // Transform the data to match our interface
-      const transformedData = data.map((hero: any) => {
-        let tagIds = [];
-        
-        // Handle both JSON string and array formats
-        if (hero.tag_ids) {
-          if (typeof hero.tag_ids === 'string') {
-            try {
-              tagIds = JSON.parse(hero.tag_ids);
-            } catch (e) {
-              console.error('Error parsing tag_ids:', e);
-              tagIds = [];
-            }
-          } else if (Array.isArray(hero.tag_ids)) {
-            tagIds = hero.tag_ids;
-          }
-        }
-        
-        return {
-          ...hero,
-          tag_ids: tagIds,
-          tags: [], // We'll fetch these separately if needed
-        };
-      });
-      
-      return transformedData as Hero[];
+      return await getHeroItems();
     }
   });
 
   // Delete hero mutation
   const deleteHeroMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('hero')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteRecord(hero, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['heroes'] });
@@ -158,7 +116,7 @@ const HeroManager = () => {
     );
   };
 
-  const getTagsBadges = (tagIds: string[] | string) => {
+  const getTagsBadges = (tagIds: string[] | string | null) => {
     // Handle both array and string formats
     let processedTagIds: string[] = [];
     
@@ -310,7 +268,7 @@ const HeroManager = () => {
                       <TableCell>
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                           <img 
-                            src={hero.image_url} 
+                            src={hero.imageUrl} 
                             alt={hero.title}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -323,10 +281,10 @@ const HeroManager = () => {
                       <TableCell className="text-gray-600">
                         {hero.subtitle || 'Aucun sous-titre'}
                       </TableCell>
-                      <TableCell>{getTagsBadges(hero.tag_ids)}</TableCell>
-                      <TableCell>{hero.sort_order || 0}</TableCell>
+                      <TableCell>{getTagsBadges(hero.tagIds)}</TableCell>
+                      <TableCell>{hero.sortOrder || 0}</TableCell>
                       <TableCell>{getStatusBadge(hero.active)}</TableCell>
-                      <TableCell>{formatDate(hero.created_at)}</TableCell>
+                      <TableCell>{formatDate(hero.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button

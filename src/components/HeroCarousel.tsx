@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getHeroItems } from "@/lib/db/queries";
 
 const HeroCarousel = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -11,14 +11,7 @@ const HeroCarousel = () => {
   const { data: heroes = [], isLoading } = useQuery({
     queryKey: ['heroes-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('hero')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      return data;
+      return await getHeroItems(true);
     }
   });
 
@@ -29,7 +22,7 @@ const HeroCarousel = () => {
   ];
 
   const slides = heroes.map(hero => ({
-    image: hero.image_url,
+    image: hero.imageUrl,
     title: hero.title,
     subtitle: hero.subtitle || '',
     buttons: defaultButtons,

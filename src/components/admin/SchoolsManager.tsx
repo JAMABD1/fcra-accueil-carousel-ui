@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getSchools, deleteRecord } from "@/lib/db/queries";
+import { schools } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,15 +16,15 @@ export interface School {
   name: string;
   description: string | null;
   type: string;
-  image_url: string | null;
-  created_at: string;
-  updated_at: string;
-  tag_id: string | null;
-  video_id: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tagId: string | null;
+  videoId: string | null;
   active: boolean | null;
-  sort_order: number | null;
+  sortOrder: number | null;
   subtitle: string | null;
-  coordonne_id: string | null;
+  coordonneId: string | null;
   coordonnes?: {
     id: string;
     phone: string;
@@ -44,21 +45,7 @@ const SchoolsManager = () => {
   const { data: schools = [], isLoading, refetch } = useQuery({
     queryKey: ['schools-admin'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('schools')
-        .select(`
-          *,
-          coordonnes (
-            id,
-            phone,
-            email,
-            address
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as School[];
+      return await getSchools();
     }
   });
 
@@ -85,18 +72,13 @@ const SchoolsManager = () => {
 
   const handleDelete = async (school: School) => {
     try {
-      const { error } = await supabase
-        .from('schools')
-        .delete()
-        .eq('id', school.id);
-
-      if (error) throw error;
+      await deleteRecord(schools, school.id);
 
       toast({
         title: "École supprimée",
         description: "L'école a été supprimée avec succès.",
       });
-      
+
       refetch();
     } catch (error) {
       console.error('Error deleting school:', error);

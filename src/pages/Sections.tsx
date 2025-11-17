@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getSections, getTags } from "@/lib/db/queries";
 import Layout from "@/components/Layout";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,10 @@ interface Section {
   title: string;
   subtitle: string | null;
   description: string | null;
-  image_url: string;
+  image_url: string | null;
   hero_id: string | null;
-  hero_ids: string[];
   tag_name: string | null;
-  tag_ids: string[];
+  tag_ids: string[] | null;
   sort_order: number | null;
   active: boolean | null;
   created_at: string;
@@ -37,51 +36,7 @@ const Sections = () => {
   const { data: sections = [], isLoading: sectionsLoading } = useQuery({
     queryKey: ['sections-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sections')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      
-      // Process sections to handle JSON fields
-      return data.map((section: any) => {
-        let heroIds = [];
-        let tagIds = [];
-        
-        if (section.hero_ids) {
-          if (typeof section.hero_ids === 'string') {
-            try {
-              heroIds = JSON.parse(section.hero_ids);
-            } catch (e) {
-              console.error('Error parsing hero_ids:', e);
-              heroIds = [];
-            }
-          } else if (Array.isArray(section.hero_ids)) {
-            heroIds = section.hero_ids;
-          }
-        }
-        
-        if (section.tag_ids) {
-          if (typeof section.tag_ids === 'string') {
-            try {
-              tagIds = JSON.parse(section.tag_ids);
-            } catch (e) {
-              console.error('Error parsing tag_ids:', e);
-              tagIds = [];
-            }
-          } else if (Array.isArray(section.tag_ids)) {
-            tagIds = section.tag_ids;
-          }
-        }
-        
-        return {
-          ...section,
-          hero_ids: heroIds,
-          tag_ids: tagIds,
-        };
-      }) as Section[];
+      return await getSections();
     }
   });
 
@@ -89,13 +44,7 @@ const Sections = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Tag[];
+      return await getTags();
     }
   });
 
@@ -150,9 +99,19 @@ const Sections = () => {
 
   // Get all unique tag names for hero filtering
   const allTagNames = sections.reduce((acc: string[], section) => {
-    const sectionTagNames = section.tag_ids
-      .map(tagId => tags.find(tag => tag.id === tagId)?.name)
-      .filter(Boolean) as string[];
+    const sectionTagNames: string[] = [];
+    
+    // Handle tag_ids array (may be undefined or null)
+    if (section.tag_ids && Array.isArray(section.tag_ids)) {
+      section.tag_ids
+        .map(tagId => tags.find(tag => tag.id === tagId)?.name)
+        .filter(Boolean)
+        .forEach(name => {
+          if (name && !sectionTagNames.includes(name)) {
+            sectionTagNames.push(name);
+          }
+        });
+    }
     
     if (section.tag_name) {
       sectionTagNames.push(section.tag_name);
@@ -195,9 +154,13 @@ const Sections = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {sections.map((section) => (
               <Card key={section.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-48 bg-cover bg-center" style={{
-                  backgroundImage: `url(${section.image_url})`
-                }}></div>
+                <div className="h-48 bg-cover bg-center bg-gray-200 flex items-center justify-center" style={{
+                  backgroundImage: section.image_url ? `url(${section.image_url})` : undefined
+                }}>
+                  {!section.image_url && (
+                    <Layers className="h-12 w-12 text-gray-400" />
+                  )}
+                </div>
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
                   {section.subtitle && (

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getSchools } from "@/lib/db/queries";
 import { Link } from "react-router-dom";
 import { MapPin, GraduationCap, BookOpen, Building2 } from "lucide-react";
 
@@ -15,15 +15,15 @@ interface School {
   name: string;
   description: string | null;
   type: string;
-  image_url: string | null;
-  created_at: string;
-  updated_at: string;
-  tag_id: string | null;
-  video_id: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tagId: string | null;
+  videoId: string | null;
   active: boolean | null;
-  sort_order: number | null;
+  sortOrder: number | null;
   subtitle: string | null;
-  coordonne_id: string | null;
+  coordonneId: string | null;
 }
 
 const Ecoles = () => {
@@ -31,15 +31,7 @@ const Ecoles = () => {
   const { data: schools = [], isLoading } = useQuery({
     queryKey: ['schools-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as any[];
+      return await getSchools({ status: 'published' });
     }
   });
 

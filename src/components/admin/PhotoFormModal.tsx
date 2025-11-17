@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord } from "@/lib/db/queries";
+import { uploadImage } from "@/lib/storage/r2";
+import { photos } from "@/lib/db/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -122,26 +124,6 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
     setCurrentImages((imgs) => imgs.filter((_, i) => i !== index));
   };
 
-  const uploadFile = async (file: File, bucket: string, path: string) => {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
-
-    return publicUrl;
-  };
-
   const savePhotoMutation = useMutation({
     mutationFn: async (data: PhotoFormData) => {
       setIsUploading(true);
@@ -159,9 +141,12 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
           
           for (let i = 0; i < selectedFiles.length; i++) {
             const file = selectedFiles[i];
-            const imagePath = `images/${Date.now()}-${i}-${file.name}`;
-            const uploadedUrl = await uploadFile(file, 'photos', imagePath);
-            uploadedUrls.push(uploadedUrl);
+            const result = await uploadImage(file, 'photos/images', 'photo-');
+            if (!result.success || !result.url) {
+              console.error('Upload error:', result.error);
+              throw new Error(result.error || 'Upload failed');
+            }
+            uploadedUrls.push(result.url);
             
             // Update progress
             setUploadProgress(Math.round(((i + 1) / totalFiles) * 80));
@@ -185,29 +170,20 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         const photoData = {
           title: data.title,
           description: data.description || null,
-          image_url: mainImageUrl!,
-          thumbnail_url: finalImages[0] || photo?.thumbnail_url,
+          imageUrl: mainImageUrl!,
+          thumbnailUrl: finalImages[0] || photo?.thumbnail_url,
           images: finalImages,
           category: data.category,
           featured: data.featured,
           status: data.status,
-          tag_ids: data.tag_ids.length > 0 ? data.tag_ids : null,
-          published_at: data.published_at ? format(data.published_at, 'yyyy-MM-dd') : null,
+          tagIds: data.tag_ids.length > 0 ? data.tag_ids : null,
+          publishedAt: data.published_at ? new Date(data.published_at) : null,
         };
 
         if (photo) {
-          const { error } = await supabase
-            .from("photos")
-            .update(photoData)
-            .eq("id", photo.id);
-          
-          if (error) throw error;
+          await updateRecord(photos, photo.id, photoData);
         } else {
-          const { error } = await supabase
-            .from("photos")
-            .insert([photoData]);
-          
-          if (error) throw error;
+          await createRecord(photos, photoData);
         }
 
         setUploadProgress(100);

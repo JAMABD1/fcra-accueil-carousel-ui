@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getPartners } from "@/lib/db/queries";
 import { 
   Carousel, 
   CarouselContent, 
@@ -15,15 +15,15 @@ interface Partner {
   title: string;
   subtitle: string | null;
   description: string | null;
-  image_url: string;
-  tag_ids: string[] | null;
-  sort_order: number | null;
+  imageUrl: string;
+  tagIds: string[] | null;
+  sortOrder: number | null;
   active: boolean | null;
-  website_url: string | null;
-  contact_email: string | null;
-  contact_phone: string | null;
-  created_at: string;
-  updated_at: string;
+  websiteUrl: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Tag {
@@ -49,14 +49,7 @@ const PartnersCarousel = ({
   const { data: partners = [], isLoading } = useQuery({
     queryKey: ['partners-public', filterTags],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('partners')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      return data as Partner[];
+      return await getPartners();
     }
   });
 
@@ -64,13 +57,8 @@ const PartnersCarousel = ({
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Tag[];
+      const { getTags } = await import("@/lib/db/queries");
+      return await getTags();
     }
   });
 
@@ -78,7 +66,7 @@ const PartnersCarousel = ({
   const filteredPartners = partners.filter(partner => {
     if (filterTags.length === 0) return true;
     
-    const partnerTagNames = partner.tag_ids
+    const partnerTagNames = partner.tagIds
       ?.map(tagId => tags.find(tag => tag.id === tagId)?.name)
       .filter(Boolean) || [];
     
@@ -139,13 +127,13 @@ const PartnersCarousel = ({
               <CarouselItem key={partner.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                 <div 
                   className="text-center cursor-pointer hover:scale-105 transition-transform duration-300"
-                  onClick={() => partner.website_url && window.open(partner.website_url, '_blank')}
+                  onClick={() => partner.websiteUrl && window.open(partner.websiteUrl, '_blank')}
                 >
                   {/* Partner Logo - Large Round Image */}
                   <div className="mb-6">
                     <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
                       <img 
-                        src={partner.image_url}   
+                        src={partner.imageUrl}   
                         alt={partner.title}
                         className="w-full h-full object-cover"
                       />

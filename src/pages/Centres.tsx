@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { getCentres } from "@/lib/db/queries";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,34 +88,25 @@ const Centres = () => {
   const { data: dbCentres = [], isLoading, error } = useQuery({
     queryKey: ['centres-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('centres')
-        .select(`
-          *,
-          videos (
-            id,
-            title,
-            video_type,
-            youtube_id
-          ),
-          directors (
-            id,
-            name,
-            job,
-            image_url
-          )
-        `)
-        .eq('active', true)
-        .order('sort_order')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as DatabaseCenter[];
+      return await getCentres();
     }
   });
 
   // Transform database centres to match the expected format
-  const centers: Center[] = dbCentres.map((centre, index) => {
+  const centers: Center[] = dbCentres.map((centreData: any, index) => {
+    const centre: DatabaseCenter = {
+      ...centreData,
+      image_url: centreData.image_url ?? centreData.imageUrl ?? "/placeholder.svg",
+      hero: centreData.hero ?? null,
+      videos: centreData.videos ?? null,
+      directors: centreData.directors ?? [],
+    };
+    const videos = centre.videos;
+    const directors = (centre.directors || []).map((d) => ({
+      ...d,
+      image_url: d.image_url ?? (d as any).imageUrl ?? "/placeholder.svg",
+    }));
+
     // Generate mock coordinates based on centre name or index
     const getCoordinates = (name: string, index: number) => {
       if (name.toLowerCase().includes('antananarivo')) return { x: 430, y: 205 };
@@ -129,21 +120,35 @@ const Centres = () => {
 
     return {
       id: centre.id,
-      name: centre.name,
+      name: centre.name || "Centre sans nom",
       description: centre.description || "Centre de développement communautaire",
-      image_url: centre.image_url || "/placeholder.svg",
+      image_url: centre.image_url,
       services: ["Éducation", "Formation", "Aide sociale"], // Default services
       beneficiaries: Math.floor(Math.random() * 300) + 100, // Mock data
       programs: Math.floor(Math.random() * 10) + 5, // Mock data
       location: centre.address || "Madagascar",
-      coordinates: getCoordinates(centre.name, index),
+      coordinates: getCoordinates(centre.name || "", index),
       contact: {
         phone: centre.phone || "+261 20 22 123 45",
         email: centre.email || "contact@fcra.mg",
         address: centre.address || "Madagascar"
       },
-      images: centre.hero?.image_url ? [centre.hero.image_url] : ["/placeholder.svg"],
-      video: centre.videos?.youtube_id ? `https://www.youtube.com/embed/${centre.videos.youtube_id}` : undefined,
+      images: [
+        centre.hero?.image_url ??
+          (centre.hero as any)?.imageUrl ??
+          centre.image_url ??
+          "/placeholder.svg",
+      ],
+      video: (() => {
+        const youtubeId = videos
+          ? (videos as any).youtube_id ?? (videos as any).youtubeId
+          : undefined;
+        if (youtubeId) {
+          return `https://www.youtube.com/embed/${youtubeId}`;
+        }
+        const videoUrl = (videos as any)?.videoUrl;
+        return videoUrl ? videoUrl : undefined;
+      })(),
       fullDescription: centre.description || "Ce centre propose une approche holistique du développement communautaire.",
       achievements: [
         "Programmes de formation professionnelle",
@@ -151,7 +156,7 @@ const Centres = () => {
         "Partenariats avec les entreprises locales",
         "Centre de santé communautaire"
       ],
-      directors: centre.directors || []
+      directors
     };
   });
 
@@ -350,7 +355,10 @@ const Centres = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Dynamic History Component */}
                 {(() => {
-                  const sortOrder = dbCentres.find(c => c.id === selectedCenter.id)?.sort_order || 1;
+                  const sortOrder =
+                    dbCentres.find((c: any) => c.id === selectedCenter.id)?.sort_order ??
+                    dbCentres.find((c: any) => c.id === selectedCenter.id)?.sortOrder ??
+                    1;
                   switch (sortOrder) {
                     case 1:
                       return <CenterHistory1 />;

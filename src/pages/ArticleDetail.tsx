@@ -1,6 +1,8 @@
 import { useParams, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { eq } from "drizzle-orm";
+import { articles } from "@/lib/db/schema";
+import { db } from "@/lib/db/client";
 import Layout from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,18 +51,12 @@ const ArticleDetail = () => {
   const imagesRef = useRef<HTMLDivElement | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi | undefined>(undefined);
 
-  // Fetch article from Supabase
+  // Fetch article from database
   const { data: article, isLoading } = useQuery({
     queryKey: ['article', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return data as Article;
+      const result = await db.select().from(articles).where(eq(articles.id, id!)).limit(1);
+      return result[0] as Article;
     },
     enabled: !!id
   });
@@ -69,12 +65,8 @@ const ArticleDetail = () => {
   const { data: allTags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name')
-        .order('name');
-      if (error) throw error;
-      return data as { id: string; name: string }[];
+      const { getTags } = await import("@/lib/db/queries");
+      return await getTags();
     }
   });
 

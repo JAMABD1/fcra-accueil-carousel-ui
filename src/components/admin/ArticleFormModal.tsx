@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { getTags, createRecord, updateRecord } from "@/lib/db/queries";
+import { uploadImage } from "@/lib/storage/r2";
+import { articles } from "@/lib/db/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -88,12 +90,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
   const { data: allTags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, color')
-        .order('name');
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
@@ -105,21 +102,11 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
       // Upload images if provided
       if (data.images && data.images.length > 0) {
         const uploadPromises = Array.from(data.images).map(async (file) => {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
-          const filePath = `${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('article-images')
-            .upload(filePath, file);
-
-          if (uploadError) throw uploadError;
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('article-images')
-            .getPublicUrl(filePath);
-
-          return publicUrl;
+          const result = await uploadImage(file, 'articles', 'article');
+          if (!result.success) {
+            throw new Error(result.error || 'Upload failed');
+          }
+          return result.url!;
         });
 
         imageUrls = await Promise.all(uploadPromises);
@@ -138,22 +125,13 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         tags: data.tags, // should be array of IDs
         featured: data.featured,
         status: data.status,
-        published_at: data.published_at ? new Date(data.published_at).toISOString() : null,
+        publishedAt: data.published_at ? new Date(data.published_at) : null,
       };
 
       if (isEditing && article) {
-        const { error } = await supabase
-          .from('articles')
-          .update(articleData)
-          .eq('id', article.id);
-        
-        if (error) throw error;
+        await updateRecord(articles, article.id, articleData);
       } else {
-        const { error } = await supabase
-          .from('articles')
-          .insert([articleData]);
-        
-        if (error) throw error;
+        await createRecord(articles, articleData);
       }
     },
     onSuccess: () => {

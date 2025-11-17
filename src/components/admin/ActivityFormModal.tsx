@@ -10,12 +10,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { createRecord, updateRecord, getTags, getVideos, getPhotos } from "@/lib/db/queries";
+import { activities } from "@/lib/db/schema";
 import SimpleMDE from "react-simplemde-editor";
 import "easymde/dist/easymde.min.css";
 
-type Activity = Tables<"activities">;
+// Define Activity type locally
+interface Activity {
+  id: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  videoId: string | null;
+  photoId: string | null;
+  tagId: string | null;
+  sortOrder: number | null;
+  active: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface ActivityFormModalProps {
   isOpen: boolean;
@@ -47,40 +60,23 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   // Remove fetching of sections
 
   const { data: videos } = useQuery({
-    queryKey: ["videos"],
+    queryKey: ["videos-active"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("videos")
-        .select("id, title")
-        .eq("status", "published")
-        .order("title");
-      if (error) throw error;
-      return data;
+      return await getVideos({ status: 'published' });
     },
   });
 
   const { data: photos } = useQuery({
-    queryKey: ["photos"],
+    queryKey: ["photos-active"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("photos")
-        .select("id, title")
-        .eq("status", "published")
-        .order("title");
-      if (error) throw error;
-      return data;
+      return await getPhotos({ status: 'published' });
     },
   });
 
   const { data: tags } = useQuery({
     queryKey: ["tags"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tags")
-        .select("id, name")
-        .order("name");
-      if (error) throw error;
-      return data;
+      return await getTags();
     },
   });
 
@@ -127,17 +123,21 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         description: data.description || null,
       };
 
+      const activityData = {
+        title: payload.title,
+        content: payload.content || null,
+        description: payload.description || null,
+        videoId: payload.video_id === "none" ? null : payload.video_id,
+        photoId: payload.photo_id === "none" ? null : payload.photo_id,
+        tagId: payload.tag_id === "none" ? null : payload.tag_id,
+        sortOrder: payload.sort_order,
+        active: payload.active,
+      };
+
       if (isEditing) {
-        const { error } = await supabase
-          .from("activities")
-          .update(payload)
-          .eq("id", activity.id);
-        if (error) throw error;
+        await updateRecord(activities, activity.id, activityData);
       } else {
-        const { error } = await supabase
-          .from("activities")
-          .insert(payload);
-        if (error) throw error;
+        await createRecord(activities, activityData);
       }
     },
     onSuccess: () => {

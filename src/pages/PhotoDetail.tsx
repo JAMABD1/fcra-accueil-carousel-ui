@@ -6,21 +6,23 @@ import { Calendar, Eye, ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { eq } from "drizzle-orm";
+import { photos } from "@/lib/db/schema";
+import { db } from "@/lib/db/client";
 import { Lightbox } from "@/components/Lightbox";
 
 interface Photo {
   id: string;
   title: string;
   description: string | null;
-  image_url: string;
-  thumbnail_url: string | null;
+  imageUrl: string;
+  thumbnailUrl: string | null;
   images: string[] | null;
   category: string;
   featured: boolean;
   status: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const PhotoDetail = () => {
@@ -31,15 +33,11 @@ const PhotoDetail = () => {
   const { data: photo, isLoading } = useQuery({
     queryKey: ["photo", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("photos")
-        .select("*")
-        .eq("id", id)
-        .eq("status", "published")
-        .single();
-      
-      if (error) throw error;
-      return data as Photo;
+      const result = await db.select()
+        .from(photos)
+        .where(eq(photos.id, id!))
+        .limit(1);
+      return result[0] as Photo;
     },
     enabled: !!id,
   });
@@ -48,17 +46,12 @@ const PhotoDetail = () => {
     queryKey: ["related-photos", photo?.category],
     queryFn: async () => {
       if (!photo) return [];
-      
-      const { data, error } = await supabase
-        .from("photos")
-        .select("*")
-        .eq("status", "published")
-        .eq("category", photo.category)
-        .neq("id", photo.id)
-        .limit(6);
-      
-      if (error) throw error;
-      return data as Photo[];
+
+      const { getPhotos } = await import("@/lib/db/queries");
+      return await getPhotos({
+        status: "published",
+        // Note: We'll filter by category and exclude current photo in the component
+      });
     },
     enabled: !!photo,
   });

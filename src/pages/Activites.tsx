@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getActivities } from "@/lib/db/queries";
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,19 +42,7 @@ const Activites = () => {
   const { data: activities = [], isLoading, error } = useQuery({
     queryKey: ['activities-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('activities')
-        .select(`
-          *,
-          videos(id, title),
-          photos(id, title),
-          tags!tag_id(id, name, color)
-        `)
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      return data;
+      return await getActivities();
     }
   });
 

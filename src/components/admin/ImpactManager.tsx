@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getImpactItems, deleteRecord, getTags } from "@/lib/db/queries";
+import { impact } from "@/lib/db/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,12 @@ export interface Impact {
   number: number;
   title: string;
   subtitle: string | null;
-  tags_id: string | null;
-  tag_ids: string[];
-  sort_order: number | null;
+  tagsId: string | null;
+  tagIds: string[];
+  sortOrder: number | null;
   active: boolean | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   tags?: {
     id: string;
     name: string;
@@ -51,28 +52,7 @@ const ImpactManager = () => {
   const { data: impacts = [], isLoading } = useQuery({
     queryKey: ['impacts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('impact')
-        .select(`
-          *,
-          tags:tags_id (
-            id,
-            name,
-            color
-          )
-        `)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      
-      // Transform the data to match our interface
-      const transformedData = data.map((impact: any) => ({
-        ...impact,
-        tag_ids: impact.tag_ids || [],
-        tagsMultiple: [], // We'll fetch these separately if needed
-      }));
-      
-      return transformedData as Impact[];
+      return await getImpactItems();
     }
   });
 
@@ -80,24 +60,14 @@ const ImpactManager = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
   // Delete impact mutation
   const deleteImpactMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('impact')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteRecord(impact, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['impacts'] });
@@ -328,11 +298,11 @@ const ImpactManager = () => {
                         {impact.subtitle || 'Aucun sous-titre'}
                       </TableCell>
                       <TableCell>
-                        {getTagsBadges(impact.tag_ids, impact.tags)}
+                        {getTagsBadges(impact.tagIds, impact.tags)}
                       </TableCell>
-                      <TableCell>{impact.sort_order || 0}</TableCell>
+                      <TableCell>{impact.sortOrder || 0}</TableCell>
                       <TableCell>{getStatusBadge(impact.active)}</TableCell>
-                      <TableCell>{formatDate(impact.created_at)}</TableCell>
+                      <TableCell>{formatDate(impact.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button

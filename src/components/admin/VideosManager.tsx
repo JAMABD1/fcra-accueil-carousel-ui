@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Search, Edit, Trash2, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { getVideos, deleteRecord } from "@/lib/db/queries";
+import { videos as videosTable } from "@/lib/db/schema";
 import { useToast } from "@/hooks/use-toast";
 import VideoFormModal from "./VideoFormModal";
 
@@ -53,12 +54,7 @@ const VideosManager = () => {
 
   const fetchVideos = async () => {
     try {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await getVideos({ status: undefined }); // Get all videos
       setVideos(data || []);
     } catch (error) {
       console.error('Error fetching videos:', error);
@@ -75,10 +71,7 @@ const VideosManager = () => {
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const { data, error } = await supabase
-          .from('tags')
-          .select('*');
-        if (error) throw error;
+        const data = await getTags();
         setAllTags(data || []);
       } catch (error) {
         console.error('Error fetching tags:', error);
@@ -97,18 +90,13 @@ const VideosManager = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette vidéo ?')) {
       try {
-        const { error } = await supabase
-          .from('videos')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
+        await deleteRecord(videosTable, id);
 
         toast({
           title: "Succès",
           description: "Vidéo supprimée avec succès",
         });
-        
+
         fetchVideos();
       } catch (error) {
         console.error('Error deleting video:', error);

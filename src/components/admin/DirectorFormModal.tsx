@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getCentres } from "@/lib/db/queries";
+import { directors } from "@/lib/db/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -19,9 +20,9 @@ interface DirectorFormData {
   job: string;
   responsibility: string;
   image: FileList | null;
-  centre_id: string;
-  is_director: boolean;
-  sort_order: number;
+  centreId: string;
+  isDirector: boolean;
+  sortOrder: number;
   active: boolean;
 }
 
@@ -41,9 +42,9 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
       job: "",
       responsibility: "",
       image: null,
-      centre_id: "none",
-      is_director: false,
-      sort_order: 0,
+      centreId: "none",
+      isDirector: false,
+      sortOrder: 0,
       active: true,
     },
   });
@@ -52,14 +53,7 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
   const { data: centres = [] } = useQuery({
     queryKey: ['centres'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('centres')
-        .select('id, name')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      return await getCentres();
     }
   });
 
@@ -71,9 +65,9 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
         job: director.job || "",
         responsibility: director.responsibility || "",
         image: null,
-        centre_id: director.centre_id || "none",
-        is_director: director.is_director || false,
-        sort_order: director.sort_order || 0,
+        centreId: director.centreId || "none",
+        isDirector: director.isDirector || false,
+        sortOrder: director.sortOrder || 0,
         active: director.active || false,
       });
     }
@@ -83,33 +77,20 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
   const saveDirectorMutation = useMutation({
     mutationFn: async (data: DirectorFormData) => {
       let imageUrl = "";
-      
+
       // Upload image if provided
       if (data.image && data.image.length > 0) {
         console.log('Uploading director image...');
-        const file = data.image[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('directors')
-          .upload(filePath, file);
-
-        if (uploadError) {
-          console.error('Image upload error:', uploadError);
-          throw uploadError;
+        const { uploadImage } = await import("@/lib/storage/r2");
+        const result = await uploadImage(data.image[0], 'directors', 'director');
+        if (!result.success) {
+          throw new Error(result.error || 'Image upload failed');
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('directors')
-          .getPublicUrl(filePath);
-
-        imageUrl = publicUrl;
+        imageUrl = result.url!;
         console.log('Director image uploaded successfully:', imageUrl);
       } else if (isEditing && director) {
         // Keep existing image when editing
-        imageUrl = director.image_url || "";
+        imageUrl = director.imageUrl || "";
         console.log('Keeping existing director image:', imageUrl);
       }
 
@@ -117,10 +98,10 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
         name: data.name,
         job: data.job || null,
         responsibility: data.responsibility || null,
-        image_url: imageUrl || null,
-        centre_id: !data.centre_id || data.centre_id === "none" ? null : data.centre_id,
-        is_director: data.is_director,
-        sort_order: data.sort_order,
+        imageUrl: imageUrl || null,
+        centreId: !data.centreId || data.centreId === "none" ? null : data.centreId,
+        isDirector: data.isDirector,
+        sortOrder: data.sortOrder,
         active: data.active,
       };
 
@@ -130,25 +111,10 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
         if (!director.id) {
           throw new Error('Invalid director id for update');
         }
-        const { error } = await supabase
-          .from('directors')
-          .update(directorData)
-          .eq('id', director.id);
-        
-        if (error) {
-          console.error('Director update error:', error);
-          throw error;
-        }
+        await updateRecord(directors, director.id, directorData);
         console.log('Director updated successfully');
       } else {
-        const { error } = await supabase
-          .from('directors')
-          .insert([directorData]);
-        
-        if (error) {
-          console.error('Director insert error:', error);
-          throw error;
-        }
+        await createRecord(directors, directorData);
         console.log('Director created successfully');
       }
     },
@@ -275,7 +241,7 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
                   {/* Centre Selection */}
                   <FormField
                     control={form.control}
-                    name="centre_id"
+                    name="centreId"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Centre assigné</FormLabel>
@@ -302,7 +268,7 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
                   {/* Order */}
                   <FormField
                     control={form.control}
-                    name="sort_order"
+                    name="sortOrder"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Ordre d'affichage</FormLabel>
@@ -335,7 +301,7 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
                         <FormControl>
                           <DirectorImageUpload
                             onImageChange={field.onChange}
-                            existingImage={director?.image_url}
+                            existingImage={director?.imageUrl}
                           />
                         </FormControl>
                         <FormMessage />
@@ -354,7 +320,7 @@ const DirectorFormModal = ({ director, onClose }: DirectorFormModalProps) => {
                   {/* Is Director */}
                   <FormField
                     control={form.control}
-                    name="is_director"
+                    name="isDirector"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">

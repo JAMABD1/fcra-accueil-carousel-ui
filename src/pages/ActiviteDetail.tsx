@@ -1,6 +1,5 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import { getActivityWithRelations } from "@/lib/db/queries";
 
 // Function to process markdown content and fix only broken markdown syntax
 const processMarkdownContent = (content: string): string => {
@@ -42,35 +42,14 @@ const ActiviteDetail = () => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Fetch activity from Supabase
+  // Fetch activity from database
   const { data: activity, isLoading } = useQuery({
     queryKey: ['activity', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('activities')
-        .select(`*, videos(*), photos(*), tags(*)`)
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      return data;
+      if (!id) return null;
+      return await getActivityWithRelations(id);
     },
     enabled: !!id
-  });
-
-  // Fetch photo group if activity.photo_id exists
-  const { data: photoGroup } = useQuery({
-    queryKey: ["photo-group", activity?.photo_id],
-    queryFn: async () => {
-      if (!activity?.photo_id) return null;
-      const { data, error } = await supabase
-        .from("photos")
-        .select("*")
-        .eq("id", activity.photo_id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!activity?.photo_id,
   });
 
   if (isLoading) {
@@ -160,14 +139,14 @@ const ActiviteDetail = () => {
               )}
             </div>
           )}
-          {activity.photo_id && photoGroup && photoGroup.images && photoGroup.images.length > 0 && (
+          {activity.photoGroup && activity.photoGroup.images && activity.photoGroup.images.length > 0 && (
             <div className="mb-6">
               <div className="flex gap-4 overflow-x-auto pb-2">
-                {photoGroup.images.map((imageUrl: string, idx: number) => (
+                {activity.photoGroup.images.map((imageUrl: string, idx: number) => (
                   <img
                     key={idx}
                     src={imageUrl}
-                    alt={photoGroup.title}
+                    alt={activity.photoGroup.title}
                     className="h-48 w-auto rounded shadow cursor-pointer object-cover"
                     onClick={() => {
                       setCurrentImageIndex(idx);
@@ -180,11 +159,11 @@ const ActiviteDetail = () => {
                 <p className="text-gray-600 text-sm mb-2">{activity.photo_description}</p>
               )}
               <Lightbox
-                images={photoGroup.images}
+                images={activity.photoGroup.images}
                 isOpen={isLightboxOpen}
                 onClose={() => setIsLightboxOpen(false)}
                 initialIndex={currentImageIndex}
-                title={photoGroup.title}
+                title={activity.photoGroup.title}
               />
             </div>
           )}

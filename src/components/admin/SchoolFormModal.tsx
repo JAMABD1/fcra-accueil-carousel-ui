@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getTags, getVideos, getCoordonnes } from "@/lib/db/queries";
+import { schools } from "@/lib/db/schema";
+import { uploadImage } from "@/lib/storage/r2";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -58,82 +60,40 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, color')
-        .order('name');
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
   // Fetch videos for dropdown
   const { data: videos = [] } = useQuery({
-    queryKey: ['videos'],
+    queryKey: ['videos-active'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('id, title')
-        .order('title');
-      if (error) throw error;
-      return data;
+      return await getVideos({ status: 'published' });
     }
   });
 
   // Fetch coordonnes for dropdown
   const { data: coordonnes = [] } = useQuery({
-    queryKey: ['coordonnes'],
+    queryKey: ['coordonnes-active'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('coordonnes')
-        .select('id, phone, email, address')
-        .eq('active', true)
-        .order('sort_order');
-      
-      if (error) throw error;
-      return data;
+      return await getCoordonnes();
     }
   });
 
-  // Upload image to Supabase storage
-  const uploadImage = async (file: File): Promise<string> => {
+  // Upload image to R2 storage
+  const uploadImageToR2 = async (file: File): Promise<string> => {
     try {
       setUploadError("");
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `school-${Date.now()}.${fileExt}`;
+      const result = await uploadImage(file, 'schools', 'school');
       
-      console.log('Uploading file:', fileName, 'to bucket: schools');
-      
-      const { data, error } = await supabase.storage
-        .from('schools')
-        .upload(fileName, file);
-
-      if (error) {
-        console.error('Upload error:', error);
-        let errorMsg = `Erreur d'upload: ${error.message}`;
-        
-        // Provide more specific error messages
-        if (error.message?.includes('bucket')) {
-          errorMsg = 'Le bucket de stockage "schools" n\'existe pas ou n\'est pas accessible';
-        } else if (error.message?.includes('size')) {
-          errorMsg = 'Le fichier est trop volumineux (maximum 50MB)';
-        } else if (error.message?.includes('type')) {
-          errorMsg = 'Type de fichier non supporté (uniquement JPEG, PNG, WebP, GIF)';
-        }
-        
+      if (!result.success) {
+        const errorMsg = result.error || 'Erreur d\'upload';
         setUploadError(errorMsg);
         throw new Error(errorMsg);
       }
 
-      console.log('Upload successful:', data);
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('schools')
-        .getPublicUrl(fileName);
-
-      console.log('Public URL:', publicUrl);
       setUploadError(""); // Clear any previous errors
-      return publicUrl;
+      return result.url!;
     } catch (error) {
       console.error('Upload function error:', error);
       const errorMsg = `Erreur lors de l'upload: ${error instanceof Error ? error.message : 'Erreur inconnue'}`;
@@ -174,7 +134,7 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
       if (imageFile && uploadMode === "upload") {
         setIsUploading(true);
         try {
-          imageUrl = await uploadImage(imageFile);
+          imageUrl = await uploadImageToR2(imageFile);
         } catch (error) {
           console.error('Image upload failed:', error);
           throw new Error(`Erreur d'upload d'image: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
@@ -187,28 +147,19 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
         name: data.name,
         description: data.description || null,
         type: data.type,
-        image_url: imageUrl || null,
-        tag_id: data.tag_id,
-        video_id: data.video_id,
+        imageUrl: imageUrl || null,
+        tagId: data.tag_id === "none" ? null : data.tag_id,
+        videoId: data.video_id === "none" ? null : data.video_id,
         active: data.active,
-        sort_order: data.sort_order,
+        sortOrder: data.sort_order,
         subtitle: data.subtitle || null,
-        coordonne_id: data.coordonne_id === "none" ? null : data.coordonne_id,
+        coordonneId: data.coordonne_id === "none" ? null : data.coordonne_id,
       };
       
       if (school) {
-        const { error } = await supabase
-          .from('schools')
-          .update(schoolData)
-          .eq('id', school.id);
-        
-        if (error) throw error;
+        await updateRecord(schools, school.id, schoolData);
       } else {
-        const { error } = await supabase
-          .from('schools')
-          .insert([schoolData]);
-        
-        if (error) throw error;
+        await createRecord(schools, schoolData);
       }
     },
     onSuccess: () => {
@@ -247,15 +198,15 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
         name: school.name || "",
         description: school.description || "",
         type: school.type || "primaire",
-        image_url: school.image_url || "",
-        tag_id: school.tag_id || null,
-        video_id: school.video_id || null,
+        image_url: school.imageUrl || "",
+        tag_id: school.tagId || null,
+        video_id: school.videoId || null,
         active: school.active ?? true,
-        sort_order: school.sort_order ?? 0,
+        sort_order: school.sortOrder ?? 0,
         subtitle: school.subtitle || "",
-        coordonne_id: school.coordonne_id || "none",
+        coordonne_id: school.coordonneId || "none",
       });
-      setImagePreview(school.image_url || "");
+      setImagePreview(school.imageUrl || "");
     }
   }, [school, form]);
 

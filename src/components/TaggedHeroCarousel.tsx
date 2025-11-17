@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getHeroItems, getTags } from "@/lib/db/queries";
 
 interface TaggedHeroCarouselProps {
   filterTags?: string[]; // Tag names to filter by
@@ -29,59 +29,15 @@ const TaggedHeroCarousel = ({
     queryKey: ['heroes-tagged', filterTags],
     queryFn: async () => {
       // First get all active heroes
-      const { data: heroesData, error: heroesError } = await supabase
-        .from('hero')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (heroesError) throw heroesError;
+      const heroes = await getHeroItems();
 
       // Get all tags
-      const { data: tagsData, error: tagsError } = await supabase
-        .from('tags')
-        .select('*');
-      
-      if (tagsError) throw tagsError;
+      const tags = await getTags();
 
-      // Process heroes to handle tag_ids
-      const processedHeroes = heroesData.map((hero: any) => {
-        let tagIds = [];
-        
-        if (hero.tag_ids) {
-          if (typeof hero.tag_ids === 'string') {
-            try {
-              tagIds = JSON.parse(hero.tag_ids);
-            } catch (e) {
-              console.error('Error parsing hero tag_ids:', e);
-              tagIds = [];
-            }
-          } else if (Array.isArray(hero.tag_ids)) {
-            tagIds = hero.tag_ids;
-          }
-        }
-        
-        return {
-          ...hero,
-          tag_ids: tagIds,
-        };
-      });
-
-      // Filter heroes by tags if filterTags is provided
-      let filteredHeroes = processedHeroes;
-      if (filterTags.length > 0) {
-        filteredHeroes = processedHeroes.filter(hero => {
-          const heroTagNames = hero.tag_ids
-            .map((tagId: string) => tagsData.find(tag => tag.id === tagId)?.name)
-            .filter(Boolean);
-          
-          return filterTags.some(filterTag => 
-            heroTagNames.includes(filterTag)
-          );
-        });
-      }
-
-      return { heroes: filteredHeroes, tags: tagsData };
+      return {
+        heroes: heroes,
+        tags: tags
+      };
     }
   });
 

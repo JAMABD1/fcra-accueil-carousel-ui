@@ -5,7 +5,7 @@ import Counter from "@/components/Counter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getImpactItems, getSections, getTags, getArticles } from "@/lib/db/queries";
 import { useNavigate } from "react-router-dom";
 
 // YouTube Video Component
@@ -33,14 +33,7 @@ const Index = () => {
   const { data: impacts = [] } = useQuery({
     queryKey: ['impacts-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('impact')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      return data;
+      return await getImpactItems();
     }
   });
 
@@ -48,14 +41,7 @@ const Index = () => {
   const { data: sections = [] } = useQuery({
     queryKey: ['sections-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sections')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      return data;
+      return await getSections();
     }
   });
 
@@ -63,12 +49,7 @@ const Index = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
@@ -106,34 +87,13 @@ const Index = () => {
   const { data: articles = [] } = useQuery({
     queryKey: ['articles-public'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('articles')
-          .select('*')
-          .eq('status', 'published')
-          .order('published_at', { ascending: false })
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data;
-      } catch (err: any) {
-        // Fallback when published_at column doesn't exist yet
-        if (err?.code === 'PGRST204' || String(err?.message || '').includes('published_at')) {
-          const { data, error } = await supabase
-            .from('articles')
-            .select('*')
-            .eq('status', 'published')
-            .order('created_at', { ascending: false });
-          if (error) throw error;
-          return data;
-        }
-        throw err;
-      }
+      return await getArticles({ status: 'published', limit: 10 });
     }
   });
 
   // Transform articles for display
   const transformedArticles = articles.map(article => {
-    const publishedAt = (article as any).published_at ?? article.created_at;
+    const publishedAt = article.publishedAt ?? article.createdAt;
     return {
       id: article.id,
       title: article.title,

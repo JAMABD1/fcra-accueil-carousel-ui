@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getDirectors } from "@/lib/db/queries";
 import Layout from "@/components/Layout";
 import AdminProfile from "@/components/AdminProfile";
 
@@ -9,27 +9,13 @@ const Administrations = () => {
   const { data: directors = [], isLoading, error } = useQuery({
     queryKey: ['directors'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('directors')
-        .select(`
-          *,
-          centres (
-            id,
-            name
-          )
-        `)
-        .eq('active', true)
-        .order('sort_order')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+      return await getDirectors();
     }
   });
 
   // Separate directors and staff
-  const mainDirectors = directors.filter(d => d.is_director);
-  const staff = directors.filter(d => !d.is_director);
+  const mainDirectors = directors.filter(d => d.isDirector);
+  const staff = directors.filter(d => !d.isDirector);
 
  
 

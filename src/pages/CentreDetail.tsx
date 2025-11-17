@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { eq } from "drizzle-orm";
+import { centres, videos, directors } from "@/lib/db/schema";
+import { db } from "@/lib/db/client";
 import Layout from "@/components/Layout";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Button } from "@/components/ui/button";
@@ -57,30 +59,20 @@ const CentreDetail = () => {
     queryKey: ['centre', id],
     queryFn: async () => {
       if (!id) throw new Error('Centre ID is required');
-      
-      const { data, error } = await supabase
-        .from('centres')
-        .select(`
-          *,
-          videos (
-            id,
-            title,
-            video_type,
-            youtube_id,
-            video_url
-          ),
-          directors (
-            id,
-            name,
-            job,
-            image_url
-          )
-        `)
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return data as DatabaseCenter;
+
+      const result = await db
+        .select({
+          centre: centres,
+          videos: videos,
+          directors: directors,
+        })
+        .from(centres)
+        .leftJoin(videos, eq(centres.videoId, videos.id))
+        .leftJoin(directors, eq(centres.directorId, directors.id))
+        .where(eq(centres.id, id))
+        .limit(1);
+
+      return result[0] as DatabaseCenter;
     },
     enabled: !!id
   });
@@ -89,31 +81,26 @@ const CentreDetail = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Tag[];
+      const { getTags } = await import("@/lib/db/queries");
+      return await getTags();
     }
   });
 
   // Fetch photos for different sections based on center tag
   const { data: missionPhotos = [] } = useQuery({
-    queryKey: ['mission-photos', centre?.tag_id],
+    queryKey: ['mission-photos', centre?.centre?.tagId],
     queryFn: async () => {
-      if (!centre || !centre.tag_id) {
+      if (!centre || !centre.centre?.tagId) {
         return [];
       }
       // Get the center tag name first
-      const centerTag = tags.find(tag => tag.id === centre.tag_id);
+      const centerTag = tags.find(tag => tag.id === centre.centre.tagId);
       if (!centerTag) return [];
-      
+
       // Create mission tag name
       const missionTagName = `${centerTag.name}-mission`;
       const missionTag = tags.find(tag => tag.name === missionTagName);
-      
+
       if (missionTag) {
         return await fetchPhotosByTags([missionTag.id], 5);
       }
@@ -123,13 +110,13 @@ const CentreDetail = () => {
   });
 
   const { data: historyPhotos = [] } = useQuery({
-    queryKey: ['history-photos', centre?.tag_id],
+    queryKey: ['history-photos', centre?.centre?.tagId],
     queryFn: async () => {
-      if (!centre || !centre.tag_id) {
+      if (!centre || !centre.centre?.tagId) {
         return [];
       }
       // Get the center tag name first
-      const centerTag = tags.find(tag => tag.id === centre.tag_id);
+      const centerTag = tags.find(tag => tag.id === centre.centre?.tagId);
       if (!centerTag) return [];
       
       // Create history tag name
@@ -146,31 +133,26 @@ const CentreDetail = () => {
 
   // Fetch related impacts based on center tag
   const { data: relatedImpacts = [] } = useQuery({
-    queryKey: ['related-impacts', centre?.tag_id],
+    queryKey: ['related-impacts', centre?.centre?.tagId],
     queryFn: async () => {
-      if (!centre || !centre.tag_id) return [];
-      
-      const { data, error } = await supabase
-        .from('impact')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      
+      if (!centre || !centre.centre?.tagId) return [];
+
+      const { getImpactItems } = await import("@/lib/db/queries");
+      const impacts = await getImpactItems();
+
       // Filter impacts that match the center's tag
-      const filteredImpacts = data.filter((impact: any) => {
+      const filteredImpacts = impacts.filter((impact: any) => {
         // Check if impact has the same tag_id as center
-        if (impact.tags_id === centre.tag_id) return true;
-        
+        if (impact.tagsId === centre.centre?.tagId) return true;
+
         // Check if impact has tag_ids array containing center's tag_id
-        if (impact.tag_ids && Array.isArray(impact.tag_ids)) {
-          return impact.tag_ids.includes(centre.tag_id);
+        if (impact.tagIds && Array.isArray(impact.tagIds)) {
+          return impact.tagIds.includes(centre.centre?.tagId);
         }
-        
+
         return false;
       });
-      
+
       return filteredImpacts;
     },
     enabled: !!centre
@@ -180,15 +162,8 @@ const CentreDetail = () => {
   const { data: latestArticles = [] } = useQuery({
     queryKey: ['latest-articles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(6);
-      
-      if (error) throw error;
-      return data;
+      const { getArticles } = await import("@/lib/db/queries");
+      return await getArticles({ status: 'published', limit: 6 });
     }
   });
 

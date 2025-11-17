@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getPhotos } from "@/lib/db/queries";
 
 interface Photo {
   id: string;
@@ -28,22 +28,17 @@ const Photos = () => {
   const { data: photos = [], isLoading } = useQuery({
     queryKey: ["photos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("photos")
-        .select("*")
-        .eq("status", "published")
-        .neq("category", "General")
-        .order("published_at", { ascending: false })
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data as Photo[];
+      return await getPhotos({
+        status: "published",
+        // Note: We'll filter out "General" category in the component
+      });
     },
   });
 
   const filteredPhotos = photos.filter(photo =>
-    photo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    photo.category.toLowerCase().includes(searchTerm.toLowerCase())
+    photo.category !== "General" &&
+    (photo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    photo.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (isLoading) {

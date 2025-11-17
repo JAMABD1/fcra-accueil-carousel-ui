@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getArticles, deleteRecord } from "@/lib/db/queries";
+import { articles } from "@/lib/db/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,25 +52,14 @@ const ArticlesManager = () => {
   const { data: articles = [], isLoading } = useQuery({
     queryKey: ['articles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Article[];
+      return await getArticles({ status: undefined }); // Get all articles
     }
   });
 
   // Delete article mutation
   const deleteArticleMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('articles')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteRecord(articles, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['articles'] });

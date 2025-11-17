@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getTags } from "@/lib/db/queries";
+import * as schema from "@/lib/db/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -52,13 +53,7 @@ const ImpactFormModal = ({ impact, onClose }: ImpactFormModalProps) => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
@@ -69,13 +64,13 @@ const ImpactFormModal = ({ impact, onClose }: ImpactFormModalProps) => {
         number: impact.number,
         title: impact.title,
         subtitle: impact.subtitle || "",
-        tags_id: impact.tags_id || "none",
-        sort_order: impact.sort_order || 0,
+        tags_id: impact.tagsId || "none",
+        sort_order: impact.sortOrder || 0,
         active: impact.active || false,
       });
       
       // Set selected tags from array
-      setSelectedTags(impact.tag_ids || []);
+      setSelectedTags(impact.tagIds || []);
     }
   }, [impact, form]);
 
@@ -95,25 +90,16 @@ const ImpactFormModal = ({ impact, onClose }: ImpactFormModalProps) => {
         number: data.number,
         title: data.title,
         subtitle: data.subtitle || null,
-        tags_id: data.tags_id === "none" ? null : data.tags_id,
-        tag_ids: selectedTags,
-        sort_order: data.sort_order,
+        tagsId: data.tags_id === "none" ? null : data.tags_id,
+        tagIds: selectedTags,
+        sortOrder: data.sort_order,
         active: data.active,
       };
 
       if (isEditing && impact) {
-        const { error } = await supabase
-          .from('impact')
-          .update(impactData)
-          .eq('id', impact.id);
-        
-        if (error) throw error;
+        await updateRecord(schema.impact, impact.id, impactData);
       } else {
-        const { error } = await supabase
-          .from('impact')
-          .insert([impactData]);
-        
-        if (error) throw error;
+        await createRecord(schema.impact, impactData);
       }
     },
     onSuccess: () => {

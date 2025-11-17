@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getTags, getHeroItems } from "@/lib/db/queries";
+import { sections } from "@/lib/db/schema";
+import { uploadImage } from "@/lib/storage/r2";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -57,13 +59,7 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, color')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
@@ -75,11 +71,11 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
         subtitle: section.subtitle || "",
         description: section.description || "",
         image: null,
-        tag_name: section.tag_name || "none",
-        sort_order: section.sort_order || 0,
+        tag_name: section.tagName || "none",
+        sort_order: section.sortOrder || 0,
         active: section.active || false,
       });
-      setSelectedTags(section.tag_ids || []);
+      setSelectedTags(section.tagIds || []);
     }
   }, [section, form]);
 
@@ -100,51 +96,32 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
       // Upload image if provided
       if (data.image && data.image.length > 0) {
         const file = data.image[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('sections')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('sections')
-          .getPublicUrl(filePath);
-
-        imageUrl = publicUrl;
+        const result = await uploadImage(file, 'sections', 'section');
+        if (!result.success) {
+          throw new Error(result.error || 'Upload failed');
+        }
+        imageUrl = result.url!;
       } else if (isEditing && section) {
         // Keep existing image when editing
-        imageUrl = section.image_url;
+        imageUrl = section.imageUrl;
       }
 
       const sectionData = {
         title: data.title,
         subtitle: data.subtitle || null,
         description: data.description || null,
-        image_url: imageUrl,
+        imageUrl: imageUrl,
         // No hero_id or hero_ids, only tags
-        tag_name: data.tag_name === "none" ? null : data.tag_name,
-        tag_ids: selectedTags,
-        sort_order: data.sort_order,
+        tagName: data.tag_name === "none" ? null : data.tag_name,
+        tagIds: selectedTags,
+        sortOrder: data.sort_order,
         active: data.active,
       };
 
       if (isEditing && section) {
-        const { error } = await supabase
-          .from('sections')
-          .update(sectionData)
-          .eq('id', section.id);
-        
-        if (error) throw error;
+        await updateRecord(sections, section.id, sectionData);
       } else {
-        const { error } = await supabase
-          .from('sections')
-          .insert([sectionData]);
-        
-        if (error) throw error;
+        await createRecord(sections, sectionData);
       }
     },
     onSuccess: () => {

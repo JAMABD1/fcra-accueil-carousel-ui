@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getPartners, deleteRecord, updateRecord } from "@/lib/db/queries";
+import { partners } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -77,13 +78,7 @@ const PartnersManager = () => {
   const { data: partners = [], isLoading } = useQuery({
     queryKey: ['partners'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('partners')
-        .select('*')
-        .order('sort_order', { ascending: true });
-      
-      if (error) throw error;
-      return data as Partner[];
+      return await getPartners();
     }
   });
 
@@ -91,25 +86,15 @@ const PartnersManager = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      const { getTags } = await import("@/lib/db/queries");
+      return await getTags();
     }
   });
 
   // Delete partner mutation
   const deletePartnerMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('partners')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteRecord(partners, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });
@@ -130,12 +115,7 @@ const PartnersManager = () => {
   // Toggle active status mutation
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await supabase
-        .from('partners')
-        .update({ active })
-        .eq('id', id);
-      
-      if (error) throw error;
+      await updateRecord(partners, id, { active });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });

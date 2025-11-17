@@ -39,6 +39,7 @@ import {
   MapPin
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { clearAuthToken } from "@/lib/auth/middleware";
 import ArticlesManager from "@/components/admin/ArticlesManager";
 import TagsManager from "@/components/admin/TagsManager";
 import VideosManager from "@/components/admin/VideosManager";
@@ -80,6 +81,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    clearAuthToken();
     navigate("/");
   };
 

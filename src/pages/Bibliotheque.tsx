@@ -7,11 +7,27 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { getLibraryItems } from "@/lib/db/queries";
 import { useToast } from "@/hooks/use-toast";
-import { Tables } from "@/integrations/supabase/types";
 
-type LibraryItem = Tables<"library">;
+// Define LibraryItem type locally
+interface LibraryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  category: string;
+  downloads: number;
+  featured: boolean;
+  status: string;
+  author: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 const Bibliotheque = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,17 +50,11 @@ const Bibliotheque = () => {
     { value: "general", label: "Général" }
   ];
 
-  // Fetch documents from Supabase
+  // Fetch documents from database
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const { data, error } = await supabase
-          .from('library')
-          .select('*')
-          .eq('status', 'published')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
+        const data = await getLibraryItems({ status: 'published' });
         setDocuments(data || []);
       } catch (error) {
         console.error('Error fetching documents:', error);
@@ -71,23 +81,20 @@ const Bibliotheque = () => {
 
   const handleDownload = async (docItem: LibraryItem) => {
     try {
-      // Increment download count
-      const { error: updateError } = await supabase
-        .from('library')
-        .update({ downloads: (docItem.downloads || 0) + 1 })
-        .eq('id', docItem.id);
+      // Increment download count using Drizzle
+      const { updateRecord, library } = await import("@/lib/db/queries");
+      await updateRecord(library, docItem.id, {
+        downloads: (docItem.downloads || 0) + 1
+      });
 
-      if (updateError) throw updateError;
-
-      // Get the file URL from Supabase storage
-      const { data } = supabase.storage
-        .from('library')
-        .getPublicUrl(docItem.file_name);
+      // Use R2 public URL
+      const { getPublicUrl } = await import("@/lib/storage/r2");
+      const fileUrl = getPublicUrl(docItem.fileUrl);
 
       // Create a temporary link and trigger download
       const link = document.createElement('a');
-      link.href = data.publicUrl;
-      link.download = docItem.file_name;
+      link.href = fileUrl;
+      link.download = docItem.fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -239,12 +246,12 @@ const Bibliotheque = () => {
                           <p className="text-gray-600 mb-3 text-sm">{doc.description}</p>
                           <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                              {doc.file_type.split('/')[1]?.toUpperCase() || 'PDF'}
+                              {doc.fileType.split('/')[1]?.toUpperCase() || 'PDF'}
                             </span>
-                            <span>{formatFileSize(doc.file_size)}</span>
+                            <span>{formatFileSize(doc.fileSize)}</span>
                             <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
-                              <span>{formatDate(doc.created_at)}</span>
+                              <span>{formatDate(doc.createdAt)}</span>
                             </div>
                           </div>
                           <div className="flex items-center justify-between">

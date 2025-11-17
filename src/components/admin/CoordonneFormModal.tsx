@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord, getTags } from "@/lib/db/queries";
+import { coordonnes } from "@/lib/db/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
@@ -17,9 +18,9 @@ interface CoordonneFormData {
   phone: string;
   email: string;
   address: string;
-  tags_id: string;
-  google_map_url: string;
-  sort_order: number;
+  tagsId: string;
+  googleMapUrl: string;
+  sortOrder: number;
   active: boolean;
 }
 
@@ -49,13 +50,7 @@ const CoordonneFormModal = ({ coordonne, onClose }: CoordonneFormModalProps) => 
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, color')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 
@@ -66,9 +61,9 @@ const CoordonneFormModal = ({ coordonne, onClose }: CoordonneFormModalProps) => 
         phone: coordonne.phone || "",
         email: coordonne.email || "",
         address: coordonne.address || "",
-        tags_id: coordonne.tags_id || "none",
-        google_map_url: coordonne.google_map_url || "",
-        sort_order: coordonne.sort_order || 0,
+        tags_id: coordonne.tagsId || "none",
+        google_map_url: coordonne.googleMapUrl || "",
+        sort_order: coordonne.sortOrder || 0,
         active: coordonne.active || false,
       });
     }
@@ -87,19 +82,20 @@ const CoordonneFormModal = ({ coordonne, onClose }: CoordonneFormModalProps) => 
         active: data.active,
       };
 
+      const coordonneDataFormatted = {
+        phone: coordonneData.phone,
+        email: coordonneData.email,
+        address: coordonneData.address,
+        tagsId: coordonneData.tags_id,
+        googleMapUrl: coordonneData.google_map_url,
+        sortOrder: coordonneData.sort_order,
+        active: coordonneData.active,
+      };
+
       if (isEditing && coordonne) {
-        const { error } = await supabase
-          .from('coordonnes')
-          .update(coordonneData)
-          .eq('id', coordonne.id);
-        
-        if (error) throw error;
+        await updateRecord(coordonnes, coordonne.id, coordonneDataFormatted);
       } else {
-        const { error } = await supabase
-          .from('coordonnes')
-          .insert([coordonneData]);
-        
-        if (error) throw error;
+        await createRecord(coordonnes, coordonneDataFormatted);
       }
     },
     onSuccess: () => {

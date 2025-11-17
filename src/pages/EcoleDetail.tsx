@@ -1,6 +1,8 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { eq } from "drizzle-orm";
+import { schools, videos } from "@/lib/db/schema";
+import { db } from "@/lib/db/client";
 import Layout from "@/components/Layout";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
 import { Badge } from "@/components/ui/badge";
@@ -13,21 +15,22 @@ import EcolesDetail3 from "@/components/EcolesHistory3";
 import EcolesDetail4 from "@/components/EcolesHistory4";
 import Counter from "@/components/Counter";
 import { fetchPhotosByTags } from "@/lib/utils";
+import { getImpactItems, getArticles, getTags } from "@/lib/db/queries";
 
 interface School {
   id: string;
   name: string;
   description: string;
   type: string;
-  image_url: string;
-  tag_id: string | null;
-  video_id: string | null;
+  imageUrl: string;
+  tagId: string | null;
+  videoId: string | null;
   active: boolean | null;
-  sort_order: number | null;
+  sortOrder: number | null;
   subtitle: string | null;
-  coordonne_id: string | null;
-  created_at: string;
-  updated_at: string;
+  coordonneId: string | null;
+  createdAt: string;
+  updatedAt: string;
   // Add other fields as needed
 }
 
@@ -48,42 +51,39 @@ interface Coordonne {
 const EcoleDetail = () => {
   const { id } = useParams();
 
-  // Fetch school from Supabase (with joined video)
+  // Fetch school from database (with joined video)
   const { data: school, isLoading } = useQuery({
     queryKey: ['school', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('schools')
-        .select(`
-          *,
-          video:videos!video_id (
-            id,
-            title,
-            video_type,
-            youtube_id,
-            video_url
-          )
-        `)
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      if (!data) return null;
+      const result = await db
+        .select({
+          school: schools,
+          video: videos,
+        })
+        .from(schools)
+        .leftJoin(videos, eq(schools.videoId, videos.id))
+        .where(eq(schools.id, id!))
+        .limit(1);
+
+      if (!result[0]) return null;
+
+      const { school: schoolData, video } = result[0];
       return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        type: data.type,
-        image_url: data.image_url,
-        tag_id: data['tag_id'] ?? null,
-        video_id: data['video_id'] ?? null,
-        active: data['active'] ?? null,
-        sort_order: data['sort_order'] ?? null,
-        subtitle: data.subtitle ?? null,
-        coordonne_id: data.coordonne_id ?? null,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        video: data.video ?? null,
-      };
+        id: schoolData.id,
+        name: schoolData.name,
+        description: schoolData.description,
+        type: schoolData.type,
+        imageUrl: schoolData.imageUrl,
+        tagId: schoolData.tagId,
+        videoId: schoolData.videoId,
+        active: schoolData.active,
+        sortOrder: schoolData.sortOrder,
+        subtitle: schoolData.subtitle,
+        coordonneId: schoolData.coordonneId,
+        createdAt: schoolData.createdAt,
+        updatedAt: schoolData.updatedAt,
+        video: video || null,
+      } as School;
     },
     enabled: !!id
   });
@@ -92,88 +92,55 @@ const EcoleDetail = () => {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as any[];
+      const { getTags } = await import("@/lib/db/queries");
+      return await getTags();
     }
   });
 
   // Fetch coordonnees for this school
   const { data: coordonne } = useQuery({
-    queryKey: ['coordonne', school?.coordonne_id],
+    queryKey: ['coordonne', school?.coordonneId],
     queryFn: async () => {
-      if (!school?.coordonne_id) return null;
-      const { data, error } = await supabase
-        .from('coordonnes')
-        .select('*')
-        .eq('id', school.coordonne_id)
-        .single();
-      if (error) throw error;
-      return data as Coordonne;
+      if (!school?.coordonneId) return null;
+      const { getCoordonnes } = await import("@/lib/db/queries");
+      const coordonnes = await getCoordonnes();
+      return coordonnes.find(c => c.id === school.coordonneId) || null;
     },
-    enabled: !!school?.coordonne_id,
+    enabled: !!school?.coordonneId,
   });
 
   const { data: relatedSchools = [] } = useQuery({
     queryKey: ['related-schools', school?.type],
     queryFn: async () => {
       if (!school) return [];
-      const { data, error } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('type', school.type)
-        .neq('id', school.id)
-        .limit(3);
-      if (error) throw error;
-      // Only pick fields that exist in School type
-      if (!data) return [];
-      return data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        type: item.type,
-        image_url: item.image_url,
-        tag_id: item['tag_id'] ?? null,
-        video_id: item['video_id'] ?? null,
-        active: item['active'] ?? null,
-        sort_order: item['sort_order'] ?? null,
-        subtitle: item.subtitle ?? null,
-        coordonne_id: item.coordonne_id ?? null,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-      }));
+      const { getSchools } = await import("@/lib/db/queries");
+      const schools = await getSchools({ status: 'published' });
+      return schools
+        .filter(s => s.type === school.type && s.id !== school.id)
+        .slice(0, 3);
     },
     enabled: !!school,
   });
 
   // Fetch impacts with the same tag as the school
   const { data: relatedImpacts = [] } = useQuery({
-    queryKey: ['impacts-by-tag', school?.tag_id],
+    queryKey: ['impacts-by-tag', school?.tagId],
     queryFn: async () => {
-      if (!school?.tag_id) return [];
-      const { data, error } = await supabase
-        .from('impact')
-        .select('*')
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
-      if (error) throw error;
-      // Filter impacts that have the same tag_id in their tag_ids array
-      return (data || []).filter((impact: any) => {
+      if (!school?.tagId) return [];
+      const impacts = await getImpactItems(true);
+      // Filter impacts that have the same tagId in their tagIds array
+      return impacts.filter((impact: any) => {
         let tagIds: string[] = [];
-        if (impact.tag_ids) {
-          if (typeof impact.tag_ids === 'string') {
-            try { tagIds = JSON.parse(impact.tag_ids); } catch { tagIds = []; }
-          } else if (Array.isArray(impact.tag_ids)) {
-            tagIds = impact.tag_ids;
+        if (impact.tagIds) {
+          if (typeof impact.tagIds === 'string') {
+            try { tagIds = JSON.parse(impact.tagIds); } catch { tagIds = []; }
+          } else if (Array.isArray(impact.tagIds)) {
+            tagIds = impact.tagIds;
           }
         }
-        // Also support legacy tags_id field
-        if (tagIds.length === 0 && impact.tags_id) tagIds = [impact.tags_id];
-        return tagIds.includes(school.tag_id);
+        // Also support legacy tagsId field
+        if (tagIds.length === 0 && impact.tagsId) tagIds = [impact.tagsId];
+        return tagIds.includes(school.tagId);
       });
     },
     enabled: !!school?.tag_id
@@ -226,18 +193,15 @@ const EcoleDetail = () => {
 
   // Fetch up to 3 latest articles with the same tag as the school
   const { data: latestArticles = [] } = useQuery({
-    queryKey: ['latest-articles-by-tag', school?.tag_id],
+    queryKey: ['latest-articles-by-tag', school?.tagId],
     queryFn: async () => {
-      if (!school?.tag_id) return [];
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .contains('tags', [school.tag_id])
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      return data || [];
+      if (!school?.tagId) return [];
+      const articles = await getArticles({ status: 'published', limit: 20 });
+      // Filter articles that have the same tagId in their tags array
+      return articles.filter((article: any) => {
+        const articleTags = article.tags || [];
+        return Array.isArray(articleTags) && articleTags.includes(school.tagId);
+      }).slice(0, 3);
     },
     enabled: !!school?.tag_id
   });

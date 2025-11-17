@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Actualites from "./pages/Actualites";
 import ArticleDetail from "./pages/ArticleDetail";
@@ -22,6 +23,7 @@ import SectionDetail from "./pages/SectionDetail";
 import Sections from "./pages/Sections";
 import CentreDetail from "./pages/CentreDetail";
 import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ActiviteDetail from "./pages/ActiviteDetail";
@@ -54,7 +56,8 @@ const App = () => (
           <Route path="/sections" element={<Sections />} />
           <Route path="/sections/:id" element={<SectionDetail />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

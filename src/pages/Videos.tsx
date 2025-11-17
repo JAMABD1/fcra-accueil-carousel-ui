@@ -7,22 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getVideos } from "@/lib/db/queries";
 
 const Videos = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch videos from Supabase
+  // Fetch videos from database
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ['videos-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      return await getVideos({ status: 'published' });
     }
   });
 

@@ -7,19 +7,21 @@ interface SearchBarProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onSearch: () => void;
+  placeholder?: string;
+  className?: string;
 }
 
-const SearchBar = ({ searchTerm, onSearchChange, onSearch }: SearchBarProps) => {
+const SearchBar = ({ searchTerm, onSearchChange, onSearch, placeholder = "Rechercher...", className = "" }: SearchBarProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 max-w-md">
+    <form onSubmit={handleSubmit} className={`flex gap-2 max-w-md ${className}`}>
       <Input
         type="text"
-        placeholder="Rechercher des actualités..."
+        placeholder={placeholder}
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
         className="flex-1"

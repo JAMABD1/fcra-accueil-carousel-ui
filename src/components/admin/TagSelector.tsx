@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getTags } from "@/lib/db/queries";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,8 +12,8 @@ interface Tag {
   id: string;
   name: string;
   color: string | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface TagSelectorProps {
@@ -32,12 +32,7 @@ const TagSelector = ({ selectedTags, onTagsChange, control, name = "tags", label
   const { data: availableTags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name', { ascending: true });
-      if (error) throw error;
-      return data as Tag[];
+      return await getTags();
     }
   });
 

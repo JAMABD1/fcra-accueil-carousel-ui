@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { createRecord, updateRecord } from "@/lib/db/queries";
+import { uploadVideo, uploadImage } from "@/lib/storage/r2";
+import { videos } from "@/lib/db/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Video, Youtube } from "lucide-react";
 import VideoUpload from "./VideoUpload";
@@ -33,19 +35,27 @@ interface Video {
   title: string;
   description: string | null;
   excerpt: string | null;
-  video_url: string | null;
-  video_type: string | null;
-  youtube_id: string | null;
-  facebook_iframe: string | null;
-  thumbnail_url: string | null;
+  video_url?: string | null;
+  videoUrl?: string | null;
+  video_type?: string | null;
+  videoType?: string | null;
+  youtube_id?: string | null;
+  youtubeId?: string | null;
+  facebook_iframe?: string | null;
+  facebookIframe?: string | null;
+  thumbnail_url?: string | null;
+  thumbnailUrl?: string | null;
   author: string | null;
   tags: string[] | null;
   featured: boolean | null;
   status: string | null;
   duration: number | null;
-  file_size: number | null;
-  created_at: string;
-  updated_at: string;
+  file_size?: number | null;
+  fileSize?: number | null;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
 }
 
 interface VideoFormModalProps {
@@ -83,10 +93,10 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
         title: video.title,
         description: video.description || "",
         excerpt: video.excerpt || "",
-        video_type: video.video_type || "upload",
+        video_type: video.video_type || video.videoType || "upload",
         video: null,
-        youtube_id: video.youtube_id || "",
-        facebook_iframe: video.facebook_iframe || "",
+        youtube_id: video.youtube_id || video.youtubeId || "",
+        facebook_iframe: video.facebook_iframe || video.facebookIframe || "",
         thumbnail: null,
         author: video.author || "",
         tags: video.tags || [],
@@ -95,26 +105,6 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
       });
     }
   }, [video, form]);
-
-  const uploadFile = async (file: File, bucket: string, path: string) => {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
-
-    return publicUrl;
-  };
 
   const getVideoDuration = (file: File): Promise<number> => {
     return new Promise((resolve) => {
@@ -139,23 +129,34 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
     setUploadProgress(0);
 
     try {
-      let videoUrl = video?.video_url || "";
-      let thumbnailUrl = video?.thumbnail_url || "";
+      let videoUrl = video?.video_url || video?.videoUrl || "";
+      let thumbnailUrl = video?.thumbnail_url || video?.thumbnailUrl || "";
       let duration = video?.duration || null;
-      let fileSize = video?.file_size || null;
+      let fileSize = video?.file_size || video?.fileSize || null;
 
       if (data.video_type === "upload") {
         // Handle uploaded video
         if (data.video && data.video[0]) {
           setUploadProgress(25);
           const videoFile = data.video[0];
-          const videoPath = `${Date.now()}-${videoFile.name}`;
-          videoUrl = await uploadFile(videoFile, 'videos', videoPath);
+          const uploadResult = await uploadVideo(videoFile, 'videos', 'video-');
+          if (!uploadResult.success || !uploadResult.url) {
+            throw new Error(uploadResult.error || "Échec de l'upload vidéo");
+          }
+          videoUrl = uploadResult.url;
           
           // Get video duration and file size
           duration = Math.floor(await getVideoDuration(videoFile));
           fileSize = videoFile.size;
           setUploadProgress(50);
+        } else if (!videoUrl) {
+          toast({
+            title: "Erreur",
+            description: "Veuillez sélectionner un fichier vidéo.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
         }
       } else if (data.video_type === "youtube") {
         // Handle YouTube video
@@ -168,7 +169,9 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
           setIsSubmitting(false);
           return;
         }
-        videoUrl = null; // No video URL for YouTube videos
+        videoUrl = null;
+        duration = null;
+        fileSize = null;
         setUploadProgress(50);
       } else if (data.video_type === "facebook") {
         if (!data.facebook_iframe) {
@@ -181,6 +184,8 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
           return;
         }
         videoUrl = null;
+        duration = null;
+        fileSize = null;
         setUploadProgress(50);
       }
 
@@ -188,8 +193,11 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
       if (data.thumbnail && data.thumbnail[0]) {
         setUploadProgress(75);
         const thumbnailFile = data.thumbnail[0];
-        const thumbnailPath = `${Date.now()}-${thumbnailFile.name}`;
-        thumbnailUrl = await uploadFile(thumbnailFile, 'video-thumbnails', thumbnailPath);
+        const thumbnailResult = await uploadImage(thumbnailFile, 'video-thumbnails', 'thumb-');
+        if (!thumbnailResult.success || !thumbnailResult.url) {
+          throw new Error(thumbnailResult.error || "Échec de l'upload de la miniature");
+        }
+        thumbnailUrl = thumbnailResult.url;
       }
 
       setUploadProgress(90);
@@ -198,32 +206,24 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
         title: data.title,
         description: data.description,
         excerpt: data.excerpt,
-        video_type: data.video_type,
-        video_url: videoUrl,
-        youtube_id: data.video_type === "youtube" ? extractYouTubeId(data.youtube_id) : null,
-        facebook_iframe: data.video_type === "facebook" ? data.facebook_iframe : null,
-        thumbnail_url: thumbnailUrl,
+        videoUrl,
+        videoType: data.video_type,
+        youtubeId: data.video_type === "youtube" ? extractYouTubeId(data.youtube_id) : null,
+        facebookIframe: data.video_type === "facebook" ? data.facebook_iframe : null,
+        thumbnailUrl,
         author: data.author,
         tags: data.tags,
         featured: data.featured,
         status: data.status,
         duration,
-        file_size: fileSize,
+        fileSize,
       };
 
-      let result;
       if (video) {
-        result = await supabase
-          .from('videos')
-          .update(videoData)
-          .eq('id', video.id);
+        await updateRecord(videos, video.id, videoData);
       } else {
-        result = await supabase
-          .from('videos')
-          .insert([videoData]);
+        await createRecord(videos, videoData);
       }
-
-      if (result.error) throw result.error;
 
       setUploadProgress(100);
       

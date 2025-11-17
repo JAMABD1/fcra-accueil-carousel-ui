@@ -7,9 +7,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Shield, Lock, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getUserByEmail } from "@/lib/db/queries";
+import { verifyPassword, hashPassword } from "@/lib/auth/password";
+import { generateToken, setAuthToken } from "@/lib/auth/middleware";
 
 interface LoginForm {
   email: string;
@@ -31,22 +33,52 @@ const Login = () => {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
 
-    // Use Supabase Auth for sign-in
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
+    try {
+      // Get user from database
+      const users = await getUserByEmail(data.email);
 
-    if (!error) {
+      if (users.length === 0) {
+        toast({
+          title: "Erreur de connexion",
+          description: "Email ou mot de passe incorrect",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const user = users[0];
+
+      // Verify password
+      const isPasswordValid = await verifyPassword(data.password, user.passwordHash);
+
+      if (!isPasswordValid) {
+        toast({
+          title: "Erreur de connexion",
+          description: "Email ou mot de passe incorrect",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Generate JWT token
+      const token = await generateToken(user.id, user.email);
+
+      // Store token in localStorage
+      setAuthToken(token);
+
       toast({
         title: "Connexion réussie",
         description: "Bienvenue!",
       });
+
       navigate("/admin");
-    } else {
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Erreur de connexion",
-        description: error.message || "Email ou mot de passe incorrect",
+        description: "Une erreur inattendue s'est produite",
         variant: "destructive",
       });
     }
@@ -157,8 +189,21 @@ const Login = () => {
                 </form>
               </Form>
               
+              {/* Link to signup */}
+              <div className="text-center mt-6">
+                <p className="text-sm text-gray-600">
+                  Vous n'avez pas de compte?{" "}
+                  <Link 
+                    to="/signup" 
+                    className="text-green-600 hover:text-green-700 font-medium transition-colors"
+                  >
+                    Créer un compte
+                  </Link>
+                </p>
+              </div>
+              
               {/* Footer */}
-              <div className="text-center mt-8">
+              <div className="text-center mt-8 pt-6 border-t border-gray-200">
                 <p className="text-sm text-gray-500">
                   © 2025 FCRA. Plateforme sécurisée d'administration.
                 </p>

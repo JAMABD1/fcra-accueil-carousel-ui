@@ -5,7 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Eye, ArrowLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { eq } from "drizzle-orm";
+import { videos } from "@/lib/db/schema";
+import { db } from "@/lib/db/client";
 
 const VideoDetail = () => {
   const { id } = useParams();
@@ -43,18 +45,43 @@ const VideoDetail = () => {
     return html;
   };
 
-  // Fetch video from Supabase
+  // Fetch video from database
   const { data: video, isLoading } = useQuery({
     queryKey: ['video-detail', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase
-        .from('videos')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      return data;
+      const result = await db
+        .select({
+          id: videos.id,
+          title: videos.title,
+          description: videos.description,
+          excerpt: videos.excerpt,
+          video_url: videos.videoUrl,
+          videoUrl: videos.videoUrl,
+          video_type: videos.videoType,
+          videoType: videos.videoType,
+          youtube_id: videos.youtubeId,
+          youtubeId: videos.youtubeId,
+          facebook_iframe: videos.facebookIframe,
+          facebookIframe: videos.facebookIframe,
+          thumbnail_url: videos.thumbnailUrl,
+          thumbnailUrl: videos.thumbnailUrl,
+          author: videos.author,
+          tags: videos.tags,
+          featured: videos.featured,
+          status: videos.status,
+          duration: videos.duration,
+          file_size: videos.fileSize,
+          fileSize: videos.fileSize,
+          created_at: videos.createdAt,
+          createdAt: videos.createdAt,
+          updated_at: videos.updatedAt,
+          updatedAt: videos.updatedAt,
+        })
+        .from(videos)
+        .where(eq(videos.id, id))
+        .limit(1);
+      return result[0] || null;
     },
     enabled: !!id
   });
@@ -63,15 +90,10 @@ const VideoDetail = () => {
   const { data: relatedVideos = [] } = useQuery({
     queryKey: ['related-videos', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('*')
-        .neq('id', id)
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      return data || [];
+      const { getVideos } = await import("@/lib/db/queries");
+      const videos = await getVideos({ status: 'published', limit: 4 });
+      // Filter out current video and limit to 3
+      return videos.filter(v => v.id !== id).slice(0, 3);
     },
     enabled: !!id
   });
@@ -101,6 +123,12 @@ const VideoDetail = () => {
     );
   }
 
+  const videoType = (video as any).video_type ?? (video as any).videoType;
+  const youtubeId = (video as any).youtube_id ?? (video as any).youtubeId;
+  const facebookIframe = (video as any).facebook_iframe ?? (video as any).facebookIframe;
+  const uploadedVideoUrl = (video as any).video_url ?? (video as any).videoUrl;
+  const createdAt = (video as any).created_at ?? (video as any).createdAt;
+
   return (
     <Layout>
       <div className="py-8 bg-gray-50 min-h-screen">
@@ -118,20 +146,20 @@ const VideoDetail = () => {
             <div className="lg:col-span-2">
               <Card className="overflow-hidden">
                 <div className="relative aspect-video bg-black">
-                  {video.video_type === 'youtube' && video.youtube_id ? (
+                  {videoType === 'youtube' && youtubeId ? (
                     <iframe
-                      src={`https://www.youtube.com/embed/${video.youtube_id}`}
+                      src={`https://www.youtube.com/embed/${youtubeId}`}
                       title={video.title}
                       className="w-full h-full"
                       allowFullScreen
                     />
-                  ) : video.video_type === 'facebook' && 'facebook_iframe' in video && (video as any).facebook_iframe ? (
+                  ) : videoType === 'facebook' && facebookIframe ? (
                     <div className="absolute inset-0">
-                      <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: sanitizeFacebookIframe((video as any).facebook_iframe) }} />
+                      <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: sanitizeFacebookIframe(facebookIframe) }} />
                     </div>
-                  ) : video.video_type === 'upload' && video.video_url ? (
+                  ) : videoType === 'upload' && uploadedVideoUrl ? (
                     <video
-                      src={video.video_url}
+                      src={uploadedVideoUrl}
                       controls
                       className="w-full h-full"
                       title={video.title}
@@ -147,7 +175,7 @@ const VideoDetail = () => {
                   <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>{video.created_at ? new Date(video.created_at).toLocaleDateString('fr-FR') : ''}</span>
+                      <span>{createdAt ? new Date(createdAt).toLocaleDateString('fr-FR') : ''}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />

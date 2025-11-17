@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getTags, createRecord, updateRecord, deleteRecord } from "@/lib/db/queries";
+import { tags as tagsTable } from "@/lib/db/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,8 @@ interface Tag {
   id: string;
   name: string;
   color: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 const TagsManager = () => {
@@ -26,29 +27,17 @@ const TagsManager = () => {
   const queryClient = useQueryClient();
 
   // Fetch tags
-  const { data: tags = [], isLoading } = useQuery({
+  const { data: tagList = [], isLoading } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Tag[];
+      return await getTags();
     }
   });
 
   // Create tag mutation
   const createTagMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .insert([{ name: newTagName, color: newTagColor }])
-        .select();
-      
-      if (error) throw error;
-      return data;
+      return await createRecord(tagsTable, { name: newTagName, color: newTagColor });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -72,12 +61,7 @@ const TagsManager = () => {
   // Delete tag mutation
   const deleteTagMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('tags')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteRecord(tagsTable, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -99,11 +83,7 @@ const TagsManager = () => {
   // Update tag mutation
   const updateTagMutation = useMutation({
     mutationFn: async ({ id, name, color }: { id: string; name: string; color: string }) => {
-      const { error } = await supabase
-        .from('tags')
-        .update({ name, color })
-        .eq('id', id);
-      if (error) throw error;
+      await updateRecord(tagsTable, id, { name, color });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -203,16 +183,16 @@ const TagsManager = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Tags existants ({tags.length})</h3>
+              <h3 className="text-lg font-medium">Tags existants ({tagList.length})</h3>
               
-              {tags.length === 0 ? (
+              {tagList.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Aucun tag trouvé. Créez votre premier tag ci-dessus.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {tags.map((tag) => (
+                  {tagList.map((tag) => (
                     <div
                       key={tag.id}
                       className="flex items-center justify-between p-3 border rounded-lg"

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getArticles, getTags } from "@/lib/db/queries";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,27 +16,7 @@ const Actualites = () => {
   const { data: articles = [], isLoading, error } = useQuery({
     queryKey: ['articles'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('articles')
-          .select('*')
-          .eq('status', 'published')
-          .order('published_at', { ascending: false })
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data;
-      } catch (err: any) {
-        if (err?.code === 'PGRST204' || String(err?.message || '').includes('published_at')) {
-          const { data, error } = await supabase
-            .from('articles')
-            .select('*')
-            .eq('status', 'published')
-            .order('created_at', { ascending: false });
-          if (error) throw error;
-          return data;
-        }
-        throw err;
-      }
+      return await getArticles({ status: 'published' });
     }
   });
 
@@ -44,12 +24,7 @@ const Actualites = () => {
   const { data: allTagsData = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
+      return await getTags();
     }
   });
 

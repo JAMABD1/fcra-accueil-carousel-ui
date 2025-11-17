@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getPhotos, deleteRecord, getTags } from "@/lib/db/queries";
+import { photos } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,37 +42,20 @@ const PhotosManager = () => {
   const { data: photos = [], isLoading } = useQuery({
     queryKey: ["photos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("photos")
-        .select("*")
-        .order("published_at", { ascending: false })
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data as Photo[];
+      return await getPhotos({ status: undefined }); // Get all photos
     },
   });
 
   const { data: tags = [] } = useQuery({
     queryKey: ["tags"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tags")
-        .select("*");
-      
-      if (error) throw error;
-      return data as Tag[];
+      return await getTags();
     },
   });
 
   const deletePhotoMutation = useMutation({
     mutationFn: async (photoId: string) => {
-      const { error } = await supabase
-        .from("photos")
-        .delete()
-        .eq("id", photoId);
-      
-      if (error) throw error;
+      await deleteRecord(photos, photoId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["photos"] });

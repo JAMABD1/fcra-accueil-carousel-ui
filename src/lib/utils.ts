@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { supabase } from "@/integrations/supabase/client"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -13,23 +12,19 @@ export async function fetchPhotosByTags(tagIds: string[], limit: number = 10) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('photos')
-      .select('*')
-      .eq('status', 'published')
-      .overlaps('tag_ids', tagIds)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const { getPhotos } = await import("@/lib/db/queries");
+    const photos = await getPhotos({ status: 'published' });
 
-    if (error) {
-      console.error('Error fetching photos:', error);
-      return [];
-    }
+    // Filter photos that have matching tag IDs
+    const matchingPhotos = photos.filter((photo: any) => {
+      if (!photo.tagIds || !Array.isArray(photo.tagIds)) return false;
+      return photo.tagIds.some((tagId: string) => tagIds.includes(tagId));
+    });
 
     // Extract all image URLs from the images array of each photo
     const allImageUrls: string[] = [];
-    
-    (data || []).forEach((photo: any) => {
+
+    matchingPhotos.slice(0, limit).forEach((photo: any) => {
       // Use the images array if it exists and has items
       if (photo.images && Array.isArray(photo.images) && photo.images.length > 0) {
         // Add all images from the images array
@@ -38,9 +33,9 @@ export async function fetchPhotosByTags(tagIds: string[], limit: number = 10) {
             allImageUrls.push(imageUrl);
           }
         });
-      } else if (photo.image_url) {
-        // Fallback to single image_url if images array is empty
-        allImageUrls.push(photo.image_url);
+      } else if (photo.imageUrl) {
+        // Fallback to single imageUrl if images array is empty
+        allImageUrls.push(photo.imageUrl);
       }
     });
 

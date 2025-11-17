@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getLibraryItems, deleteRecord, getTags, createRecord, updateRecord } from "@/lib/db/queries";
+import { library } from "@/lib/db/schema";
+import { uploadDocument } from "@/lib/storage/r2";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,12 +25,28 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Search, FileText, Upload, Download, Star, Eye, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Tables } from "@/integrations/supabase/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-type LibraryItem = Tables<"library">;
+// Define LibraryItem type locally
+interface LibraryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  category: string;
+  downloads: number;
+  featured: boolean;
+  status: string;
+  author: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface LibraryFormData {
   title: string;
@@ -82,25 +100,14 @@ const LibraryManager = () => {
   const { data: libraryItems = [], isLoading } = useQuery({
     queryKey: ['library'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('library')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as LibraryItem[];
+      return await getLibraryItems();
     }
   });
 
   // Delete library item mutation
   const deleteItemMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('library')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await deleteRecord(library, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['library'] });
@@ -128,59 +135,42 @@ const LibraryManager = () => {
         throw new Error('File is required for new documents');
       }
 
-      let fileUrl = selectedItem?.file_url;
-      let fileName = selectedItem?.file_name;
-      let fileSize = selectedItem?.file_size;
-      let fileType = selectedItem?.file_type;
+      let fileUrl = selectedItem?.fileUrl;
+      let fileName = selectedItem?.fileName;
+      let fileSize = selectedItem?.fileSize;
+      let fileType = selectedItem?.fileType;
 
       // Upload new file if provided
       if (file) {
-        const fileNameWithTimestamp = `${Date.now()}-${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('library')
-          .upload(fileNameWithTimestamp, file);
-
-        if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('library')
-          .getPublicUrl(fileNameWithTimestamp);
-
-        fileUrl = urlData.publicUrl;
-        fileName = fileNameWithTimestamp;
+        const result = await uploadDocument(file, 'library', 'document');
+        if (!result.success) {
+          throw new Error(result.error || 'Upload failed');
+        }
+        fileUrl = result.url!;
+        fileName = file.name;
         fileSize = file.size;
         fileType = file.type;
       }
 
       const itemData = {
         title: formData.title,
-        description: formData.description,
+        description: formData.description || null,
         category: formData.category,
-        author: formData.author,
+        author: formData.author || null,
         featured: formData.featured,
         status: formData.status,
         tags: formData.tags,
-        file_url: fileUrl!,
-        file_name: fileName!,
-        file_size: fileSize!,
-        file_type: fileType!,
+        fileUrl: fileUrl!,
+        fileName: fileName!,
+        fileSize: fileSize!,
+        fileType: fileType!,
         downloads: selectedItem?.downloads || 0
       };
 
       if (isUpdate && itemId) {
-        const { error } = await supabase
-          .from('library')
-          .update(itemData)
-          .eq('id', itemId);
-        
-        if (error) throw error;
+        await updateRecord(library, itemId, itemData);
       } else {
-        const { error } = await supabase
-          .from('library')
-          .insert(itemData);
-        
-        if (error) throw error;
+        await createRecord(library, itemData);
       }
     },
     onSuccess: () => {
