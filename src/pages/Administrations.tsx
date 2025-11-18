@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getDirectors } from "@/lib/db/queries";
+import { getPublicUrl } from "@/lib/storage/r2";
 import Layout from "@/components/Layout";
 import AdminProfile from "@/components/AdminProfile";
 
@@ -68,16 +69,26 @@ const Administrations = () => {
               Direction
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {mainDirectors.map((director) => (
-                <AdminProfile
-                  key={director.id}
-                  name={director.name}
-                  title={director.job || "Directeur"}
-                 // email={director.centres?.name ? `${director.centres.name.toLowerCase().replace(/\s+/g, '')}@fcra.mg` : "direction@fcra.mg"}
-                  image={director.image_url || "/placeholder.svg"}
-                  backgroundColor="bg-blue-100"
-                />
-              ))}
+              {mainDirectors.map((director) => {
+                // Handle image URL - use full URL if available, otherwise convert relative path to public URL
+                const imageUrl = director.image_url || director.imageUrl;
+                const finalImageUrl = !imageUrl 
+                  ? "/placeholder.svg"
+                  : imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
+                  ? imageUrl
+                  : getPublicUrl(imageUrl);
+                
+                return (
+                  <AdminProfile
+                    key={director.id}
+                    name={director.name}
+                    title={director.job || "Directeur"}
+                   // email={director.centres?.name ? `${director.centres.name.toLowerCase().replace(/\s+/g, '')}@fcra.mg` : "direction@fcra.mg"}
+                    image={finalImageUrl}
+                    backgroundColor="bg-blue-100"
+                  />
+                );
+              })}
             </div>
             
             {mainDirectors.length === 0 && (
@@ -94,16 +105,26 @@ const Administrations = () => {
                 Équipe Administrative
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                {staff.map((member) => (
-                  <AdminProfile
-                    key={member.id}
-                    name={member.name}
-                    title={member.job || "Membre de l'équipe"}
-                   // email={member.centres?.name ? `${member.centres.name.toLowerCase().replace(/\s+/g, '')}@fcra.mg` : "contact@fcra.mg"}
-                    image={member.image_url || "/placeholder.svg"}
-                    backgroundColor="bg-green-100"
-                  />
-                ))}
+                {staff.map((member) => {
+                  // Handle image URL - use full URL if available, otherwise convert relative path to public URL
+                  const imageUrl = member.image_url || member.imageUrl;
+                  const finalImageUrl = !imageUrl 
+                    ? "/placeholder.svg"
+                    : imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
+                    ? imageUrl
+                    : getPublicUrl(imageUrl);
+                  
+                  return (
+                    <AdminProfile
+                      key={member.id}
+                      name={member.name}
+                      title={member.job || "Membre de l'équipe"}
+                     // email={member.centres?.name ? `${member.centres.name.toLowerCase().replace(/\s+/g, '')}@fcra.mg` : "contact@fcra.mg"}
+                      image={finalImageUrl}
+                      backgroundColor="bg-green-100"
+                    />
+                  );
+                })}
               </div>
             </div>
           )}

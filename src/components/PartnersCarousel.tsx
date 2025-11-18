@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPartners } from "@/lib/db/queries";
+import { getPublicUrl } from "@/lib/storage/r2";
 import { 
   Carousel, 
   CarouselContent, 
@@ -15,15 +16,23 @@ interface Partner {
   title: string;
   subtitle: string | null;
   description: string | null;
-  imageUrl: string;
-  tagIds: string[] | null;
-  sortOrder: number | null;
-  active: boolean | null;
-  websiteUrl: string | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  createdAt: string;
-  updatedAt: string;
+  imageUrl?: string;
+  image_url?: string;
+  tagIds?: string[] | null;
+  tag_ids?: string[] | null;
+  sortOrder?: number | null;
+  sort_order?: number | null;
+  active?: boolean | null;
+  websiteUrl?: string | null;
+  website_url?: string | null;
+  contactEmail?: string | null;
+  contact_email?: string | null;
+  contactPhone?: string | null;
+  contact_phone?: string | null;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
 }
 
 interface Tag {
@@ -66,8 +75,9 @@ const PartnersCarousel = ({
   const filteredPartners = partners.filter(partner => {
     if (filterTags.length === 0) return true;
     
-    const partnerTagNames = partner.tagIds
-      ?.map(tagId => tags.find(tag => tag.id === tagId)?.name)
+    const partnerTagIds = partner.tagIds || (partner as any).tag_ids || [];
+    const partnerTagNames = partnerTagIds
+      ?.map((tagId: string) => tags.find(tag => tag.id === tagId)?.name)
       .filter(Boolean) || [];
     
     return filterTags.some(filterTag => 
@@ -123,7 +133,16 @@ const PartnersCarousel = ({
           setApi={setApi}
         >
           <CarouselContent className="-ml-2 md:-ml-4">
-            {filteredPartners.map((partner) => (
+            {filteredPartners.map((partner) => {
+              // Handle image URL - use full URL if available, otherwise convert relative path to public URL
+              const imageUrl = partner.imageUrl || (partner as any).image_url;
+              const finalImageUrl = !imageUrl 
+                ? "/placeholder.svg"
+                : imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
+                ? imageUrl
+                : getPublicUrl(imageUrl);
+              
+              return (
               <CarouselItem key={partner.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                 <div 
                   className="text-center cursor-pointer hover:scale-105 transition-transform duration-300"
@@ -133,9 +152,12 @@ const PartnersCarousel = ({
                   <div className="mb-6">
                     <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
                       <img 
-                        src={partner.imageUrl}   
+                        src={finalImageUrl}   
                         alt={partner.title}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
                       />
                     </div>
                   </div>
@@ -153,7 +175,8 @@ const PartnersCarousel = ({
                   )}
                 </div>
               </CarouselItem>
-            ))}
+              );
+            })}
           </CarouselContent>
           
           <CarouselPrevious />

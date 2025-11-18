@@ -18,6 +18,9 @@ import {
   users
 } from '../schema';
 
+// Export table schemas for use in components
+export { library };
+
 // Generic CRUD operations
 export const createRecord = async (table: any, data: any) => {
   return await db.insert(table).values(data).returning();
@@ -418,10 +421,79 @@ export const getCentres = async (active: boolean = true) => {
 
 // Specific query functions for directors
 export const getDirectors = async (active: boolean = true) => {
-  return await db.select()
+  return await db.select({
+    id: directors.id,
+    name: directors.name,
+    image_url: directors.imageUrl,
+    imageUrl: directors.imageUrl,
+    job: directors.job,
+    responsibility: directors.responsibility,
+    sort_order: directors.sortOrder,
+    sortOrder: directors.sortOrder,
+    centre_id: directors.centreId,
+    centreId: directors.centreId,
+    is_director: directors.isDirector,
+    isDirector: directors.isDirector,
+    active: directors.active,
+    created_at: directors.createdAt,
+    createdAt: directors.createdAt,
+    updated_at: directors.updatedAt,
+    updatedAt: directors.updatedAt,
+  })
     .from(directors)
     .where(eq(directors.active, active))
     .orderBy(asc(directors.sortOrder));
+};
+
+// Specific query functions for administrators
+export const getAdministrators = async (options: {
+  active?: boolean;
+  isDirector?: boolean;
+  limit?: number;
+  offset?: number;
+} = {}) => {
+  const { active = true, isDirector, limit, offset = 0 } = options;
+
+  let whereClause = sql`true`;
+
+  if (active !== undefined) {
+    whereClause = and(whereClause, eq(directors.active, active));
+  }
+
+  if (isDirector !== undefined) {
+    whereClause = and(whereClause, eq(directors.isDirector, isDirector));
+  }
+
+  const baseQuery = db.select({
+    id: directors.id,
+    name: directors.name,
+    image_url: directors.imageUrl,
+    imageUrl: directors.imageUrl,
+    job: directors.job,
+    responsibility: directors.responsibility,
+    sort_order: directors.sortOrder,
+    sortOrder: directors.sortOrder,
+    centre_id: directors.centreId,
+    centreId: directors.centreId,
+    is_director: directors.isDirector,
+    isDirector: directors.isDirector,
+    active: directors.active,
+    created_at: directors.createdAt,
+    createdAt: directors.createdAt,
+    updated_at: directors.updatedAt,
+    updatedAt: directors.updatedAt,
+  })
+    .from(directors)
+    .where(whereClause)
+    .orderBy(asc(directors.sortOrder));
+
+  const result = limit 
+    ? await baseQuery.limit(limit).offset(offset)
+    : offset > 0
+    ? await baseQuery.offset(offset)
+    : await baseQuery;
+
+  return result;
 };
 
 // Specific query functions for activities
@@ -506,36 +578,96 @@ export const getActivityWithRelations = async (id: string) => {
   return result;
 };
 
-// Specific query functions for schools
+// Specific query functions for schools with relations
 export const getSchools = async (options: {
   type?: string;
-  status?: string;
-  featured?: boolean;
+  active?: boolean;
   limit?: number;
   offset?: number;
 } = {}) => {
-  const { type, status, featured, limit = 10, offset = 0 } = options;
+  const { type, active = true, limit, offset = 0 } = options;
 
-  let whereClause = sql`true`;
-
-  if (type) {
-    whereClause = and(whereClause, eq(schools.type, type));
-  }
-
-  if (status) {
-    whereClause = and(whereClause, eq(schools.status, status));
-  }
-
-  if (featured !== undefined) {
-    whereClause = and(whereClause, eq(schools.featured, featured));
-  }
-
-  return await db.select()
+  const baseQuery = db
+    .select({
+      school: schools,
+      coordonne: coordonnes,
+      tag: tags,
+      video: videos,
+    })
     .from(schools)
-    .where(whereClause)
-    .orderBy(desc(schools.createdAt))
-    .limit(limit)
-    .offset(offset);
+    .leftJoin(coordonnes, eq(schools.coordonneId, coordonnes.id))
+    .leftJoin(tags, eq(schools.tagId, tags.id))
+    .leftJoin(videos, eq(schools.videoId, videos.id))
+    .where(
+      and(
+        active !== undefined ? eq(schools.active, active) : sql`true`,
+        type ? eq(schools.type, type) : sql`true`
+      )
+    )
+    .orderBy(asc(schools.sortOrder), desc(schools.createdAt));
+
+  const rows = limit 
+    ? await baseQuery.limit(limit).offset(offset)
+    : offset > 0
+    ? await baseQuery.offset(offset)
+    : await baseQuery;
+
+  return rows.map(({ school, coordonne, tag, video }) => ({
+    id: school.id,
+    name: school.name,
+    description: school.description,
+    type: school.type,
+    subtitle: school.subtitle,
+    image_url: school.imageUrl,
+    imageUrl: school.imageUrl,
+    coordonne_id: school.coordonneId,
+    coordonneId: school.coordonneId,
+    tag_id: school.tagId,
+    tagId: school.tagId,
+    video_id: school.videoId,
+    videoId: school.videoId,
+    active: school.active,
+    sort_order: school.sortOrder,
+    sortOrder: school.sortOrder,
+    created_at: school.createdAt,
+    createdAt: school.createdAt,
+    updated_at: school.updatedAt,
+    updatedAt: school.updatedAt,
+    coordonnes: coordonne
+      ? {
+          id: coordonne.id,
+          phone: coordonne.phone,
+          email: coordonne.email,
+          address: coordonne.address,
+          google_map_url: coordonne.googleMapUrl,
+          googleMapUrl: coordonne.googleMapUrl,
+        }
+      : null,
+    tag: tag
+      ? {
+          id: tag.id,
+          name: tag.name,
+          color: tag.color,
+        }
+      : null,
+    video: video
+      ? {
+          id: video.id,
+          title: video.title,
+          description: video.description,
+          video_type: video.videoType,
+          videoType: video.videoType,
+          youtube_id: video.youtubeId,
+          youtubeId: video.youtubeId,
+          facebook_iframe: video.facebookIframe,
+          facebookIframe: video.facebookIframe,
+          video_url: video.videoUrl,
+          videoUrl: video.videoUrl,
+          thumbnail_url: video.thumbnailUrl,
+          thumbnailUrl: video.thumbnailUrl,
+        }
+      : null,
+  }));
 };
 
 // Specific query functions for coordonnes
@@ -589,10 +721,96 @@ export const getLibraryItems = async (options: {
 
 // Specific query functions for partners
 export const getPartners = async (active: boolean = true) => {
-  return await db.select()
+  return await db.select({
+    id: partners.id,
+    title: partners.title,
+    subtitle: partners.subtitle,
+    description: partners.description,
+    image_url: partners.imageUrl,
+    imageUrl: partners.imageUrl,
+    tag_ids: partners.tagIds,
+    tagIds: partners.tagIds,
+    sort_order: partners.sortOrder,
+    sortOrder: partners.sortOrder,
+    active: partners.active,
+    website_url: partners.websiteUrl,
+    websiteUrl: partners.websiteUrl,
+    contact_email: partners.contactEmail,
+    contactEmail: partners.contactEmail,
+    contact_phone: partners.contactPhone,
+    contactPhone: partners.contactPhone,
+    created_at: partners.createdAt,
+    createdAt: partners.createdAt,
+    updated_at: partners.updatedAt,
+    updatedAt: partners.updatedAt,
+  })
     .from(partners)
     .where(eq(partners.active, active))
     .orderBy(asc(partners.sortOrder));
+};
+
+// Specific query functions for partenaires (enhanced version with options)
+export const getPartenaires = async (options: {
+  active?: boolean;
+  tagIds?: string[];
+  limit?: number;
+  offset?: number;
+  searchTerm?: string;
+} = {}) => {
+  const { active = true, tagIds, limit, offset = 0, searchTerm } = options;
+
+  let whereClause = sql`true`;
+
+  if (active !== undefined) {
+    whereClause = and(whereClause, eq(partners.active, active));
+  }
+
+  if (tagIds && tagIds.length > 0) {
+    whereClause = and(whereClause, sql`${partners.tagIds} && ${tagIds}`);
+  }
+
+  if (searchTerm) {
+    whereClause = and(whereClause, or(
+      like(partners.title, `%${searchTerm}%`),
+      like(partners.subtitle, `%${searchTerm}%`),
+      like(partners.description, `%${searchTerm}%`)
+    ));
+  }
+
+  const baseQuery = db.select({
+    id: partners.id,
+    title: partners.title,
+    subtitle: partners.subtitle,
+    description: partners.description,
+    image_url: partners.imageUrl,
+    imageUrl: partners.imageUrl,
+    tag_ids: partners.tagIds,
+    tagIds: partners.tagIds,
+    sort_order: partners.sortOrder,
+    sortOrder: partners.sortOrder,
+    active: partners.active,
+    website_url: partners.websiteUrl,
+    websiteUrl: partners.websiteUrl,
+    contact_email: partners.contactEmail,
+    contactEmail: partners.contactEmail,
+    contact_phone: partners.contactPhone,
+    contactPhone: partners.contactPhone,
+    created_at: partners.createdAt,
+    createdAt: partners.createdAt,
+    updated_at: partners.updatedAt,
+    updatedAt: partners.updatedAt,
+  })
+    .from(partners)
+    .where(whereClause)
+    .orderBy(asc(partners.sortOrder));
+
+  const result = limit 
+    ? await baseQuery.limit(limit).offset(offset)
+    : offset > 0
+    ? await baseQuery.offset(offset)
+    : await baseQuery;
+
+  return result;
 };
 
 // Specific query functions for tags

@@ -87,9 +87,11 @@ const Bibliotheque = () => {
         downloads: (docItem.downloads || 0) + 1
       });
 
-      // Use R2 public URL
-      const { getPublicUrl } = await import("@/lib/storage/r2");
-      const fileUrl = getPublicUrl(docItem.fileUrl);
+      // Use the URL from DB directly if it's already a full URL, otherwise use getPublicUrl
+      // The fileUrl stored in DB is already a full URL from uploadDocument
+      const fileUrl = docItem.fileUrl.startsWith('http://') || docItem.fileUrl.startsWith('https://')
+        ? docItem.fileUrl
+        : (await import("@/lib/storage/r2")).getPublicUrl(docItem.fileUrl);
 
       // Create a temporary link and trigger download
       const link = document.createElement('a');

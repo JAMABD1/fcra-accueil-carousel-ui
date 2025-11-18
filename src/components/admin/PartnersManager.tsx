@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPartners, deleteRecord, updateRecord } from "@/lib/db/queries";
 import { partners } from "@/lib/db/schema";
+import { getPublicUrl } from "@/lib/storage/r2";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -224,13 +225,25 @@ const PartnersManager = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPartners.map((partner) => (
+                {filteredPartners.map((partner) => {
+                  // Handle image URL - use full URL if available, otherwise convert relative path to public URL
+                  const imageUrl = partner.image_url || (partner as any).imageUrl;
+                  const finalImageUrl = !imageUrl 
+                    ? "/placeholder.svg"
+                    : imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
+                    ? imageUrl
+                    : getPublicUrl(imageUrl);
+                  
+                  return (
                   <TableRow key={partner.id}>
                     <TableCell>
                       <img 
-                        src={partner.image_url} 
+                        src={finalImageUrl} 
                         alt={partner.title}
                         className="w-12 h-12 object-cover rounded"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
                       />
                     </TableCell>
                     <TableCell>
@@ -322,7 +335,8 @@ const PartnersManager = () => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}
