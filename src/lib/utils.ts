@@ -7,19 +7,22 @@ export function cn(...inputs: ClassValue[]) {
 
 // Utility function to fetch photos by tag IDs
 export async function fetchPhotosByTags(tagIds: string[], limit: number = 10) {
-  if (!tagIds || tagIds.length === 0) {
-    return [];
-  }
-
   try {
     const { getPhotos } = await import("@/lib/db/queries");
     const photos = await getPhotos({ status: 'published' });
 
-    // Filter photos that have matching tag IDs
-    const matchingPhotos = photos.filter((photo: any) => {
-      if (!photo.tagIds || !Array.isArray(photo.tagIds)) return false;
-      return photo.tagIds.some((tagId: string) => tagIds.includes(tagId));
-    });
+    let matchingPhotos;
+
+    if (!tagIds || tagIds.length === 0) {
+      // If no tagIds provided, return all photos (for sections without specific tags)
+      matchingPhotos = photos;
+    } else {
+      // Filter photos that have matching tag IDs
+      matchingPhotos = photos.filter((photo: any) => {
+        if (!photo.tagIds || !Array.isArray(photo.tagIds)) return false;
+        return photo.tagIds.some((tagId: string) => tagIds.includes(tagId));
+      });
+    }
 
     // Extract all image URLs from the images array of each photo
     const allImageUrls: string[] = [];

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
@@ -104,23 +105,75 @@ const SectionDetail = () => {
     }
   });
 
-  // Fetch photos based on section tags
-  const { data: sectionPhotos = [] } = useQuery({
-    queryKey: ['section-photos', section?.tag_ids],
-    queryFn: async () => {
-      if (!section || !section.tag_ids || section.tag_ids.length === 0) {
-        return [];
+  // Sections have a single tagName - use it directly for hero filtering
+  const sectionTagName = useMemo(() => {
+    if (!section) return null;
+    // Use tagName (camelCase) or tag_name (snake_case) directly if it exists
+    const tagName = (section as any).tagName || (section as any).tag_name;
+    if (tagName) {
+      return tagName;
+    }
+    // Fallback: if tagIds/tag_ids exists, get the first tag's name
+    const tagIds = (section as any).tagIds || (section as any).tag_ids;
+    if (Array.isArray(tagIds) && tagIds.length > 0) {
+      const firstTag = tags.find((tag) => tag.id === tagIds[0]);
+      return firstTag?.name || null;
+    }
+    return null;
+  }, [section, tags]);
+
+  // For impacts and other queries that need tag IDs
+  // Sections only have one tagName - prioritize tagName/tag_name over tagIds/tag_ids
+  const sectionTagIds = useMemo(() => {
+    if (!section) return [];
+
+    const sectionAny = section as any;
+
+    // First, try to get tag ID from tagName/tag_name (primary source for sections)
+    const tagName = sectionAny.tagName || sectionAny.tag_name;
+    if (tagName) {
+      const matchingTag = tags.find((tag) => tag.name.toLowerCase() === tagName.toLowerCase());
+      if (matchingTag) {
+        return [matchingTag.id];
+      } else {
+        // Try partial match or similar names
+        const similarTags = tags.filter(tag =>
+          tag.name.toLowerCase().includes(tagName.toLowerCase()) ||
+          tagName.toLowerCase().includes(tag.name.toLowerCase())
+        );
+        if (similarTags.length > 0) {
+          return [similarTags[0].id];
+        }
       }
-      return await fetchPhotosByTags(section.tag_ids, 10);
+    }
+
+    // Fallback to first tag from tagIds/tag_ids if tagName is not available
+    const tagIds = sectionAny.tagIds || sectionAny.tag_ids;
+    if (Array.isArray(tagIds) && tagIds.length > 0) {
+      return [tagIds[0]];
+    }
+
+    return [];
+  }, [section, tags]);
+
+  // Fetch photos based on section tags (using resolved IDs)
+  const { data: sectionPhotos = [] } = useQuery({
+    queryKey: ['section-photos', sectionTagIds],
+    queryFn: async () => {
+      if (sectionTagIds.length === 0) {
+        // If no specific tags, return a reasonable number of recent photos
+        return await fetchPhotosByTags([], 20);
+      }
+      return await fetchPhotosByTags(sectionTagIds, 1000); // Show all photos with matching tags
     },
-    enabled: !!section && !!section.tag_ids && section.tag_ids.length > 0
+    enabled: !!section
   });
 
   // Fetch related impacts based on shared tags
   const { data: relatedImpacts = [] } = useQuery({
-    queryKey: ['related-impacts', section?.tag_ids],
+    queryKey: ['related-impacts', sectionTagIds],
     queryFn: async () => {
-      if (!section || !section.tag_ids || section.tag_ids.length === 0) return [];
+      if (sectionTagIds.length === 0) return [];
       
       const impacts = await getImpactItems(true);
       
@@ -156,41 +209,32 @@ const SectionDetail = () => {
       
       // Filter impacts that share at least one tag with the section
       const filteredImpacts = processedImpacts.filter((impact: any) => {
-        return section.tag_ids.some(tagId => impact.tagIds.includes(tagId));
+        return sectionTagIds.some(tagId => impact.tagIds.includes(tagId));
       });
       
       return filteredImpacts as Impact[];
     },
-    enabled: !!section
+    enabled: !!section && sectionTagIds.length > 0
   });
 
   // Fetch related articles based on shared tags - last 6 articles
   const { data: relatedArticles = [] } = useQuery({
-    queryKey: ['related-articles', section?.tag_ids],
+    queryKey: ['related-articles', sectionTagName],
     queryFn: async () => {
-      if (!section || !section.tag_ids || section.tag_ids.length === 0) return [];
+      if (!sectionTagName) return [];
       
       const articles = await getArticles({ status: 'published', limit: 20 });
       
-      // Get tag names from section
-      const sectionTagNames = section.tag_ids
-        .map(tagId => tags.find(tag => tag.id === tagId)?.name)
-        .filter(Boolean);
-      
-      if (sectionTagNames.length === 0) return [];
-      
-      // Filter articles that have at least one matching tag
+      // Filter articles that have the matching tag name
       const filteredArticles = articles.filter((article: any) => {
         const articleTags = article.tags || [];
-        return sectionTagNames.some(tagName => 
-          articleTags.includes(tagName)
-        );
+        return articleTags.includes(sectionTagName);
       });
       
       // Return only the last 6 articles
-      return filteredArticles.slice(0, 6) as Article[];
+      return filteredArticles.slice(0, 6);
     },
-    enabled: !!section && !!tags.length
+    enabled: !!section && !!sectionTagName
   });
 
   const getTagsBadges = (tagIds: string[]) => {
@@ -214,8 +258,8 @@ const SectionDetail = () => {
   };
 
   const getSharedTags = (itemTagIds: string[]) => {
-    if (!section || !section.tag_ids) return [];
-    return section.tag_ids.filter(tagId => itemTagIds.includes(tagId));
+    if (!sectionTagIds.length) return [];
+    return sectionTagIds.filter(tagId => itemTagIds.includes(tagId));
   };
 
   if (sectionLoading) {
@@ -240,20 +284,13 @@ const SectionDetail = () => {
     );
   }
 
-  // Get tag names for filtering heroes
-  const sectionTagNames = (section?.tag_ids && Array.isArray(section.tag_ids))
-    ? section.tag_ids
-        .map(tagId => tags.find(tag => tag.id === tagId)?.name)
-        .filter(Boolean) as string[]
-    : [];
-
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        {/* Hero Carousel - Show heroes with matching tags */}
-        {sectionTagNames.length > 0 && (
+        {/* Hero Carousel - Show heroes with matching tag name */}
+        {sectionTagName && (
           <TaggedHeroCarousel 
-            filterTags={sectionTagNames}
+            filterTags={[sectionTagName]}
             showButtons={false}
             heightClass="h-96 md:h-[500px]"
           />
@@ -269,18 +306,18 @@ const SectionDetail = () => {
             </h2>
           </div>
           
-          {/* Conditional rendering based on sort_order */}
-          {section.sort_order === 1 ? (
+          {/* Conditional rendering based on sortOrder/sort_order */}
+          {((section as any).sortOrder || (section as any).sort_order) === 1 ? (
             <OrphelinatSection photos={sectionPhotos} />
-          ) : section.sort_order === 2 ? (
+          ) : ((section as any).sortOrder || (section as any).sort_order) === 2 ? (
             <EducationSection photos={sectionPhotos} />
-          ) : section.sort_order === 4 ? (
+          ) : ((section as any).sortOrder || (section as any).sort_order) === 4 ? (
             <SanteSection photos={sectionPhotos} />
-          ) : section.sort_order === 5 ? (
+          ) : ((section as any).sortOrder || (section as any).sort_order) === 5 ? (
             <ReligionSection photos={sectionPhotos} />
-          ) : section.sort_order === 6 ? (
+          ) : ((section as any).sortOrder || (section as any).sort_order) === 6 ? (
             <InfoproSection photos={sectionPhotos} />
-          ) : section.sort_order === 7 ? (
+          ) : ((section as any).sortOrder || (section as any).sort_order) === 7 ? (
             <UniversitesSection photos={sectionPhotos} />
           ) : (
             <div className="max-w-4xl mx-auto">
@@ -329,10 +366,12 @@ const SectionDetail = () => {
         )}
 
         {/* Partners Carousel */}
-        <PartnersCarousel 
-          filterTags={sectionTagNames}
-          maxPartners={8}
-        />
+        {sectionTagName && (
+          <PartnersCarousel 
+            filterTags={[sectionTagName]}
+            maxPartners={8}
+          />
+        )}
 
         {/* Related Articles - Derniers Actualités */}
         {relatedArticles.length > 0 && (
@@ -366,7 +405,14 @@ const SectionDetail = () => {
                     </div>
                     <CardContent className="p-6">
                       <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                        <span>{new Date(article.created_at).toLocaleDateString('fr-FR')}</span>
+                        <span>
+                          {(() => {
+                            const dateValue = (article as any).createdAt || (article as any).created_at;
+                            if (!dateValue) return 'Date inconnue';
+                            const date = new Date(dateValue);
+                            return isNaN(date.getTime()) ? 'Date inconnue' : date.toLocaleDateString('fr-FR');
+                          })()}
+                        </span>
                         {article.author && (
                           <>
                             <span>•</span>

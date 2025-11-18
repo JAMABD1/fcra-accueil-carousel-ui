@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSchools, deleteRecord } from "@/lib/db/queries";
-import { schools } from "@/lib/db/schema";
+import { schools as schoolsTable } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ const SchoolsManager = () => {
   const { toast } = useToast();
 
   // Fetch schools with related data
-  const { data: schools = [], isLoading, refetch } = useQuery({
+  const { data: schoolsData = [], isLoading, refetch } = useQuery({
     queryKey: ['schools-admin'],
     queryFn: async () => {
       return await getSchools();
@@ -50,7 +50,7 @@ const SchoolsManager = () => {
   });
 
   // Filter schools based on search term
-  const filteredSchools = schools.filter(school =>
+  const filteredSchools = schoolsData.filter(school =>
     school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     school.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     school.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,8 +59,8 @@ const SchoolsManager = () => {
   );
 
   // Statistics
-  const totalSchools = schools.length;
-  const schoolsByType = schools.reduce((acc, school) => {
+  const totalSchools = schoolsData.length;
+  const schoolsByType = schoolsData.reduce((acc, school) => {
     acc[school.type] = (acc[school.type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -72,7 +72,7 @@ const SchoolsManager = () => {
 
   const handleDelete = async (school: School) => {
     try {
-      await deleteRecord(schools, school.id);
+      await deleteRecord(schoolsTable, school.id);
 
       toast({
         title: "École supprimée",
@@ -158,7 +158,7 @@ const SchoolsManager = () => {
           </CardHeader>
           <CardContent>
             <div className="text-sm text-green-600">
-              {schools.length > 0 ? new Date(schools[0].updated_at).toLocaleDateString('fr-FR') : 'N/A'}
+              {schoolsData.length > 0 ? new Date(schoolsData[0].updated_at).toLocaleDateString('fr-FR') : 'N/A'}
             </div>
           </CardContent>
         </Card>

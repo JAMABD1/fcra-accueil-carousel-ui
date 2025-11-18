@@ -36,9 +36,13 @@ export interface Article {
   tags: string[] | null;
   featured: boolean | null;
   status: string | null;
-  published_at: string | null;
-  created_at: string;
-  updated_at: string;
+  published_at?: string | Date | null;
+  created_at?: string | Date;
+  updated_at?: string | Date;
+  // camelCase variants returned by drizzle
+  publishedAt?: string | Date | null;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 const ArticlesManager = () => {
@@ -49,7 +53,7 @@ const ArticlesManager = () => {
   const queryClient = useQueryClient();
 
   // Fetch articles
-  const { data: articles = [], isLoading } = useQuery({
+  const { data: articles = [], isLoading } = useQuery<Article[]>({
     queryKey: ['articles'],
     queryFn: async () => {
       return await getArticles({ status: undefined }); // Get all articles
@@ -118,8 +122,17 @@ const ArticlesManager = () => {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+  const formatDate = (dateInput?: string | Date | null) => {
+    if (!dateInput) {
+      return '—';
+    }
+
+    const parsedDate = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    if (isNaN(parsedDate.getTime())) {
+      return '—';
+    }
+
+    return parsedDate.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -235,7 +248,7 @@ const ArticlesManager = () => {
                   <TableHead>Auteur</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>En vedette</TableHead>
-                  <TableHead>Date de création</TableHead>
+                  <TableHead>Date de publication</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -289,7 +302,16 @@ const ArticlesManager = () => {
                           <Badge variant="outline">Non</Badge>
                         )}
                       </TableCell>
-                      <TableCell>{formatDate(article.created_at)}</TableCell>
+                      <TableCell>
+                        {formatDate(
+                          article.published_at ??
+                          article.publishedAt ??
+                          article.updated_at ??
+                          article.updatedAt ??
+                          article.created_at ??
+                          article.createdAt
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button

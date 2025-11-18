@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Search, Edit, Trash2, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getVideos, deleteRecord } from "@/lib/db/queries";
+import { getVideos, deleteRecord, getTags } from "@/lib/db/queries";
 import { videos as videosTable } from "@/lib/db/schema";
 import { useToast } from "@/hooks/use-toast";
 import VideoFormModal from "./VideoFormModal";

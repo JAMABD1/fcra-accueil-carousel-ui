@@ -50,7 +50,34 @@ const TaggedHeroCarousel = ({
     { text: "Nous rejoindre", variant: "default" as const },
   ];
 
-  const slides = heroes.map(hero => ({
+  // Map tag ids to names for easy lookup
+  const tagNameById = tags.reduce<Record<string, string>>((acc, tag) => {
+    acc[tag.id] = tag.name;
+    return acc;
+  }, {});
+
+  const filteredHeroes = filterTags.length === 0
+    ? heroes
+    : heroes.filter(hero => {
+        let heroTagIds: string[] = [];
+        const heroAny = hero as any;
+
+        if (Array.isArray(heroAny.tag_ids)) {
+          heroTagIds = heroAny.tag_ids;
+        } else if (heroAny.tags_id) {
+          heroTagIds = [heroAny.tags_id];
+        }
+
+        // Hero must have at least one tag that matches any of the filter tags
+        // Convert hero tag IDs to tag names and check if any match the filter tags
+        const heroTagNames = heroTagIds
+          .map(tagId => tagNameById[tagId])
+          .filter(Boolean); // Remove any undefined values
+        
+        return heroTagNames.some(tagName => filterTags.includes(tagName));
+      });
+
+  const slides = filteredHeroes.map(hero => ({
     image: hero.image_url,
     title: hero.title,
     subtitle: hero.subtitle || '',

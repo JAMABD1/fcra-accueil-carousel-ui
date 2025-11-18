@@ -110,7 +110,7 @@ export const getVideos = async (options: {
   offset?: number;
   searchTerm?: string;
 } = {}) => {
-  const { status, featured, limit = 10, offset = 0, searchTerm } = options;
+  const { status, featured, limit = 1000, offset = 0, searchTerm } = options;
 
   let whereClause = sql`true`;
 
@@ -172,7 +172,7 @@ export const getPhotos = async (options: {
   limit?: number;
   offset?: number;
 } = {}) => {
-  const { category, status, featured, tagIds, limit = 10, offset = 0 } = options;
+  const { category, status, featured, tagIds, limit = 1000, offset = 0 } = options;
 
   let whereClause = sql`true`;
 

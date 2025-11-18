@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getCentres, deleteRecord, getTags } from "@/lib/db/queries";
-import { centres } from "@/lib/db/schema";
+import { getCentres, deleteRecord } from "@/lib/db/queries";
+import { centres as centresTable } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,7 @@ const CentresManager = () => {
   const { toast } = useToast();
 
   // Fetch centres with related data
-  const { data: centres = [], isLoading, refetch } = useQuery({
+  const { data: centresData = [], isLoading, refetch } = useQuery({
     queryKey: ['centres'],
     queryFn: async () => {
       return await getCentres();
@@ -66,7 +66,7 @@ const CentresManager = () => {
     normalizedSearch === "" || (value && value.toLowerCase().includes(normalizedSearch));
 
   // Filter centres based on search term
-  const filteredCentres = centres.filter(centre => {
+  const filteredCentres = centresData.filter(centre => {
     const nameMatch = matchesSearch(centre.name);
     const descriptionMatch = matchesSearch(centre.description);
     const addressMatch = matchesSearch(centre.address);
@@ -75,9 +75,9 @@ const CentresManager = () => {
   });
 
   // Statistics
-  const totalCentres = centres.length;
-  const activeCentres = centres.filter(c => c.active).length;
-  const withVideos = centres.filter(c => c.videoId || (c as any).video_id || c.videos).length;
+  const totalCentres = centresData.length;
+  const activeCentres = centresData.filter(c => c.active).length;
+  const withVideos = centresData.filter(c => c.videoId || (c as any).video_id || c.videos).length;
 
   const handleEdit = (centre: Centre) => {
     setSelectedCentre(centre);
@@ -86,7 +86,7 @@ const CentresManager = () => {
 
   const handleDelete = async (centre: Centre) => {
     try {
-      await deleteRecord(centres, centre.id);
+      await deleteRecord(centresTable, centre.id);
 
       toast({
         title: "Centre supprimé",

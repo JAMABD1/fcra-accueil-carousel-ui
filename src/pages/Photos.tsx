@@ -36,9 +36,8 @@ const Photos = () => {
   });
 
   const filteredPhotos = photos.filter(photo =>
-    photo.category !== "General" &&
-    (photo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    photo.category.toLowerCase().includes(searchTerm.toLowerCase()))
+    photo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    photo.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {

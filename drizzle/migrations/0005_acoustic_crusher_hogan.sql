@@ -1,0 +1,1 @@
+ALTER TABLE "centres" ADD COLUMN "tag_name" text;

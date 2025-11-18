@@ -1,0 +1,2 @@
+INSERT INTO library (title, description, file_url, file_name, file_size, file_type, category, downloads, featured, status, author) VALUES
+  ('RAPPORT DES ACTIVITES DU FCRA [2023-2024]', 'RAPPORT DES ACTIVITES DU FCRA [2023-2024]', 'https://pub-03ee1d270877480c8234daba55734fbe.r2.dev/fcra-sitweb/library/library_1763464813110_rapport_des_activites_du_fcra__2023_2024_.pdf', '1756194232097-rapport20232024.pdf', 8929480, 'application/pdf', 'general', 2, false, 'published', 'Daoud');
