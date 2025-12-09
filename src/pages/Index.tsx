@@ -24,7 +24,7 @@ const YouTubeVideo = ({ videoId }: { videoId: string }) => {
       </div>
     </div>
   );
-};
+};   
 
 const Index = () => {
   const navigate = useNavigate();
@@ -234,7 +234,7 @@ const Index = () => {
       </div>
 
             <div className="col-span-1">
-            <YouTubeVideo videoId="bklq4ZVkfIk" />
+            <YouTubeVideo videoId="WlknRHFGlW0" />
             </div>
             </div>
 
