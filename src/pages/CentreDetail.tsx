@@ -106,7 +106,7 @@ const CentreDetail = () => {
       }
       return [];
     },
-    enabled: !!centre && !!centre.tag_id && tags.length > 0
+    enabled: !!centre && !!centre.centre?.tagId && tags.length > 0
   });
 
   const { data: historyPhotos = [] } = useQuery({
@@ -128,7 +128,7 @@ const CentreDetail = () => {
       }
       return [];
     },
-    enabled: !!centre && !!centre.tag_id && tags.length > 0
+    enabled: !!centre && !!centre.centre?.tagId && tags.length > 0
   });
 
   // Fetch related impacts based on center tag
@@ -190,7 +190,7 @@ const CentreDetail = () => {
   }
 
   // Get center tag name for hero filtering
-  const centerTag = tags.find(tag => tag.id === centre.tag_id);
+  const centerTag = tags.find(tag => tag.id === centre.centre?.tagId);
   const centerTagNames = centerTag ? [centerTag.name] : [];
 
   return (
@@ -206,9 +206,9 @@ const CentreDetail = () => {
         )}
 
         {/* Center Header */}
-        <section className="py-16 bg-white">
+        <section className="py-8 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
+            <div className="text-center mb-6">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                 {centre.name}
               </h1>
@@ -235,7 +235,7 @@ const CentreDetail = () => {
         </section>
 
         {/* Dynamic Center Detail Section */}
-        <section className="py-16 bg-gray-50">
+        <section className="py-8 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Dynamic Component with Missions, Vision, Values and History */}
             {(() => {
@@ -259,17 +259,17 @@ const CentreDetail = () => {
 
         {/* Impact Section with Animated Counters */}
         {relatedImpacts.length > 0 && (
-          <section className="py-16 bg-gray-50">
+          <section className="py-8 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <div className="text-center mb-6">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                   Notre Impact en Chiffres
                 </h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {relatedImpacts.map((impact: any) => (
                   <div key={impact.id} className="text-center">
-                    <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
                       <Counter end={impact.number} suffix="+" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">{impact.title}</h3>
@@ -285,11 +285,11 @@ const CentreDetail = () => {
 
         {/* Derniers Articles Section */}
         {latestArticles.length > 0 && (
-          <section className="py-16 bg-white">
+          <section className="py-8 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center justify-between mb-6">
                 <div className="text-center md:text-left w-full">
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                     Derniers articles
                   </h2>
                 </div>
@@ -303,11 +303,11 @@ const CentreDetail = () => {
                   </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {latestArticles.map((article: any) => (
                   <Card key={article.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg'})` }}></div>
-                    <CardContent className="p-6">
+                    <CardContent className="p-4">
                       <h3 className="text-xl font-semibold mb-2">{article.title}</h3>
                       <p className="text-gray-600 text-sm mb-4 line-clamp-3">{article.excerpt || (article.content?.substring(0, 150) + '...')}</p>
                       <Button asChild variant="outline" className="w-full mt-2">
@@ -323,18 +323,18 @@ const CentreDetail = () => {
 
         {/* Directors Section */}
         {centre.directors && centre.directors.length > 0 && (
-          <section className="py-16 bg-gray-50">
+          <section className="py-8 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <div className="text-center mb-6">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                   Notre Équipe
                 </h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {centre.directors.map((director) => (
                   <Card key={director.id} className="text-center">
-                    <CardContent className="p-6">
-                      <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden">
                         {director.image_url ? (
                           <img
                             src={director.image_url}

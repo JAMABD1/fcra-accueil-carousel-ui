@@ -16,6 +16,7 @@ import SanteSection from "@/components/SanteSection";
 import ReligionSection from "@/components/ReligionSection";
 import InfoproSection from "@/components/InfoproSection";
 import UniversitesSection from "@/components/UniversitesSection";
+import RVSSection from "@/components/RVSSection";
 import PartnersCarousel from "@/components/PartnersCarousel";
 import Counter from "@/components/Counter";
 import { fetchPhotosByTags } from "@/lib/utils";
@@ -311,6 +312,8 @@ const SectionDetail = () => {
             <OrphelinatSection photos={sectionPhotos} />
           ) : ((section as any).sortOrder || (section as any).sort_order) === 2 ? (
             <EducationSection photos={sectionPhotos} />
+          ) : ((section as any).sortOrder || (section as any).sort_order) === 3 ? (
+            <RVSSection photos={sectionPhotos} />
           ) : ((section as any).sortOrder || (section as any).sort_order) === 4 ? (
             <SanteSection photos={sectionPhotos} />
           ) : ((section as any).sortOrder || (section as any).sort_order) === 5 ? (

@@ -10,16 +10,16 @@ const CenterDetail4 = ({ missionPhotos, historyPhotos }: CenterDetail4Props) => 
   return (
     <>
       {/* Mission Section */}
-      <section className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="col-span-1">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
               🎯 Mission
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Le centre s'inscrit pleinement dans les objectifs du FCRA :
             </p>
-            <ul className="list-disc list-inside text-gray-600 space-y-2 mb-4">
+            <ul className="list-disc list-inside text-gray-600 space-y-1 mb-3">
               <li>Promouvoir l'éducation intégrale</li>
               <li>Favoriser le développement humain durable</li>
               <li>Soutenir une jeunesse tournée vers l'avenir, responsable, éduquée et engagée</li>
@@ -41,13 +41,13 @@ const CenterDetail4 = ({ missionPhotos, historyPhotos }: CenterDetail4Props) => 
       </section>
 
       {/* Vision Section */}
-      <section className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="col-span-1">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
               🏗️ Un centre éducatif en pleine expansion
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Créé il y a bientôt trois ans, le centre FCRA de Sakoana incarne la volonté du FCRA 
               d'élargir son action éducative dans des zones stratégiques, souvent négligées, 
               en accompagnant les jeunes vers un avenir meilleur.
@@ -81,7 +81,7 @@ const CenterDetail4 = ({ missionPhotos, historyPhotos }: CenterDetail4Props) => 
             <Card className="p-6">
               <CardContent className="p-0">
                 <h4 className="text-lg font-semibold mb-4">🎯 Un même objectif : l'avenir de la jeunesse</h4>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 mb-3">
                   Bien que jeune, le centre de Sakoana partage une vision commune :
                 </p>
                 <ul className="list-disc list-inside text-gray-600 space-y-2">
@@ -103,14 +103,14 @@ const CenterDetail4 = ({ missionPhotos, historyPhotos }: CenterDetail4Props) => 
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               Centres FCRA Sakoana – École en pleine expansion
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Créé il y a bientôt trois ans, le centre FCRA de Sakoana incarne la volonté du FCRA 
               d'élargir son action éducative dans des zones stratégiques, souvent négligées, 
               en accompagnant les jeunes vers un avenir meilleur.
             </p>
             
             <h4 className="text-lg font-semibold mb-3 text-gray-900">📅 Trois années d'engagement éducatif</h4>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Le centre s'engage activement pour une scolarisation accessible en zone rurale, 
               la formation académique et citoyenne des élèves, et l'implication communautaire 
               en collaboration avec les familles et autorités locales.

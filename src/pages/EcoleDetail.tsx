@@ -143,18 +143,18 @@ const EcoleDetail = () => {
         return tagIds.includes(school.tagId);
       });
     },
-    enabled: !!school?.tag_id
+    enabled: !!school?.tagId
   });
 
   // Fetch photos for different sections based on school tag
   const { data: missionPhotos = [] } = useQuery({
-    queryKey: ['mission-photos', school?.tag_id],
+    queryKey: ['mission-photos', school?.tagId],
     queryFn: async () => {
-      if (!school || !school.tag_id) {
+      if (!school || !school.tagId) {
         return [];
       }
       // Get the school tag name first
-      const schoolTag = tags.find(tag => tag.id === school.tag_id);
+      const schoolTag = tags.find(tag => tag.id === school.tagId);
       if (!schoolTag) return [];
       
       // Create mission tag name
@@ -166,17 +166,17 @@ const EcoleDetail = () => {
       }
       return [];
     },
-    enabled: !!school && !!school.tag_id && tags.length > 0
+    enabled: !!school && !!school.tagId && tags.length > 0
   });
 
   const { data: historyPhotos = [] } = useQuery({
-    queryKey: ['history-photos', school?.tag_id],
+    queryKey: ['history-photos', school?.tagId],
     queryFn: async () => {
-      if (!school || !school.tag_id) {
+      if (!school || !school.tagId) {
         return [];
       }
       // Get the school tag name first
-      const schoolTag = tags.find(tag => tag.id === school.tag_id);
+      const schoolTag = tags.find(tag => tag.id === school.tagId);
       if (!schoolTag) return [];
       
       // Create history tag name
@@ -188,7 +188,7 @@ const EcoleDetail = () => {
       }
       return [];
     },
-    enabled: !!school && !!school.tag_id && tags.length > 0
+    enabled: !!school && !!school.tagId && tags.length > 0
   });
 
   // Fetch up to 3 latest articles with the same tag as the school
@@ -203,7 +203,7 @@ const EcoleDetail = () => {
         return Array.isArray(articleTags) && articleTags.includes(school.tagId);
       }).slice(0, 3);
     },
-    enabled: !!school?.tag_id
+    enabled: !!school?.tagId
   });
 
   // Remove the relatedVideos query (no longer needed)
@@ -243,7 +243,7 @@ const EcoleDetail = () => {
   const video: any = school && school.video && typeof school.video === 'object' && !('code' in school.video) ? school.video : null;
 
   // Get school tag name for hero filtering
-  const schoolTag = tags.find(tag => tag.id === school.tag_id);
+  const schoolTag = tags.find(tag => tag.id === school.tagId);
   const schoolTagNames = schoolTag ? [schoolTag.name] : [];
 
   return (

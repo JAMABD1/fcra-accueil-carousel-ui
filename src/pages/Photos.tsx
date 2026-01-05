@@ -1,6 +1,7 @@
 
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Calendar, Eye, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -24,6 +25,7 @@ interface Photo {
 
 const Photos = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
   const { data: photos = [], isLoading } = useQuery({
     queryKey: ["photos"],
@@ -35,10 +37,23 @@ const Photos = () => {
     },
   });
 
-  const filteredPhotos = photos.filter(photo =>
-    photo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    photo.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPhotos = photos.filter(photo => {
+    const matchesSearch = photo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      photo.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesFilter = true;
+    if (selectedFilter !== "all") {
+      const photoCategory = photo.category.toLowerCase();
+      if (selectedFilter === "visite") {
+        matchesFilter = photoCategory === "visite";
+      } else if (selectedFilter === "general") {
+        // Match both "General" and "Générale"
+        matchesFilter = photoCategory === "general" || photoCategory === "générale";
+      }
+    }
+    
+    return matchesSearch && matchesFilter;
+  });
 
   if (isLoading) {
     return (
@@ -65,6 +80,31 @@ const Photos = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Découvrez nos moments marquants en images
             </p>
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
+            <Button
+              variant={selectedFilter === "all" ? "default" : "outline"}
+              onClick={() => setSelectedFilter("all")}
+              className={selectedFilter === "all" ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              Tous
+            </Button>
+            <Button
+              variant={selectedFilter === "visite" ? "default" : "outline"}
+              onClick={() => setSelectedFilter("visite")}
+              className={selectedFilter === "visite" ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              Visite
+            </Button>
+            <Button
+              variant={selectedFilter === "general" ? "default" : "outline"}
+              onClick={() => setSelectedFilter("general")}
+              className={selectedFilter === "general" ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              Générale
+            </Button>
           </div>
 
           {/* Search Bar */}
@@ -120,7 +160,13 @@ const Photos = () => {
 
           {filteredPhotos.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">Aucune photo trouvée pour "{searchTerm}"</p>
+              <p className="text-gray-500">
+                {searchTerm 
+                  ? `Aucune photo trouvée pour "${searchTerm}"${selectedFilter !== "all" ? ` dans la catégorie ${selectedFilter === "visite" ? "Visite" : "Générale"}` : ""}`
+                  : selectedFilter !== "all"
+                  ? `Aucune photo trouvée dans la catégorie ${selectedFilter === "visite" ? "Visite" : "Générale"}`
+                  : "Aucune photo trouvée"}
+              </p>
             </div>
           )}
         </div>

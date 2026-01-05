@@ -51,7 +51,7 @@ const OrphelinatSection = ({ photos }: OrphelinatSectionProps) => {
 
           <Card className="p-6">
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">Plus de 230 enfants pris en charge</h3>
+              <h3 className="text-xl font-semibold mb-4">Plus de 240 enfants pris en charge</h3>
               <p className="text-gray-600 mb-4">
                 Un accompagnement global: hébergement, alimentation, soins, éducation et encadrement
                 affectif, pour permettre à chaque enfant de s'épanouir et d'apprendre.

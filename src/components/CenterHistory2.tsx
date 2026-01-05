@@ -10,16 +10,16 @@ const CenterDetail2 = ({ missionPhotos, historyPhotos }: CenterDetail2Props) => 
   return (
     <>
       {/* Mission Section */}
-      <section className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="col-span-1">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
               🎯 Mission
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Le centre s'inscrit pleinement dans les objectifs du FCRA :
             </p>
-            <ul className="list-disc list-inside text-gray-600 space-y-2 mb-4">
+            <ul className="list-disc list-inside text-gray-600 space-y-1 mb-3">
               <li>Promouvoir l'éducation intégrale</li>
               <li>Favoriser le développement humain durable</li>
               <li>Soutenir une jeunesse tournée vers l'avenir, responsable, éduquée et engagée</li>
@@ -41,13 +41,13 @@ const CenterDetail2 = ({ missionPhotos, historyPhotos }: CenterDetail2Props) => 
       </section>
 
       {/* Vision Section */}
-      <section className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="col-span-1">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
               🏗️ Un complexe éducatif d'envergure
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Doté d'infrastructures modernes, le centre d'Andakana symbolise l'ambition du FCRA : 
               offrir à la jeunesse malgache un accès équitable à une éducation de qualité, 
               dans un cadre propice à l'épanouissement personnel et collectif.
@@ -80,7 +80,7 @@ const CenterDetail2 = ({ missionPhotos, historyPhotos }: CenterDetail2Props) => 
             <Card className="p-6">
               <CardContent className="p-0">
                 <h4 className="text-lg font-semibold mb-4">🚀 Un symbole d'espoir</h4>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 mb-3">
                   Le Centre d'Andakana est bien plus qu'un lieu de formation : il représente un espace d'avenir pour de nombreux jeunes en quête d'un meilleur futur.
                 </p>
                 <h4 className="text-lg font-semibold mb-4">📍 Localisation</h4>
@@ -101,12 +101,12 @@ const CenterDetail2 = ({ missionPhotos, historyPhotos }: CenterDetail2Props) => 
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               Centre FCRA Andakana – Complexe éducatif principal
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Le Centre FCRA Andakana est situé dans la commune rurale d'Andakana. Il représente aujourd'hui le plus grand complexe du réseau FCRA à Madagascar.
             </p>
             
             <h4 className="text-lg font-semibold mb-3 text-gray-900">🏗️ Un complexe éducatif d'envergure</h4>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-3">
               Doté d'infrastructures modernes, le centre d'Andakana symbolise l'ambition du FCRA : 
               offrir à la jeunesse malgache un accès équitable à une éducation de qualité, 
               dans un cadre propice à l'épanouissement personnel et collectif.
