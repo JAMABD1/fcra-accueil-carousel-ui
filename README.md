@@ -1,73 +1,103 @@
-# Welcome to your Lovable project
+# FCRA Accueil — Carousel UI
 
-## Project info
+Public website and admin area for presenting FCRA content: hero carousel, news, centres, activities, media (photos and videos), library, schools, and thematic sections. Built as a single-page application with a protected `/admin` dashboard for content management.
 
-**URL**: https://lovable.dev/projects/912ded3c-b4b2-443a-b64f-ffa0aecbdaf7
+## Tech stack
 
-## How can I edit this code?
+| Area | Technology |
+|------|------------|
+| App | [React 18](https://react.dev/), [TypeScript](https://www.typescriptlang.org/) |
+| Build | [Vite5](https://vitejs.dev/) |
+| Styling | [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/) (Radix primitives) |
+| Routing | [React Router6](https://reactrouter.com/) |
+| Data fetching | [TanStack Query](https://tanstack.com/query) |
+| Database | [Neon](https://neon.tech/) (serverless Postgres) via [@neondatabase/serverless](https://github.com/neondatabase/serverless), [Drizzle ORM](https://orm.drizzle.team/) |
+| File storage | S3-compatible API ([AWS SDK](https://docs.aws.amazon.com/sdk-for-javascript/); e.g. Cloudflare R2) |
+| Auth | JWT ([jose](https://github.com/panva/jose)), bcrypt for passwords |
 
-There are several ways of editing your application.
+## Requirements
 
-**Use Lovable**
+- **Node.js** 18+ and **npm** (see [nvm](https://github.com/nvm-sh/nvm) if you need a version manager)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/912ded3c-b4b2-443a-b64f-ffa0aecbdaf7) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Quick start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone https://github.com/JAMABD1/fcra-accueil-carousel-ui.git
+cd fcra-accueil-carousel-ui
+npm install
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Create a `.env` file in the project root (see [Environment variables](#environment-variables)). Then:
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The dev server starts via Vite (default URL is printed in the terminal, usually `http://localhost:5173`).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Other scripts
 
-**Use GitHub Codespaces**
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server with hot reload |
+| `npm run build` | Production build to `dist/` |
+| `npm run build:dev` | Build in development mode |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Run ESLint |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Environment variables
 
-## What technologies are used for this project?
+Vite exposes only variables prefixed with `VITE_` to the browser. The codebase also accepts several **non-`VITE_`** names as fallbacks where noted (useful for scripts or tooling).
 
-This project is built with:
+| Variable | Purpose |
+|----------|---------|
+| `VITE_DATABASE_URL` | Neon / Postgres connection string (`DATABASE_URL` also accepted in code) |
+| `VITE_JWT_SECRET` | Secret for signing JWTs (`JWT_SECRET` also accepted) |
+| `VITE_AWS_S3_API_URL` | S3-compatible endpoint URL |
+| `VITE_AWS_ACCESS_KEY_ID` | Access key |
+| `VITE_AWS_SECRET_ACCESS_KEY` | Secret key |
+| `VITE_AWS_S3_BUCKET_NAME` | Bucket name |
+| `VITE_R2_PUBLIC_URL` | Public base URL for served assets (`R2_PUBLIC_URL` also accepted) |
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Never commit real secrets. Keep `.env` out of version control.
 
-## How can I deploy this project?
+## Routes (overview)
 
-Simply open [Lovable](https://lovable.dev/projects/912ded3c-b4b2-443a-b64f-ffa0aecbdaf7) and click on Share -> Publish.
+| Path | Description |
+|------|-------------|
+| `/` | Home (hero carousel, highlights, contact) |
+| `/actualites`, `/actualites/:id` | News listing and article detail |
+| `/administrations` | Administrations page |
+| `/centres`, `/centres/:id` | Centres listing and detail |
+| `/activites`, `/activites/:id` | Activities |
+| `/videos`, `/videos/:id` | Videos |
+| `/photos`, `/photos/:id` | Photo galleries |
+| `/bibliotheque` | Library |
+| `/ecoles`, `/ecoles/:id` | Schools |
+| `/sections`, `/sections/:id` | Thematic sections |
+| `/login`, `/signup` | Authentication |
+| `/admin` | **Protected** admin dashboard |
 
-## Can I connect a custom domain to my Lovable project?
+## Project layout (high level)
 
-Yes, you can!
+- `src/pages/` — Route-level screens
+- `src/components/` — Shared UI and feature blocks
+- `src/components/admin/` — Admin CRUD and upload flows
+- `src/lib/db/` — Drizzle schema, client, queries
+- `src/lib/auth/` — JWT and password helpers
+- `src/lib/storage/` — S3/R2 upload helpers
+- `scripts/` — Optional upload and maintenance scripts
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Deployment
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+You can deploy the Vite `dist/` output to any static host. Ensure production env vars are set on the host or in your CI/CD pipeline. If you use [Lovable](https://lovable.dev), publishing is available from the project under **Share → Publish**; custom domains are documented in [Lovable’s custom domain guide](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide).
+
+## Lovable project
+
+This repo is connected to a Lovable workspace. Edits in Lovable sync with Git; local changes pushed here are reflected in Lovable as well.
+
+**Lovable project:** https://lovable.dev/projects/912ded3c-b4b2-443a-b64f-ffa0aecbdaf7
+
+## License
+
+This project is **private** (`"private": true` in `package.json`). Use and distribution are governed by your organization’s policies.
