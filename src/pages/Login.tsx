@@ -189,16 +189,15 @@ const Login = () => {
                 </form>
               </Form>
               
-              {/* Link to signup */}
+              {/* Link to signup disabled */}
               <div className="text-center mt-6">
                 <p className="text-sm text-gray-600">
                   Vous n'avez pas de compte?{" "}
-                  <Link 
-                    to="/signup" 
-                    className="text-green-600 hover:text-green-700 font-medium transition-colors"
+                  <span 
+                    className="text-gray-400 cursor-not-allowed font-medium"
                   >
                     Créer un compte
-                  </Link>
+                  </span>
                 </p>
               </div>
               

@@ -195,7 +195,7 @@ const SignUp = () => {
                   <Button 
                     type="submit" 
                     className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                    disabled={isLoading}
+                    disabled={true}
                   >
                     {isLoading ? (
                       <div className="flex items-center gap-2">
