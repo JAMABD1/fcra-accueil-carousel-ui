@@ -92,7 +92,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className="hidden md:flex items-center space-x-4">
               <button className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900">
                 <Globe className="h-4 w-4" />
-                <span>fr</span>
+                <span>Français</span>
               </button>
               <Link 
                 to="/login"
@@ -186,7 +186,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               <h4 className="font-semibold mb-4">Contact</h4>
               <div className="space-y-2 text-gray-300">
                 <p>✉️ jao.lazabdallah83@gmail.com</p>
-                <p>📍 Antaniavo , Antohomadinika Antananarivo Madagascar </p>
+                <p>📍 Antaniavo, Antohomadinika Antananarivo Madagascar</p>
               </div>
             </div>
             <div>

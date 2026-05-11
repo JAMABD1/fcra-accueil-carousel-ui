@@ -114,10 +114,10 @@ const TaggedHeroCarousel = ({
     return (
       <div className={`relative overflow-hidden bg-gray-100 flex items-center justify-center ${className} ${heightClasses}`} style={heightStyle}>
         <div className="text-center text-gray-600">
-          <h2 className="text-2xl font-bold mb-4">Aucune image hero disponible</h2>
+          <h2 className="text-2xl font-bold mb-4">Aucune bannière d'accueil disponible</h2>
           <p>
             {filterTags.length > 0 
-              ? `Aucun hero trouvé pour les tags: ${filterTags.join(', ')}`
+              ? `Aucune bannière trouvée pour les tags\u00a0: ${filterTags.join(', ')}`
               : 'Les images seront affichées ici une fois configurées.'
             }
           </p>

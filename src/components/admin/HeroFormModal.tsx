@@ -133,15 +133,15 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['heroes'] });
       toast({
-        title: isEditing ? "Hero modifié" : "Hero créé",
-        description: `L'élément hero a été ${isEditing ? 'modifié' : 'créé'} avec succès.`,
+        title: isEditing ? "Bannière modifiée" : "Bannière créée",
+        description: `La bannière d'accueil a été ${isEditing ? 'modifiée' : 'créée'} avec succès.`,
       });
       onClose();
     },
     onError: (error) => {
       toast({
         title: "Erreur",
-        description: `Impossible de ${isEditing ? 'modifier' : 'créer'} l'élément hero.`,
+        description: `Impossible de ${isEditing ? 'modifier' : 'créer'} la bannière d'accueil.`,
         variant: "destructive",
       });
       console.error('Save error:', error);
@@ -179,7 +179,7 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
           <div className="flex items-center space-x-2">
             <ImageIcon className="h-5 w-5 text-green-600" />
             <h2 className="text-xl font-semibold">
-              {isEditing ? "Modifier Hero" : "Nouveau Hero"}
+              {isEditing ? "Modifier la bannière" : "Nouvelle bannière"}
             </h2>
           </div>
         </div>
@@ -208,7 +208,7 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
                     <FormLabel>Titre *</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Titre du hero"
+                        placeholder="Titre de la bannière"
                         {...field}
                         className="w-full"
                       />
@@ -226,7 +226,7 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
                     <FormLabel>Sous-titre</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Sous-titre du hero"
+                        placeholder="Sous-titre de la bannière"
                         {...field}
                         className="w-full"
                         rows={3}
@@ -348,7 +348,7 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Actif</FormLabel>
                       <div className="text-sm text-muted-foreground">
-                        Afficher cet élément hero sur le site
+                        Afficher cette bannière d'accueil sur le site
                       </div>
                     </div>
                     <FormControl>
@@ -373,7 +373,7 @@ const HeroFormModal = ({ hero, onClose }: HeroFormModalProps) => {
                 name="image"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Image du hero *</FormLabel>
+                    <FormLabel>Image de la bannière *</FormLabel>
                     <FormControl>
                       <HeroImageUpload
                         onChange={field.onChange}

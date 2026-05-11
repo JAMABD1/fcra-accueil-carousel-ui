@@ -62,7 +62,7 @@ const SignUp = () => {
 
       toast({
         title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès!",
+        description: "Votre compte a été créé avec succès\u00a0!",
       });
 
       navigate("/admin");

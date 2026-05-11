@@ -60,7 +60,7 @@ const RVSSection = ({ photos }: RVSSectionProps) => {
           <Card className="p-6">
             <CardContent className="p-0">
               <h3 className="text-xl font-semibold mb-4 text-blue-600">
-                La Radio RVS possède 09 stations dans tout Madagascar:
+                La Radio RVS possède 9 stations dans tout Madagascar :
               </h3>
               <ul className="space-y-2">
                 {radioStations.map((station, index) => (
@@ -84,25 +84,25 @@ const RVSSection = ({ photos }: RVSSectionProps) => {
             </h3>
             <div className="flex flex-wrap gap-4">
               <span className="text-xl font-semibold text-green-600">Informer</span>
-              <span className="text-xl font-semibold text-green-600">Eduquer</span>
+              <span className="text-xl font-semibold text-green-600">Éduquer</span>
               <span className="text-xl font-semibold text-green-600">Divertir</span>
             </div>
           </CardContent>
         </Card>
       </section>
 
-      {/* COOPÉRATION DE LA RVS ET L'ORTM */}
+      {/* COOPÉRATION ENTRE LA RVS ET L'ORTM */}
       <section className="mb-8">
         <Card className="p-6">
           <CardContent className="p-0">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              COOPÉRATION DE LA RVS ET L'ORTM
+              COOPÉRATION ENTRE LA RVS ET L'ORTM
             </h3>
             <p className="text-gray-600 mb-4">
-              La RVS et l'ORTM se concrétise à travers la diffusion de l'émission "Mba fantatrao ve", 
-              qui est présentée chaque vendredi sur la TVM (Télévision Malagasy) et la RNM 
-              (Radio Nationale Malagasy), chaque lundi. Cette émission vise à éduquer et informer 
-              le public sur des sujets importants qui est produite par Mme Asma.
+              La RVS et l'ORTM se concrétisent à travers la diffusion de l'émission « Mba fantatrao ve »,
+              présentée chaque vendredi sur la TVM (Télévision Malagasy) et la RNM
+              (Radio Nationale Malagasy), chaque lundi. Cette émission, produite par Mme Asma, vise à éduquer et à informer
+              le public sur des sujets importants.
             </p>
           </CardContent>
         </Card>

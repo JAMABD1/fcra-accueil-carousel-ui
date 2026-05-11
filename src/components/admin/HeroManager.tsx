@@ -66,14 +66,14 @@ const HeroManager = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['heroes'] });
       toast({
-        title: "Hero supprimé",
-        description: "L'élément hero a été supprimé avec succès.",
+        title: "Bannière supprimée",
+        description: "La bannière d'accueil a été supprimée avec succès.",
       });
     },
     onError: (error) => {
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'élément hero.",
+        description: "Impossible de supprimer la bannière d'accueil.",
         variant: "destructive",
       });
       console.error('Delete error:', error);
@@ -98,7 +98,7 @@ const HeroManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet élément hero ?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette bannière d\'accueil\u00a0?')) {
       deleteHeroMutation.mutate(id);
     }
   };
@@ -178,13 +178,13 @@ const HeroManager = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Heroes</CardTitle>
+            <CardTitle className="text-sm font-medium">Bannières au total</CardTitle>
             <ImageIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              Éléments hero au total
+              Bannières d'accueil au total
             </p>
           </CardContent>
         </Card>
@@ -219,13 +219,13 @@ const HeroManager = () => {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Gestion des Heroes</CardTitle>
+            <CardTitle>Gestion des bannières d'accueil</CardTitle>
             <Button
               onClick={() => setIsModalOpen(true)}
               className="bg-green-600 hover:bg-green-700"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter un Hero
+              Ajouter une bannière
             </Button>
           </div>
         </CardHeader>

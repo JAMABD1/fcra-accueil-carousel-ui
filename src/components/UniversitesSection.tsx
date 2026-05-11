@@ -49,7 +49,7 @@ const UniversitesSection = ({ photos }: UniversitesSectionProps) => {
                 <li>Technologies émergentes</li>
               </ul>
               <p className="text-gray-600 mt-4">
-                Ce programme constitue un véritable levier d'autonomisation pour des jeunes 
+                Ce programme constitue un véritable levier de renforcement de l'autonomie pour des jeunes 
                 talentueux issus de milieux défavorisés.
               </p>
             </CardContent>
@@ -65,8 +65,8 @@ const UniversitesSection = ({ photos }: UniversitesSectionProps) => {
                 cette université de renom.
               </p>
               <p className="text-gray-600 mb-4">
-                En juin 2025, sept jeunes Malgaches, issus de l'orphelinat Zaynabia du FCRA, 
-                ont intégré Parul University dans des formations telles que :
+                En juin 2025, sept jeunes malgaches, issus de l'orphelinat Zaynabia du FCRA, 
+                ont rejoint Parul University pour y suivre des formations telles que :
               </p>
               <ul className="list-disc list-inside text-gray-600 space-y-1">
                 <li>Informatique</li>

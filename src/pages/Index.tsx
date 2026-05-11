@@ -153,7 +153,7 @@ const Index = () => {
             non lucratif dédié à l’entraide, à l’éducation, au développement 
             humain et à la promotion des valeurs de solidarité. Fondé avec la
              conviction que chaque individu mérite une chance équitable de s’épanouir, notre centre œuvre pour un avenir meilleur à travers des actions concrètes 
-            dans les domaines éducatif, social, spirituel et communautaire.
+            dans les domaines éducatifs, sociaux, spirituels et communautaires.
             </p>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Nous accueillons les enfants, les jeunes et les familles dans un environnement bienveillant, où l’écoute, le respect et
@@ -164,7 +164,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="p-6">
               <CardContent className="p-0">
-                <h3 className="text-xl font-semibold mb-4">Notre Missions</h3>
+                <h3 className="text-xl font-semibold mb-4">Nos missions</h3>
                 <p className="text-gray-600">
                  <ul className="list-disc list-inside">
                   <li>Offrir un accompagnement éducatif et spirituel aux enfants et aux jeunes</li>
@@ -189,7 +189,7 @@ const Index = () => {
             </Card>
             <Card className="p-6">
               <CardContent className="p-0">
-                <h3 className="text-xl font-semibold mb-4">Notre Valeurs</h3>
+                <h3 className="text-xl font-semibold mb-4">Nos valeurs</h3>
                 <p className="text-gray-600">
                 <ul className="list-disc list-inside">
                   <li ><span className="font-bold">Solidarité :</span> L’union et le soutien mutuel sont au cœur de toutes nos actions.</li>
@@ -228,9 +228,6 @@ const Index = () => {
      <li>Le dialogue interreligieux, dans un esprit d’ouverture, de respect et de cohésion sociale ;</li>
      <li>Les projets communautaires durables, visant à renforcer l’autonomie et la résilience des populations locales.</li>
      </ul>
-     <p className="text-gray-600">
-     Les projets communautaires durables, visant à renforcer l’autonomie et la résilience des populations locales.
-     </p>
       </div>
 
             <div className="col-span-1">
@@ -332,7 +329,7 @@ const Index = () => {
           <div className="flex items-center justify-between mb-12">
             <div className="text-center md:text-left w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Derniers Actualités
+                Dernières actualités
               </h2>
               <p className="text-lg text-gray-600 text-center md:text-center">
                 Découvrez nos dernières publications et apprenez-en plus sur notre engagement.
@@ -344,7 +341,7 @@ const Index = () => {
                 className="text-green-600 hover:text-green-700"
                 onClick={() => navigate('/actualites')}
               >
-                Voir tous les actualités
+                Voir toutes les actualités
               </Button>
             </div>
           </div>

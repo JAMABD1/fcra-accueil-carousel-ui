@@ -147,7 +147,7 @@ const Sections = () => {
               Nos Sections
             </h1>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Découvrez tous nos domaines d'activité et programmes dédiés à l'éducation et au développement social.
+              Découvrez tous nos domaines d'activité et tous nos programmes dédiés à l'éducation et au développement social.
             </p>
           </div>
 

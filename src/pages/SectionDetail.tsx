@@ -376,17 +376,17 @@ const SectionDetail = () => {
           />
         )}
 
-        {/* Related Articles - Derniers Actualités */}
+        {/* Related Articles - Dernières actualités */}
         {relatedArticles.length > 0 && (
           <div className="py-16 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
                   <Newspaper className="h-8 w-8 text-green-600" />
-                  Derniers Actualités
+                  Dernières actualités
                 </h2>
                 <p className="text-lg text-gray-600">
-                  Les dernières nouvelles et actualités liées à cette section
+                  Les dernières actualités liées à cette section
                 </p>
               </div>
               

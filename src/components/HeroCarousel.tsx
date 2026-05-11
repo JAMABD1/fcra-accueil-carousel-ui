@@ -54,7 +54,7 @@ const HeroCarousel = () => {
     return (
       <div className="relative h-[70vh] overflow-hidden bg-gray-100 flex items-center justify-center">
         <div className="text-center text-gray-600">
-          <h2 className="text-2xl font-bold mb-4">Aucune image hero disponible</h2>
+          <h2 className="text-2xl font-bold mb-4">Aucune bannière d'accueil disponible</h2>
           <p>Les images seront affichées ici une fois configurées.</p>
         </div>
       </div>
