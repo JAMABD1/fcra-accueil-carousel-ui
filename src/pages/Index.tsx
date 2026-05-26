@@ -145,7 +145,10 @@ const Index = () => {
       <section id="apropos" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+              Fifanampiana Centre Rassoul Akram (FCRA)
+            </h1>
+            <h2 className="text-2xl md:text-3xl font-semibold text-gray-700 mb-4">
               À propos de FCRA
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
@@ -273,6 +276,46 @@ const Index = () => {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Action Domains */}
+      <section id="actions" className="py-16 bg-green-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="p-6">
+              <CardContent className="p-0">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Nos actions éducatives</h2>
+                <p className="text-gray-600">
+                  La FCRA développe des établissements scolaires d'excellence à Madagascar,
+                  notamment le Lycée Privé La Sagesse à Antaniavo, pour offrir une éducation
+                  de qualité aux enfants et aux jeunes d'Antananarivo et des régions avoisinantes.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6">
+              <CardContent className="p-0">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Santé et Médical</h2>
+                <p className="text-gray-600">
+                  À travers le Dispensaire Shabbir et d'autres structures de santé, la FCRA
+                  assure des soins médicaux accessibles aux communautés locales, avec des
+                  consultations, des médicaments essentiels et un suivi médical de qualité.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6">
+              <CardContent className="p-0">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Soutien aux Orphelins</h2>
+                <p className="text-gray-600">
+                  Le FCRA gère quatre centres d'orphelinat à Antaniavo, Andakana, Manakara
+                  et Sakoana, offrant un accueil sûr et bienveillant aux enfants vulnérables
+                  à Madagascar.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
