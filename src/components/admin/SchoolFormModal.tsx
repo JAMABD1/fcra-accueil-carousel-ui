@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { createRecord, updateRecord, getTags, getVideos, getCoordonnes } from "@/lib/db/queries";
+import { createRecord, updateRecord, getTags, getVideos, getCoordonnes, getHeroItems, isSlugAvailable } from "@/lib/db/queries";
 import { schools } from "@/lib/db/schema";
 import { uploadImage } from "@/lib/storage/r2";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -13,6 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { School } from "./SchoolsManager";
 import { Save, X, GraduationCap, Upload, Image as ImageIcon } from "lucide-react";
+import { useSlugField } from "@/hooks/useSlugField";
+import SlugFormField from "./SlugFormField";
+import { SLUG_PATTERN } from "@/lib/utils/slug";
+import HeroMultiSelect from "./shared/HeroMultiSelect";
+import MultiImageUpload from "./shared/MultiImageUpload";
 
 interface SchoolFormData {
   name: string;
@@ -35,12 +40,18 @@ interface SchoolFormModalProps {
 const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isEditing = !!school;
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [uploadMode, setUploadMode] = useState<"url" | "upload">("url");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>("");
-  
+  const [missionImages, setMissionImages] = useState<string[]>([]);
+  const [historyImages, setHistoryImages] = useState<string[]>([]);
+  const [selectedHeroIds, setSelectedHeroIds] = useState<string[]>([]);
+  const [slugError, setSlugError] = useState<string | undefined>();
+  const [checkingSlug, setCheckingSlug] = useState(false);
+
   const form = useForm<SchoolFormData>({
     defaultValues: {
       name: "",
@@ -76,6 +87,14 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
     queryKey: ['coordonnes-active'],
     queryFn: async () => {
       return await getCoordonnes();
+    }
+  });
+
+  // Fetch heroes for selection
+  const { data: heroes = [] } = useQuery({
+    queryKey: ['heroes'],
+    queryFn: async () => {
+      return await getHeroItems();
     }
   });
 
@@ -145,17 +164,21 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
 
       const schoolData = {
         name: data.name,
+        slug,
         description: data.description || null,
         type: data.type,
         imageUrl: imageUrl || null,
         tagId: data.tag_id === "none" ? null : data.tag_id,
         videoId: data.video_id === "none" ? null : data.video_id,
+        heroIds: selectedHeroIds,
+        missionImages,
+        historyImages,
         active: data.active,
         sortOrder: data.sort_order,
         subtitle: data.subtitle || null,
         coordonneId: data.coordonne_id === "none" ? null : data.coordonne_id,
       };
-      
+
       if (school) {
         await updateRecord(schools, school.id, schoolData);
       } else {
@@ -192,6 +215,9 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
     }
   });
 
+  const nameValue = form.watch("name");
+  const { slug, setSlug, initSlug } = useSlugField(nameValue, isEditing);
+
   useEffect(() => {
     if (school) {
       form.reset({
@@ -207,10 +233,29 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
         coordonne_id: school.coordonneId || "none",
       });
       setImagePreview(school.imageUrl || "");
+      setMissionImages(school.missionImages || []);
+      setHistoryImages(school.historyImages || []);
+      setSelectedHeroIds(school.heroIds || []);
+      initSlug(school.slug || "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [school, form]);
 
-  const onSubmit = (data: SchoolFormData) => {
+  const onSubmit = async (data: SchoolFormData) => {
+    if (!SLUG_PATTERN.test(slug)) {
+      toast({ title: "Erreur de validation", description: "Le slug n'est pas valide.", variant: "destructive" });
+      return;
+    }
+
+    setSlugError(undefined);
+    setCheckingSlug(true);
+    const available = await isSlugAvailable(schools, slug, isEditing ? school?.id : undefined);
+    setCheckingSlug(false);
+    if (!available) {
+      setSlugError("Ce slug est déjà utilisé par une autre école.");
+      return;
+    }
+
     mutation.mutate(data);
   };
 
@@ -290,6 +335,15 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
                     )}
                   />
                 </div>
+
+                <SlugFormField
+                  value={slug}
+                  onChange={setSlug}
+                  onBlur={() => setSlugError(undefined)}
+                  prefix="/ecoles/"
+                  error={slugError}
+                  checking={checkingSlug}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -479,6 +533,26 @@ const SchoolFormModal = ({ school, onClose }: SchoolFormModalProps) => {
                     )}
                   />
                 </div>
+
+                <HeroMultiSelect heroes={heroes} value={selectedHeroIds} onChange={setSelectedHeroIds} />
+
+                <div className="space-y-6 pt-2">
+                  <MultiImageUpload
+                    label="Images — Mission"
+                    value={missionImages}
+                    onChange={setMissionImages}
+                    folder="schools"
+                    prefix="school-mission-"
+                  />
+                  <MultiImageUpload
+                    label="Images — Histoire"
+                    value={historyImages}
+                    onChange={setHistoryImages}
+                    folder="schools"
+                    prefix="school-histoire-"
+                  />
+                </div>
+
                 {/* Active Switch */}
                 <FormField
                   control={form.control}

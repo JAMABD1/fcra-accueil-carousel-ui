@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Photo {
   id: string;
   title: string;
+  slug: string;
   description: string | null;
   image_url: string;
   thumbnail_url: string | null;

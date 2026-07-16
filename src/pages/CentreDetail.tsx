@@ -1,23 +1,24 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { eq } from "drizzle-orm";
-import { centres, videos, directors } from "@/lib/db/schema";
-import { db } from "@/lib/db/client";
 import Layout from "@/components/Layout";
-import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
+import DirectHeroCarousel from "@/components/DirectHeroCarousel";
+import SectionHeading from "@/components/SectionHeading";
+import ScrollReveal from "@/components/ScrollReveal";
+import ContactInfoGrid from "@/components/ContactInfoGrid";
+import NewsCard from "@/components/NewsCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import CenterDetail1 from "@/components/CenterHistory1";
 import CenterDetail2 from "@/components/CenterHistory2";
 import CenterDetail3 from "@/components/CenterHistory3";
 import CenterDetail4 from "@/components/CenterHistory4";
 import Counter from "@/components/Counter";
-import { fetchPhotosByTags } from "@/lib/utils";
 
 interface DatabaseCenter {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   address: string | null;
   phone: string | null;
@@ -25,6 +26,9 @@ interface DatabaseCenter {
   image_url: string | null;
   tag_id: string | null;
   video_id: string | null;
+  hero_ids: string[] | null;
+  mission_images: string[] | null;
+  history_images: string[] | null;
   sort_order: number | null;
   active: boolean | null;
   created_at: string;
@@ -42,100 +46,41 @@ interface DatabaseCenter {
     job: string;
     image_url: string;
   }[];
-}
-
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
+  heroes?: {
+    id: string;
+    title: string;
+    subtitle?: string | null;
+    image_url?: string | null;
+    imageUrl?: string | null;
+  }[];
 }
 
 const CentreDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  // Fetch center details
+  // Fetch center details (includes heroes/missionImages/historyImages/directors)
   const { data: centre, isLoading: centreLoading } = useQuery({
-    queryKey: ['centre', id],
+    queryKey: ['centre', slug],
     queryFn: async () => {
-      if (!id) throw new Error('Centre ID is required');
+      if (!slug) throw new Error('Centre slug is required');
 
-      const result = await db
-        .select({
-          centre: centres,
-          videos: videos,
-          directors: directors,
-        })
-        .from(centres)
-        .leftJoin(videos, eq(centres.videoId, videos.id))
-        .leftJoin(directors, eq(centres.directorId, directors.id))
-        .where(eq(centres.id, id))
-        .limit(1);
-
-      return result[0] as DatabaseCenter;
+      const { getCentres } = await import("@/lib/db/queries");
+      const allCentres = await getCentres();
+      return allCentres.find((c: any) => c.slug === slug || c.id === slug) as DatabaseCenter | undefined ?? null;
     },
-    enabled: !!id
+    enabled: !!slug
   });
 
-  // Fetch tags
-  const { data: tags = [] } = useQuery({
-    queryKey: ['tags'],
-    queryFn: async () => {
-      const { getTags } = await import("@/lib/db/queries");
-      return await getTags();
-    }
-  });
-
-  // Fetch photos for different sections based on center tag
-  const { data: missionPhotos = [] } = useQuery({
-    queryKey: ['mission-photos', centre?.centre?.tagId],
-    queryFn: async () => {
-      if (!centre || !centre.centre?.tagId) {
-        return [];
-      }
-      // Get the center tag name first
-      const centerTag = tags.find(tag => tag.id === centre.centre.tagId);
-      if (!centerTag) return [];
-
-      // Create mission tag name
-      const missionTagName = `${centerTag.name}-mission`;
-      const missionTag = tags.find(tag => tag.name === missionTagName);
-
-      if (missionTag) {
-        return await fetchPhotosByTags([missionTag.id], 5);
-      }
-      return [];
-    },
-    enabled: !!centre && !!centre.centre?.tagId && tags.length > 0
-  });
-
-  const { data: historyPhotos = [] } = useQuery({
-    queryKey: ['history-photos', centre?.centre?.tagId],
-    queryFn: async () => {
-      if (!centre || !centre.centre?.tagId) {
-        return [];
-      }
-      // Get the center tag name first
-      const centerTag = tags.find(tag => tag.id === centre.centre?.tagId);
-      if (!centerTag) return [];
-      
-      // Create history tag name
-      const historyTagName = `${centerTag.name}-histoire`;
-      const historyTag = tags.find(tag => tag.name === historyTagName);
-      
-      if (historyTag) {
-        return await fetchPhotosByTags([historyTag.id], 5);
-      }
-      return [];
-    },
-    enabled: !!centre && !!centre.centre?.tagId && tags.length > 0
-  });
+  const missionPhotos = centre?.mission_images || [];
+  const historyPhotos = centre?.history_images || [];
+  const centreHeroes = centre?.heroes || [];
 
   // Fetch related impacts based on center tag
   const { data: relatedImpacts = [] } = useQuery({
-    queryKey: ['related-impacts', centre?.centre?.tagId],
+    queryKey: ['related-impacts', centre?.tag_id],
     queryFn: async () => {
-      if (!centre || !centre.centre?.tagId) return [];
+      if (!centre || !centre.tag_id) return [];
 
       const { getImpactItems } = await import("@/lib/db/queries");
       const impacts = await getImpactItems();
@@ -143,11 +88,11 @@ const CentreDetail = () => {
       // Filter impacts that match the center's tag
       const filteredImpacts = impacts.filter((impact: any) => {
         // Check if impact has the same tag_id as center
-        if (impact.tagsId === centre.centre?.tagId) return true;
+        if (impact.tagsId === centre.tag_id) return true;
 
         // Check if impact has tag_ids array containing center's tag_id
         if (impact.tagIds && Array.isArray(impact.tagIds)) {
-          return impact.tagIds.includes(centre.centre?.tagId);
+          return impact.tagIds.includes(centre.tag_id);
         }
 
         return false;
@@ -189,58 +134,37 @@ const CentreDetail = () => {
     );
   }
 
-  // Get center tag name for hero filtering
-  const centerTag = tags.find(tag => tag.id === centre.centre?.tagId);
-  const centerTagNames = centerTag ? [centerTag.name] : [];
-
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
         {/* Hero Carousel */}
-        {centerTagNames.length > 0 && (
-          <TaggedHeroCarousel 
-            filterTags={centerTagNames}
-            showButtons={false}
-            heightClass="h-96 md:h-[500px]"
-          />
+        {centreHeroes.length > 0 && (
+          <DirectHeroCarousel heroes={centreHeroes} heightClass="h-96 md:h-[500px]" />
         )}
 
         {/* Center Header */}
-        <section className="py-8 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-6">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                {centre.name}
-              </h1>
-              {centre.description && (
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                  {centre.description}
-                </p>
-              )}
-            </div>
-
-            {/* Center Info Cards */}
-            <div className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
-              {centre.address && (
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <MapPin className="h-8 w-8 text-green-600 mx-auto mb-4" />
-                    <h3 className="font-semibold mb-2">Adresse</h3>
-                    <p className="text-gray-600">{centre.address}</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+        <section className="py-12 lg:py-14 bg-white relative overflow-hidden">
+          <div className="grain-overlay pointer-events-none" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <ScrollReveal>
+              <div className="text-center max-w-3xl mx-auto mb-8">
+                <p className="eyebrow-label mb-3">Centre FCRA</p>
+                <h1 className="text-section font-bold text-gray-900 mb-4">{centre.name}</h1>
+                {centre.description && (
+                  <p className="text-lg text-gray-600 leading-relaxed">{centre.description}</p>
+                )}
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* Dynamic Center Detail Section */}
-        <section className="py-8 bg-gray-50">
+        <section className="py-12 lg:py-14 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Dynamic Component with Missions, Vision, Values and History */}
             {(() => {
               const sortOrder = centre.sort_order || 1;
-              
+
               switch (sortOrder) {
                 case 1:
                   return <CenterDetail1 missionPhotos={missionPhotos} historyPhotos={historyPhotos} />;
@@ -259,13 +183,9 @@ const CentreDetail = () => {
 
         {/* Impact Section with Animated Counters */}
         {relatedImpacts.length > 0 && (
-          <section className="py-8 bg-gray-50">
+          <section className="py-12 lg:py-14 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-6">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                  Notre Impact en Chiffres
-                </h2>
-              </div>
+              <SectionHeading title="Notre impact en chiffres" align="center" className="mb-8" />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {relatedImpacts.map((impact: any) => (
                   <div key={impact.id} className="text-center">
@@ -283,38 +203,32 @@ const CentreDetail = () => {
           </section>
         )}
 
+        <ContactInfoGrid address={centre.address} phone={centre.phone} email={centre.email} />
+
         {/* Derniers Articles Section */}
         {latestArticles.length > 0 && (
-          <section className="py-8 bg-white">
+          <section className="py-12 lg:py-14 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="text-center md:text-left w-full">
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                    Derniers articles
-                  </h2>
-                </div>
-                <div className="hidden md:block ml-4">
-                  <Button 
-                    variant="link" 
-                    className="text-green-600 hover:text-green-700"
-                    onClick={() => navigate('/actualites')}
-                  >
-                    Voir tous les articles
-                  </Button>
-                </div>
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+                <SectionHeading eyebrow="Actualités" title="Derniers articles" align="left" className="mb-0" />
+                <Button asChild variant="outline" className="border-green-200 text-green-700 hover:bg-green-50 shrink-0">
+                  <Link to="/actualites">Voir tous les articles</Link>
+                </Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {latestArticles.map((article: any) => (
-                  <Card key={article.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg'})` }}></div>
-                    <CardContent className="p-4">
-                      <h3 className="text-xl font-semibold mb-2">{article.title}</h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">{article.excerpt || (article.content?.substring(0, 150) + '...')}</p>
-                      <Button asChild variant="outline" className="w-full mt-2">
-                        <a href={`/actualites/${article.id}`}>Lire l'article</a>
-                      </Button>
-                    </CardContent>
-                  </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {latestArticles.map((article: any, index: number) => (
+                  <ScrollReveal key={article.id} delay={index * 0.06}>
+                    <NewsCard
+                      id={article.id}
+                      slug={article.slug}
+                      title={article.title}
+                      date={new Date(article.createdAt).toLocaleDateString('fr-FR')}
+                      author={article.author ?? undefined}
+                      image={article.images && article.images.length > 0 ? article.images[0] : '/placeholder.svg'}
+                      excerpt={article.excerpt || `${(article.content ?? '').substring(0, 140)}...`}
+                      tags={article.tags ?? []}
+                    />
+                  </ScrollReveal>
                 ))}
               </div>
             </div>
@@ -323,36 +237,34 @@ const CentreDetail = () => {
 
         {/* Directors Section */}
         {centre.directors && centre.directors.length > 0 && (
-          <section className="py-8 bg-gray-50">
+          <section className="py-12 lg:py-14 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-6">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                  Notre Équipe
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                {centre.directors.map((director) => (
-                  <Card key={director.id} className="text-center">
-                    <CardContent className="p-4">
-                      <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden">
-                        {director.image_url ? (
-                          <img
-                            src={director.image_url}
-                            alt={director.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-500 text-2xl">
-                              {director.name.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">{director.name}</h3>
-                      <p className="text-gray-600">{director.job}</p>
-                    </CardContent>
-                  </Card>
+              <SectionHeading eyebrow="Équipe" title="Notre équipe" align="center" className="mb-10" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                {centre.directors.map((director, index) => (
+                  <ScrollReveal key={director.id} delay={index * 0.08}>
+                    <Card className="text-center border-gray-100 card-lift overflow-hidden">
+                      <CardContent className="p-6">
+                        <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-green-50">
+                          {director.image_url ? (
+                            <img
+                              src={director.image_url}
+                              alt={director.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-green-50 flex items-center justify-center">
+                              <span className="text-green-600 text-2xl font-bold">
+                                {director.name.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{director.name}</h3>
+                        <p className="text-gray-600 text-sm">{director.job}</p>
+                      </CardContent>
+                    </Card>
+                  </ScrollReveal>
                 ))}
               </div>
             </div>

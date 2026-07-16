@@ -14,6 +14,7 @@ import { ActivityFormModal } from "./ActivityFormModal";
 interface Activity {
   id: string;
   title: string;
+  slug: string;
   description: string | null;
   content: string | null;
   videoId: string | null;

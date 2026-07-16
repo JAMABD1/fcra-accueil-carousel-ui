@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { getTags, createRecord, updateRecord } from "@/lib/db/queries";
+import { getTags, createRecord, updateRecord, isSlugAvailable } from "@/lib/db/queries";
 import { uploadImage } from "@/lib/storage/r2";
 import { articles } from "@/lib/db/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useSlugField } from "@/hooks/useSlugField";
+import SlugFormField from "./SlugFormField";
+import { SLUG_PATTERN } from "@/lib/utils/slug";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,6 +43,8 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
   const isEditing = !!article;
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("basic");
+  const [slugError, setSlugError] = useState<string | undefined>();
+  const [checkingSlug, setCheckingSlug] = useState(false);
 
   const form = useForm<ArticleFormData>({
     defaultValues: {
@@ -54,6 +59,9 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
       published_at: null,
     },
   });
+
+  const titleValue = form.watch("title");
+  const { slug, setSlug, initSlug } = useSlugField(titleValue, isEditing);
 
   // Set form values when editing
   useEffect(() => {
@@ -73,7 +81,9 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
       if (article.images && article.images.length > 0) {
         setPreviewImages(article.images);
       }
+      initSlug(article.slug || "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article, form]);
 
   // Handle image preview
@@ -118,6 +128,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
       // Save tag IDs, not names
       const articleData = {
         title: data.title,
+        slug,
         content: data.content,
         excerpt: data.excerpt || null,
         images: imageUrls,
@@ -152,7 +163,7 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
     }
   });
 
-  const onSubmit = (data: ArticleFormData) => {
+  const onSubmit = async (data: ArticleFormData) => {
     // Basic validation
     if (!data.title.trim()) {
       toast({
@@ -170,6 +181,22 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
         description: "Le contenu est requis.",
         variant: "destructive",
       });
+      setActiveTab("basic");
+      return;
+    }
+
+    if (!SLUG_PATTERN.test(slug)) {
+      toast({ title: "Erreur de validation", description: "Le slug n'est pas valide.", variant: "destructive" });
+      setActiveTab("basic");
+      return;
+    }
+
+    setSlugError(undefined);
+    setCheckingSlug(true);
+    const available = await isSlugAvailable(articles, slug, isEditing ? article?.id : undefined);
+    setCheckingSlug(false);
+    if (!available) {
+      setSlugError("Ce slug est déjà utilisé par un autre article.");
       setActiveTab("basic");
       return;
     }
@@ -238,8 +265,16 @@ const ArticleFormModal = ({ article, onClose }: ArticleFormModalProps) => {
                 <CardHeader>
                   <CardTitle className="text-lg">Informations de base</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <ArticleBasicFields control={form.control} />
+                  <SlugFormField
+                    value={slug}
+                    onChange={setSlug}
+                    onBlur={() => setSlugError(undefined)}
+                    prefix="/actualites/"
+                    error={slugError}
+                    checking={checkingSlug}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>

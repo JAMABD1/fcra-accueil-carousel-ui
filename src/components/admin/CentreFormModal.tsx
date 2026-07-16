@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { createRecord, updateRecord, getTags, getVideos } from "@/lib/db/queries";
+import { createRecord, updateRecord, getTags, getVideos, getHeroItems, isSlugAvailable } from "@/lib/db/queries";
 import { uploadImage } from "@/lib/storage/r2";
 import { centres } from "@/lib/db/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -14,6 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Centre } from "./CentresManager";
 import { Save, X, Building, Upload, Image as ImageIcon } from "lucide-react";
+import { useSlugField } from "@/hooks/useSlugField";
+import SlugFormField from "./SlugFormField";
+import { SLUG_PATTERN } from "@/lib/utils/slug";
+import HeroMultiSelect from "./shared/HeroMultiSelect";
+import MultiImageUpload from "./shared/MultiImageUpload";
 
 interface CentreFormData {
   name: string;
@@ -44,6 +49,11 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
   const [uploadMode, setUploadMode] = useState<"url" | "upload">("url");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>("");
+  const [missionImages, setMissionImages] = useState<string[]>([]);
+  const [historyImages, setHistoryImages] = useState<string[]>([]);
+  const [selectedHeroIds, setSelectedHeroIds] = useState<string[]>([]);
+  const [slugError, setSlugError] = useState<string | undefined>();
+  const [checkingSlug, setCheckingSlug] = useState(false);
 
   const form = useForm<CentreFormData>({
     defaultValues: {
@@ -76,6 +86,17 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
     }
   });
 
+  // Fetch heroes for selection
+  const { data: heroes = [] } = useQuery({
+    queryKey: ['heroes'],
+    queryFn: async () => {
+      return await getHeroItems();
+    }
+  });
+
+  const nameValue = form.watch("name");
+  const { slug, setSlug, initSlug } = useSlugField(nameValue, isEditing);
+
   // Set form values when editing
   useEffect(() => {
     if (centre) {
@@ -91,8 +112,13 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         sort_order: centre.sortOrder || 0,
         active: centre.active || false,
       });
-      setImagePreview(centre.image_url || "");
+      setImagePreview(centre.imageUrl || "");
+      setMissionImages(centre.missionImages || []);
+      setHistoryImages(centre.historyImages || []);
+      setSelectedHeroIds(centre.heroIds || []);
+      initSlug(centre.slug || "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centre, form]);
 
   // Upload image to R2 storage
@@ -174,6 +200,7 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
 
       const centreData = {
         name: data.name,
+        slug,
         description: data.description || null,
         address: data.address || null,
         phone: data.phone || null,
@@ -181,6 +208,9 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         imageUrl: imageUrl || null,
         tagId: data.tag_id === "none" ? null : data.tag_id,
         videoId: data.video_id === "none" ? null : data.video_id,
+        heroIds: selectedHeroIds,
+        missionImages,
+        historyImages,
         sortOrder: data.sort_order,
         active: data.active,
       };
@@ -209,7 +239,7 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
     }
   });
 
-  const onSubmit = (data: CentreFormData) => {
+  const onSubmit = async (data: CentreFormData) => {
     // Basic validation
     if (!data.name.trim()) {
       toast({
@@ -227,6 +257,20 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
         description: "L'adresse email n'est pas valide.",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (!SLUG_PATTERN.test(slug)) {
+      toast({ title: "Erreur de validation", description: "Le slug n'est pas valide.", variant: "destructive" });
+      return;
+    }
+
+    setSlugError(undefined);
+    setCheckingSlug(true);
+    const available = await isSlugAvailable(centres, slug, isEditing ? centre?.id : undefined);
+    setCheckingSlug(false);
+    if (!available) {
+      setSlugError("Ce slug est déjà utilisé par un autre centre.");
       return;
     }
 
@@ -282,6 +326,15 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
                         <FormMessage />
                       </FormItem>
                     )}
+                  />
+
+                  <SlugFormField
+                    value={slug}
+                    onChange={setSlug}
+                    onBlur={() => setSlugError(undefined)}
+                    prefix="/centres/"
+                    error={slugError}
+                    checking={checkingSlug}
                   />
 
                   {/* Description */}
@@ -553,6 +606,34 @@ const CentreFormModal = ({ centre, onClose }: CentreFormModalProps) => {
                         <FormMessage />
                       </FormItem>
                     )}
+                  />
+
+                  <HeroMultiSelect heroes={heroes} value={selectedHeroIds} onChange={setSelectedHeroIds} />
+                  <FormDescription>
+                    Bannière(s) affichée(s) en haut de la page de ce centre. Sélectionnez-en plusieurs pour un carrousel.
+                  </FormDescription>
+                </CardContent>
+              </Card>
+
+              {/* Galleries */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Galeries (Mission / Histoire)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <MultiImageUpload
+                    label="Images — Mission"
+                    value={missionImages}
+                    onChange={setMissionImages}
+                    folder="centres"
+                    prefix="centre-mission-"
+                  />
+                  <MultiImageUpload
+                    label="Images — Histoire"
+                    value={historyImages}
+                    onChange={setHistoryImages}
+                    folder="centres"
+                    prefix="centre-histoire-"
                   />
                 </CardContent>
               </Card>

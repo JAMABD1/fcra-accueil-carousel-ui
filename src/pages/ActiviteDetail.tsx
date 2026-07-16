@@ -36,7 +36,7 @@ const processMarkdownContent = (content: string): string => {
 };
 
 const ActiviteDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
 
   // State for Lightbox
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -44,12 +44,12 @@ const ActiviteDetail = () => {
 
   // Fetch activity from database
   const { data: activity, isLoading } = useQuery({
-    queryKey: ['activity', id],
+    queryKey: ['activity', slug],
     queryFn: async () => {
-      if (!id) return null;
-      return await getActivityWithRelations(id);
+      if (!slug) return null;
+      return await getActivityWithRelations(slug);
     },
-    enabled: !!id
+    enabled: !!slug
   });
 
   if (isLoading) {

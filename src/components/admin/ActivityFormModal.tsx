@@ -10,15 +10,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { createRecord, updateRecord, getTags, getVideos, getPhotos } from "@/lib/db/queries";
+import { createRecord, updateRecord, getTags, getVideos, getPhotos, isSlugAvailable } from "@/lib/db/queries";
 import { activities } from "@/lib/db/schema";
 import SimpleMDE from "react-simplemde-editor";
 import "easymde/dist/easymde.min.css";
+import { useSlugField } from "@/hooks/useSlugField";
+import SlugFormField from "./SlugFormField";
+import { SLUG_PATTERN } from "@/lib/utils/slug";
 
 // Define Activity type locally
 interface Activity {
   id: string;
   title: string;
+  slug?: string;
   description: string | null;
   content: string | null;
   videoId: string | null;
@@ -56,6 +60,9 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     sort_order: 0,
     active: true,
   });
+  const [slugError, setSlugError] = useState<string | undefined>();
+  const [checkingSlug, setCheckingSlug] = useState(false);
+  const { slug, setSlug, initSlug } = useSlugField(formData.title, isEditing);
 
   // Remove fetching of sections
 
@@ -94,6 +101,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         sort_order: activity.sort_order || 0,
         active: activity.active ?? true,
       });
+      initSlug(activity.slug || "");
     } else {
       setFormData({
         title: "",
@@ -125,6 +133,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
 
       const activityData = {
         title: payload.title,
+        slug,
         content: payload.content || null,
         description: payload.description || null,
         videoId: payload.video_id === "none" ? null : payload.video_id,
@@ -151,8 +160,23 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!SLUG_PATTERN.test(slug)) {
+      toast.error("Le slug n'est pas valide.");
+      return;
+    }
+
+    setSlugError(undefined);
+    setCheckingSlug(true);
+    const available = await isSlugAvailable(activities, slug, isEditing ? activity?.id : undefined);
+    setCheckingSlug(false);
+    if (!available) {
+      setSlugError("Ce slug est déjà utilisé par une autre activité.");
+      return;
+    }
+
     saveActivity.mutate(formData);
   };
 
@@ -200,6 +224,15 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                   />
                 </div>
               </div>
+
+              <SlugFormField
+                value={slug}
+                onChange={setSlug}
+                onBlur={() => setSlugError(undefined)}
+                prefix="/activites/"
+                error={slugError}
+                checking={checkingSlug}
+              />
 
               <div>
                 <Label htmlFor="description">Description</Label>

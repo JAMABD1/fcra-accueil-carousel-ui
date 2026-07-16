@@ -8,9 +8,10 @@ import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
 import { videos } from "@/lib/db/schema";
 import { db } from "@/lib/db/client";
+import { whereSlugOrId } from "@/lib/db/queries";
 
 const VideoDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   
   const sanitizeFacebookIframe = (iframeHtml: string) => {
     let html = iframeHtml.trim();
@@ -47,13 +48,14 @@ const VideoDetail = () => {
 
   // Fetch video from database
   const { data: video, isLoading } = useQuery({
-    queryKey: ['video-detail', id],
+    queryKey: ['video-detail', slug],
     queryFn: async () => {
-      if (!id) return null;
+      if (!slug) return null;
       const result = await db
         .select({
           id: videos.id,
           title: videos.title,
+          slug: videos.slug,
           description: videos.description,
           excerpt: videos.excerpt,
           video_url: videos.videoUrl,
@@ -79,23 +81,23 @@ const VideoDetail = () => {
           updatedAt: videos.updatedAt,
         })
         .from(videos)
-        .where(eq(videos.id, id))
+        .where(whereSlugOrId(videos, slug!))
         .limit(1);
       return result[0] || null;
     },
-    enabled: !!id
+    enabled: !!slug
   });
 
   // Fetch related videos (exclude current)
   const { data: relatedVideos = [] } = useQuery({
-    queryKey: ['related-videos', id],
+    queryKey: ['related-videos', slug],
     queryFn: async () => {
       const { getVideos } = await import("@/lib/db/queries");
       const videos = await getVideos({ status: 'published', limit: 4 });
       // Filter out current video and limit to 3
-      return videos.filter(v => v.id !== id).slice(0, 3);
+      return videos.filter(v => v.slug !== slug).slice(0, 3);
     },
-    enabled: !!id
+    enabled: !!slug
   });
 
   if (isLoading) {
@@ -200,7 +202,7 @@ const VideoDetail = () => {
               <div className="space-y-4">
                 {relatedVideos.map((relatedVideo: any) => (
                   <Card key={relatedVideo.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <Link to={`/videos/${relatedVideo.id}`}>
+                    <Link to={`/videos/${relatedVideo.slug}`}>
                       <div className="flex">
                         <div className="relative w-32 h-20 flex-shrink-0">
                           <div 

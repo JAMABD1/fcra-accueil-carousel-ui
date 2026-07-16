@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 export interface School {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   type: string;
   imageUrl: string | null;
@@ -21,6 +22,9 @@ export interface School {
   updatedAt: string;
   tagId: string | null;
   videoId: string | null;
+  heroIds?: string[] | null;
+  missionImages?: string[] | null;
+  historyImages?: string[] | null;
   active: boolean | null;
   sortOrder: number | null;
   subtitle: string | null;

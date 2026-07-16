@@ -40,21 +40,21 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/actualites" element={<Actualites />} />
-          <Route path="/actualites/:id" element={<ArticleDetail />} />
+          <Route path="/actualites/:slug" element={<ArticleDetail />} />
           <Route path="/administrations" element={<Administrations />} />
           <Route path="/centres" element={<Centres />} />
-          <Route path="/centres/:id" element={<CentreDetail />} />
+          <Route path="/centres/:slug" element={<CentreDetail />} />
           <Route path="/activites" element={<Activites />} />
-          <Route path="/activites/:id" element={<ActiviteDetail />} />
+          <Route path="/activites/:slug" element={<ActiviteDetail />} />
           <Route path="/videos" element={<Videos />} />
-          <Route path="/videos/:id" element={<VideoDetail />} />
+          <Route path="/videos/:slug" element={<VideoDetail />} />
           <Route path="/photos" element={<Photos />} />
-          <Route path="/photos/:id" element={<PhotoDetail />} />
+          <Route path="/photos/:slug" element={<PhotoDetail />} />
           <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/ecoles" element={<Ecoles />} />
-          <Route path="/ecoles/:id" element={<EcoleDetail />} />
+          <Route path="/ecoles/:slug" element={<EcoleDetail />} />
           <Route path="/sections" element={<Sections />} />
-          <Route path="/sections/:id" element={<SectionDetail />} />
+          <Route path="/sections/:slug" element={<SectionDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />

@@ -1,5 +1,6 @@
 import { db } from '../client';
-import { eq, and, sql, desc, asc, or, like, inArray } from 'drizzle-orm';
+import { eq, and, sql, desc, asc, or, like, inArray, ne } from 'drizzle-orm';
+import { nullifyEmptyStrings } from '../sanitize';
 import {
   articles,
   videos,
@@ -23,11 +24,11 @@ export { library };
 
 // Generic CRUD operations
 export const createRecord = async (table: any, data: any) => {
-  return await db.insert(table).values(data).returning();
+  return await db.insert(table).values(nullifyEmptyStrings(table, data)).returning();
 };
 
 export const updateRecord = async (table: any, id: string, data: any) => {
-  return await db.update(table).set(data).where(eq(table.id, id)).returning();
+  return await db.update(table).set(nullifyEmptyStrings(table, data)).where(eq(table.id, id)).returning();
 };
 
 export const deleteRecord = async (table: any, id: string) => {
@@ -36,6 +37,20 @@ export const deleteRecord = async (table: any, id: string) => {
 
 export const getRecordById = async (table: any, id: string) => {
   return await db.select().from(table).where(eq(table.id, id));
+};
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Resolves a route param that may be either a slug or a legacy UUID id.
+export const whereSlugOrId = (table: any, param: string) =>
+  UUID_PATTERN.test(param) ? or(eq(table.slug, param), eq(table.id, param)) : eq(table.slug, param);
+
+export const isSlugAvailable = async (table: any, slug: string, excludeId?: string) => {
+  const where = excludeId
+    ? and(eq(table.slug, slug), ne(table.id, excludeId))
+    : eq(table.slug, slug);
+  const rows = await db.select({ id: table.id }).from(table).where(where).limit(1);
+  return rows.length === 0;
 };
 
 export const getAllRecords = async (table: any, options: {
@@ -132,6 +147,7 @@ export const getVideos = async (options: {
   return await db.select({
       id: videos.id,
       title: videos.title,
+      slug: videos.slug,
       description: videos.description,
       excerpt: videos.excerpt,
       video_url: videos.videoUrl,
@@ -195,6 +211,7 @@ export const getPhotos = async (options: {
   return await db.select({
     id: photos.id,
     title: photos.title,
+    slug: photos.slug,
     description: photos.description,
     image_url: photos.imageUrl,
     imageUrl: photos.imageUrl,
@@ -243,6 +260,14 @@ export const getHeroItems = async (active: boolean = true) => {
     .orderBy(asc(hero.sortOrder));
 };
 
+// Resolve an array of hero IDs into full hero objects, preserving selection order
+const resolveHeroesByIds = (allHeroes: Awaited<ReturnType<typeof getHeroItems>>, ids: string[] | null | undefined) => {
+  if (!ids || ids.length === 0) return [];
+  return ids
+    .map((id) => allHeroes.find((h) => h.id === id))
+    .filter((h): h is NonNullable<typeof h> => Boolean(h));
+};
+
 // Specific query functions for impact
 export const getImpactItems = async (active: boolean = true) => {
   return await db.select({
@@ -269,24 +294,29 @@ export const getImpactItems = async (active: boolean = true) => {
 
 // Specific query functions for sections
 export const getSections = async (active: boolean = true) => {
-  return await db.select({
+  const rows = await db.select({
     id: sections.id,
     title: sections.title,
+    slug: sections.slug,
     subtitle: sections.subtitle,
     description: sections.description,
     // snake_case keys for existing public pages
     image_url: sections.imageUrl,
     hero_id: sections.heroId,
+    hero_ids: sections.heroIds,
     tag_name: sections.tagName,
     tag_ids: sections.tagIds,
+    gallery_images: sections.galleryImages,
     sort_order: sections.sortOrder,
     created_at: sections.createdAt,
     updated_at: sections.updatedAt,
     // camelCase keys for admin tooling
     imageUrl: sections.imageUrl,
     heroId: sections.heroId,
+    heroIds: sections.heroIds,
     tagName: sections.tagName,
     tagIds: sections.tagIds,
+    galleryImages: sections.galleryImages,
     sortOrder: sections.sortOrder,
     createdAt: sections.createdAt,
     updatedAt: sections.updatedAt,
@@ -295,6 +325,13 @@ export const getSections = async (active: boolean = true) => {
     .from(sections)
     .where(eq(sections.active, active))
     .orderBy(asc(sections.sortOrder));
+
+  const allHeroes = await getHeroItems();
+
+  return rows.map((section) => ({
+    ...section,
+    heroes: resolveHeroesByIds(allHeroes, section.heroIds),
+  }));
 };
 
 // Specific query functions for centres with relations
@@ -313,6 +350,7 @@ export const getCentres = async (active: boolean = true) => {
     .where(eq(centres.active, active))
     .orderBy(asc(centres.sortOrder));
 
+  const allHeroes = await getHeroItems();
   const centreMap = new Map<string, any>();
 
   rows.forEach(({ centre, director, video, heroItem }) => {
@@ -323,6 +361,7 @@ export const getCentres = async (active: boolean = true) => {
       entry = {
         id: centre.id,
         name: centre.name,
+        slug: centre.slug,
         description: centre.description,
         address: centre.address,
         phone: centre.phone,
@@ -331,12 +370,18 @@ export const getCentres = async (active: boolean = true) => {
         imageUrl: centre.imageUrl,
         hero_id: centre.heroId,
         heroId: centre.heroId,
+        hero_ids: centre.heroIds,
+        heroIds: centre.heroIds,
         video_id: centre.videoId,
         videoId: centre.videoId,
         director_id: centre.directorId,
         directorId: centre.directorId,
         tag_id: centre.tagId,
         tagId: centre.tagId,
+        mission_images: centre.missionImages,
+        missionImages: centre.missionImages,
+        history_images: centre.historyImages,
+        historyImages: centre.historyImages,
         sort_order: centre.sortOrder,
         sortOrder: centre.sortOrder,
         active: centre.active,
@@ -344,6 +389,7 @@ export const getCentres = async (active: boolean = true) => {
         createdAt: centre.createdAt,
         updated_at: centre.updatedAt,
         updatedAt: centre.updatedAt,
+        heroes: resolveHeroesByIds(allHeroes, centre.heroIds),
         hero: heroItem
           ? {
               id: heroItem.id,
@@ -504,7 +550,7 @@ export const getActivities = async (active: boolean = true) => {
     .orderBy(asc(activities.sortOrder));
 };
 
-export const getActivityWithRelations = async (id: string) => {
+export const getActivityWithRelations = async (slugOrId: string) => {
   const rows = await db
     .select({
       activity: activities,
@@ -514,7 +560,7 @@ export const getActivityWithRelations = async (id: string) => {
     .from(activities)
     .leftJoin(videos, eq(activities.videoId, videos.id))
     .leftJoin(photos, eq(activities.photoId, photos.id))
-    .where(eq(activities.id, id))
+    .where(whereSlugOrId(activities, slugOrId))
     .limit(1);
 
   if (!rows.length) {
@@ -606,15 +652,18 @@ export const getSchools = async (options: {
     )
     .orderBy(asc(schools.sortOrder), desc(schools.createdAt));
 
-  const rows = limit 
+  const rows = limit
     ? await baseQuery.limit(limit).offset(offset)
     : offset > 0
     ? await baseQuery.offset(offset)
     : await baseQuery;
 
+  const allHeroes = await getHeroItems();
+
   return rows.map(({ school, coordonne, tag, video }) => ({
     id: school.id,
     name: school.name,
+    slug: school.slug,
     description: school.description,
     type: school.type,
     subtitle: school.subtitle,
@@ -626,6 +675,12 @@ export const getSchools = async (options: {
     tagId: school.tagId,
     video_id: school.videoId,
     videoId: school.videoId,
+    hero_ids: school.heroIds,
+    heroIds: school.heroIds,
+    mission_images: school.missionImages,
+    missionImages: school.missionImages,
+    history_images: school.historyImages,
+    historyImages: school.historyImages,
     active: school.active,
     sort_order: school.sortOrder,
     sortOrder: school.sortOrder,
@@ -650,6 +705,7 @@ export const getSchools = async (options: {
           color: tag.color,
         }
       : null,
+    heroes: resolveHeroesByIds(allHeroes, school.heroIds),
     video: video
       ? {
           id: video.id,
@@ -829,4 +885,196 @@ export const createUser = async (email: string, passwordHash: string) => {
     passwordHash,
   }).returning();
   return result[0];
+};
+
+export type AdminDashboardStats = {
+  headline: {
+    publishedArticles: number;
+    activeCentres: number;
+    activeActivities: number;
+    totalSections: number;
+    draftArticles: number;
+    inactiveContent: number;
+  };
+  contentByType: { name: string; value: number; key: string }[];
+  monthlyPublications: { month: string; count: number }[];
+  recentUpdates: {
+    id: string;
+    title: string;
+    type: string;
+    updatedAt: string;
+  }[];
+  alerts: {
+    level: "error" | "warning" | "info";
+    message: string;
+  }[];
+  healthScore: number;
+};
+
+const parseDate = (value: unknown): Date | null => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+export const getAdminDashboardStats = async (): Promise<AdminDashboardStats> => {
+  const [
+    articleRows,
+    heroRows,
+    impactRows,
+    sectionRows,
+    centreRows,
+    activityRows,
+    schoolRows,
+    videoRows,
+    photoRows,
+    directorRows,
+    partnerRows,
+    libraryRows,
+  ] = await Promise.all([
+    db.select().from(articles),
+    db.select().from(hero),
+    db.select().from(impact),
+    db.select().from(sections),
+    db.select().from(centres),
+    db.select().from(activities),
+    db.select().from(schools),
+    db.select().from(videos),
+    db.select().from(photos),
+    db.select().from(directors),
+    db.select().from(partners),
+    db.select().from(library),
+  ]);
+
+  const publishedArticles = articleRows.filter((a) => a.status === "published").length;
+  const draftArticles = articleRows.filter((a) => a.status === "draft").length;
+  const activeCentres = centreRows.filter((c) => c.active).length;
+  const activeActivities = activityRows.filter((a) => a.active).length;
+  const activeSections = sectionRows.filter((s) => s.active).length;
+
+  const inactiveContent =
+    heroRows.filter((h) => !h.active).length +
+    impactRows.filter((i) => !i.active).length +
+    sectionRows.filter((s) => !s.active).length +
+    centreRows.filter((c) => !c.active).length +
+    activityRows.filter((a) => !a.active).length +
+    schoolRows.filter((s) => !s.active).length +
+    directorRows.filter((d) => !d.active).length;
+
+  const contentByType = [
+    { name: "Actualités", value: articleRows.length, key: "articles" },
+    { name: "Centres", value: centreRows.length, key: "centres" },
+    { name: "Activités", value: activityRows.length, key: "activities" },
+    { name: "Écoles", value: schoolRows.length, key: "schools" },
+    { name: "Médias", value: videoRows.length + photoRows.length, key: "media" },
+    { name: "Partenaires", value: partnerRows.length, key: "partners" },
+  ].filter((item) => item.value > 0);
+
+  const monthLabels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+  const monthlyCounts = new Map<string, number>();
+  const now = new Date();
+
+  for (let i = 5; i >= 0; i -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    monthlyCounts.set(key, 0);
+  }
+
+  articleRows.forEach((article) => {
+    const created = parseDate(article.createdAt);
+    if (!created) return;
+    const key = `${created.getFullYear()}-${created.getMonth()}`;
+    if (monthlyCounts.has(key)) {
+      monthlyCounts.set(key, (monthlyCounts.get(key) ?? 0) + 1);
+    }
+  });
+
+  const monthlyPublications = Array.from(monthlyCounts.entries()).map(([key, count]) => {
+    const [, monthIndex] = key.split("-");
+    return {
+      month: monthLabels[Number(monthIndex)],
+      count,
+    };
+  });
+
+  const recentCandidates = [
+    ...articleRows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      type: "Actualité",
+      updatedAt: parseDate(row.updatedAt) ?? parseDate(row.createdAt),
+    })),
+    ...centreRows.map((row) => ({
+      id: row.id,
+      title: row.name,
+      type: "Centre",
+      updatedAt: parseDate(row.updatedAt) ?? parseDate(row.createdAt),
+    })),
+    ...activityRows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      type: "Activité",
+      updatedAt: parseDate(row.updatedAt) ?? parseDate(row.createdAt),
+    })),
+  ]
+    .filter((item) => item.updatedAt)
+    .sort((a, b) => (b.updatedAt!.getTime() - a.updatedAt!.getTime()))
+    .slice(0, 6)
+    .map((item) => ({
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      updatedAt: item.updatedAt!.toISOString(),
+    }));
+
+  const alerts: AdminDashboardStats["alerts"] = [];
+
+  if (draftArticles > 0) {
+    alerts.push({
+      level: draftArticles >= 5 ? "warning" : "info",
+      message: `${draftArticles} article${draftArticles > 1 ? "s" : ""} en brouillon en attente de publication`,
+    });
+  }
+
+  if (inactiveContent > 0) {
+    alerts.push({
+      level: inactiveContent >= 10 ? "warning" : "info",
+      message: `${inactiveContent} élément${inactiveContent > 1 ? "s" : ""} inactif${inactiveContent > 1 ? "s" : ""} sur le site`,
+    });
+  }
+
+  const activeHeroes = heroRows.filter((h) => h.active).length;
+  if (activeHeroes === 0 && heroRows.length > 0) {
+    alerts.push({
+      level: "error",
+      message: "Aucune bannière active — vérifiez la section Heroes",
+    });
+  }
+
+  const totalTracked =
+    articleRows.length +
+    centreRows.length +
+    activityRows.length +
+    sectionRows.length +
+    schoolRows.length;
+  const activeTracked =
+    publishedArticles + activeCentres + activeActivities + activeSections;
+  const healthScore =
+    totalTracked > 0 ? Math.round((activeTracked / totalTracked) * 100) : 100;
+
+  return {
+    headline: {
+      publishedArticles,
+      activeCentres,
+      activeActivities,
+      totalSections: sectionRows.length,
+      draftArticles,
+      inactiveContent,
+    },
+    contentByType,
+    monthlyPublications,
+    recentUpdates: recentCandidates,
+    alerts,
+    healthScore,
+  };
 };

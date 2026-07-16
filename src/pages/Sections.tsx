@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getSections, getTags } from "@/lib/db/queries";
 import Layout from "@/components/Layout";
 import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
+import PageHero from "@/components/PageHero";
+import ScrollReveal from "@/components/ScrollReveal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -138,50 +140,49 @@ const Sections = () => {
 
   return (
     <Layout>
-      {/* Sections List */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
-              <Layers className="h-8 w-8 text-green-600" />
-              Nos Sections
-            </h1>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Découvrez tous nos domaines d'activité et tous nos programmes dédiés à l'éducation et au développement social.
-            </p>
-          </div>
+      <PageHero
+        eyebrow="Programmes"
+        title="Nos Sections"
+        subtitle="Découvrez tous nos domaines d'activité et programmes dédiés à l'éducation et au développement social."
+        icon={<Layers className="h-8 w-8 text-green-600 shrink-0" />}
+      />
 
+      {/* Sections List */}
+      <section className="py-16 bg-gray-50 min-h-[50vh]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {sections.map((section) => (
-              <Card key={section.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-48 bg-cover bg-center bg-gray-200 flex items-center justify-center" style={{
-                  backgroundImage: section.image_url ? `url(${section.image_url})` : undefined
-                }}>
-                  {!section.image_url && (
-                    <Layers className="h-12 w-12 text-gray-400" />
-                  )}
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
-                  {section.subtitle && (
-                    <p className="text-sm text-gray-500 mb-3">{section.subtitle}</p>
-                  )}
-                  {section.description && (
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      <div dangerouslySetInnerHTML={{ 
-                        __html: section.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...' 
-                      }} />
-                    </p>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate(`/sections/${section.id}`)}
-                  >
-                    Découvrir cette section
-                  </Button>
-                </CardContent>
-              </Card>
+            {sections.map((section, index) => (
+              <ScrollReveal key={section.id} delay={index * 0.06}>
+                <Card className="group overflow-hidden border-gray-200/80 card-lift hover:shadow-xl hover:border-green-200/60 transition-all duration-300 h-full flex flex-col">
+                  <div className="h-48 bg-cover bg-center bg-gray-200 flex items-center justify-center" style={{
+                    backgroundImage: section.image_url ? `url(${section.image_url})` : undefined
+                  }}>
+                    {!section.image_url && (
+                      <Layers className="h-12 w-12 text-gray-400" />
+                    )}
+                  </div>
+                  <CardContent className="p-6 flex flex-col flex-1">
+                    <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
+                    {section.subtitle && (
+                      <p className="text-sm text-gray-500 mb-3">{section.subtitle}</p>
+                    )}
+                    {section.description && (
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                        <div dangerouslySetInnerHTML={{
+                          __html: section.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...'
+                        }} />
+                      </p>
+                    )}
+                    <Button
+                      variant="outline"
+                      className="w-full mt-auto"
+                      onClick={() => navigate(`/sections/${section.slug}`)}
+                    >
+                      Découvrir cette section
+                    </Button>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
             ))}
           </div>
         </div>

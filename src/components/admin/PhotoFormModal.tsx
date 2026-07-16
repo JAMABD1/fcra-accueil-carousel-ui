@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createRecord, updateRecord } from "@/lib/db/queries";
+import { createRecord, updateRecord, isSlugAvailable } from "@/lib/db/queries";
 import { uploadImage } from "@/lib/storage/r2";
 import { photos } from "@/lib/db/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,10 +20,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { useSlugField } from "@/hooks/useSlugField";
+import SlugFormField from "./SlugFormField";
+import { SLUG_PATTERN } from "@/lib/utils/slug";
 
 interface Photo {
   id: string;
   title: string;
+  slug?: string;
   description: string | null;
   image_url: string;
   thumbnail_url: string | null;
@@ -59,8 +63,11 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [currentImages, setCurrentImages] = useState<string[]>([]);
+  const [slugError, setSlugError] = useState<string | undefined>();
+  const [checkingSlug, setCheckingSlug] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isEditing = !!photo;
 
   const form = useForm<PhotoFormData>({
     defaultValues: {
@@ -73,6 +80,9 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       published_at: null,
     },
   });
+
+  const titleValue = form.watch("title");
+  const { slug, setSlug, initSlug } = useSlugField(titleValue, isEditing);
 
   useEffect(() => {
     if (photo) {
@@ -90,6 +100,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         ? photo.images
         : (photo.image_url ? [photo.image_url] : []);
       setCurrentImages(initialImages);
+      initSlug(photo.slug || "");
     } else {
       form.reset({
         title: "",
@@ -102,6 +113,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
       });
       setCurrentImages([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photo, form]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,6 +181,7 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
 
         const photoData = {
           title: data.title,
+          slug,
           description: data.description || null,
           imageUrl: mainImageUrl!,
           thumbnailUrl: finalImages[0] || photo?.thumbnail_url,
@@ -215,13 +228,27 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
     },
   });
 
-  const onSubmit = (data: PhotoFormData) => {
+  const onSubmit = async (data: PhotoFormData) => {
     if (!photo && selectedFiles.length === 0) {
       toast({
         title: "Erreur",
         description: "Veuillez sélectionner au moins une image.",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (!SLUG_PATTERN.test(slug)) {
+      toast({ title: "Erreur de validation", description: "Le slug n'est pas valide.", variant: "destructive" });
+      return;
+    }
+
+    setSlugError(undefined);
+    setCheckingSlug(true);
+    const available = await isSlugAvailable(photos, slug, isEditing ? photo?.id : undefined);
+    setCheckingSlug(false);
+    if (!available) {
+      setSlugError("Ce slug est déjà utilisé par une autre photo.");
       return;
     }
 
@@ -240,7 +267,16 @@ export const PhotoFormModal = ({ photo, isOpen, onClose }: PhotoFormModalProps) 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <PhotoBasicFields form={form} />
-            
+
+            <SlugFormField
+              value={slug}
+              onChange={setSlug}
+              onBlur={() => setSlugError(undefined)}
+              prefix="/photos/"
+              error={slugError}
+              checking={checkingSlug}
+            />
+
             {/* Tag Selection */}
             <TagSelector
               control={form.control}

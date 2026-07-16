@@ -28,6 +28,7 @@ export const tags = pgTable('tags', {
 export const articles = pgTable('articles', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
   content: text('content').notNull(),
   excerpt: text('excerpt'),
   images: jsonb('images').$type<string[]>().default([]),
@@ -48,6 +49,7 @@ export const articles = pgTable('articles', {
 export const videos = pgTable('videos', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
   description: text(),
   excerpt: text(),
   videoUrl: text('video_url'),
@@ -74,6 +76,7 @@ export const videos = pgTable('videos', {
 export const photos = pgTable('photos', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
   description: text(),
   imageUrl: text('image_url').notNull(),
   thumbnailUrl: text('thumbnail_url'),
@@ -132,12 +135,15 @@ export const impact = pgTable('impact', {
 export const sections = pgTable('sections', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
   subtitle: text(),
   description: text(),
   imageUrl: text('image_url').notNull(),
   heroId: uuid('hero_id').references(() => hero.id, { onDelete: 'set null' }),
+  heroIds: jsonb('hero_ids').$type<string[]>().default([]),
   tagName: text('tag_name'),
   tagIds: jsonb('tag_ids').$type<string[]>().default([]),
+  galleryImages: text('gallery_images').array(),
   active: boolean('active').default(true),
   sortOrder: integer('sort_order').default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).default(sql`now()`).notNull(),
@@ -172,15 +178,19 @@ export const directors = pgTable('directors', {
 export const centres = pgTable('centres', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
   description: text(),
   address: text(),
   phone: text(),
   email: text(),
   heroId: uuid('hero_id').references(() => hero.id, { onDelete: 'set null' }),
+  heroIds: jsonb('hero_ids').$type<string[]>().default([]),
   videoId: uuid('video_id').references(() => videos.id, { onDelete: 'set null' }),
   directorId: uuid('director_id').references(() => directors.id, { onDelete: 'set null' }),
   tagId: uuid('tag_id').references(() => tags.id, { onDelete: 'set null' }),
   imageUrl: text('image_url'),
+  missionImages: text('mission_images').array(),
+  historyImages: text('history_images').array(),
   sortOrder: integer('sort_order').default(0),
   active: boolean('active').default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).default(sql`now()`).notNull(),
@@ -197,6 +207,7 @@ export const centres = pgTable('centres', {
 export const activities = pgTable('activities', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
   subtitle: text(),
   description: text(),
   sectionId: uuid('section_id').references(() => sections.id, { onDelete: 'cascade' }),
@@ -222,6 +233,7 @@ export const activities = pgTable('activities', {
 export const schools = pgTable('schools', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
   description: text(),
   type: text('type').notNull(),
   imageUrl: text('image_url'),
@@ -229,6 +241,10 @@ export const schools = pgTable('schools', {
   coordonneId: uuid('coordonne_id').references(() => coordonnes.id, { onDelete: 'set null' }),
   tagId: uuid('tag_id').references(() => tags.id, { onDelete: 'set null' }),
   videoId: uuid('video_id').references(() => videos.id, { onDelete: 'set null' }),
+  heroId: uuid('hero_id').references(() => hero.id, { onDelete: 'set null' }),
+  heroIds: jsonb('hero_ids').$type<string[]>().default([]),
+  missionImages: text('mission_images').array(),
+  historyImages: text('history_images').array(),
   active: boolean('active').default(true),
   sortOrder: integer('sort_order').default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).default(sql`now()`).notNull(),
@@ -237,6 +253,7 @@ export const schools = pgTable('schools', {
   tagIdIdx: index('idx_schools_tag_id').on(table.tagId),
   videoIdIdx: index('idx_schools_video_id').on(table.videoId),
   coordonneIdIdx: index('idx_schools_coordonne_id').on(table.coordonneId),
+  heroIdIdx: index('idx_schools_hero_id').on(table.heroId),
 }));
 
 // Coordonnes table

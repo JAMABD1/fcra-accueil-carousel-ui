@@ -21,6 +21,7 @@ import SectionFormModal from "./SectionFormModal";
 export interface Section {
   id: string;
   title: string;
+  slug: string;
   subtitle: string | null;
   description: string | null;
   imageUrl: string;
@@ -28,6 +29,7 @@ export interface Section {
   heroIds: string[];
   tagName: string | null;
   tagIds: string[];
+  galleryImages?: string[] | null;
   sortOrder: number | null;
   active: boolean | null;
   createdAt: string;
@@ -97,7 +99,7 @@ const SectionsManager = () => {
     total: sectionsData.length,
     active: sectionsData.filter(s => s.active).length,
     inactive: sectionsData.filter(s => !s.active).length,
-    withHero: sectionsData.filter(s => s.heroId).length,
+    withHero: sectionsData.filter(s => s.heroIds && s.heroIds.length > 0).length,
   };
 
   const filteredSections = sectionsData.filter(section =>

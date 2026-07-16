@@ -21,6 +21,7 @@ import VideoFormModal from "./VideoFormModal";
 interface Video {
   id: string;
   title: string;
+  slug: string;
   description: string | null;
   excerpt: string | null;
   video_url: string;
@@ -240,7 +241,7 @@ const VideosManager = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => video.id && navigate(`/videos/${video.id}`)}
+                            onClick={() => video.slug && navigate(`/videos/${video.slug}`)}
                             title="Lire"
                           >
                             <Play className="h-4 w-4" />

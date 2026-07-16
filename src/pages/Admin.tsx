@@ -54,6 +54,7 @@ import { ActivitiesManager } from "@/components/admin/ActivitiesManager";
 import SchoolsManager from "@/components/admin/SchoolsManager";
 import LibraryManager from "@/components/admin/LibraryManager";
 import PartnersManager from "@/components/admin/PartnersManager";
+import AdminDashboard from "@/components/admin/AdminDashboard";
 
 const adminMenuItems = [
   { title: "Tableau de bord", icon: LayoutDashboard, id: "dashboard" },
@@ -88,154 +89,9 @@ const Admin = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "dashboard":
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Utilisateurs</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">1,234</div>
-                  <p className="text-xs text-muted-foreground">+20.1% ce mois</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Articles Publiés</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">89</div>
-                  <p className="text-xs text-muted-foreground">+12% ce mois</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Centres Actifs</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">23</div>
-                  <p className="text-xs text-muted-foreground">+2 nouveaux</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Activités</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">156</div>
-                  <p className="text-xs text-muted-foreground">+8 cette semaine</p>
-                </CardContent>
-              </Card>
-            </div>
+        return <AdminDashboard onNavigate={setActiveSection} />;
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activité Récente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Nouvel article publié</p>
-                        <p className="text-xs text-muted-foreground">Il y a 2 heures</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Utilisateur inscrit</p>
-                        <p className="text-xs text-muted-foreground">Il y a 4 heures</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Centre mis à jour</p>
-                        <p className="text-xs text-muted-foreground">Il y a 6 heures</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Actions Rapides</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="h-20 flex flex-col space-y-2"
-                      onClick={() => setActiveSection("heroes")}
-                    >
-                      <ImageIcon className="h-6 w-6" />
-                      <span className="text-sm">Gérer Heroes</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="h-20 flex flex-col space-y-2"
-                      onClick={() => setActiveSection("impacts")}
-                    >
-                      <TrendingUp className="h-6 w-6" />
-                      <span className="text-sm">Gérer Impacts</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="h-20 flex flex-col space-y-2"
-                      onClick={() => setActiveSection("sections")}
-                    >
-                      <Layers className="h-6 w-6" />
-                      <span className="text-sm">Gérer Sections</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="h-20 flex flex-col space-y-2"
-                      onClick={() => setActiveSection("directors")}
-                    >
-                      <Users className="h-6 w-6" />
-                      <span className="text-sm">Gérer Directeurs</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="h-20 flex flex-col space-y-2"
-                      onClick={() => setActiveSection("centres")}
-                    >
-                      <Building className="h-6 w-6" />
-                      <span className="text-sm">Gérer Centres</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="h-20 flex flex-col space-y-2"
-                      onClick={() => setActiveSection("coordonnes")}
-                    >
-                      <MapPin className="h-6 w-6" />
-                      <span className="text-sm">Gérer Coordonnées</span>
-                    </Button>
-                    <Button 
-                      className="h-20 flex flex-col space-y-2"
-                      onClick={() => setActiveSection("news")}
-                    >
-                      <FileText className="h-6 w-6" />
-                      <span className="text-sm">Nouvel Article</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
-        
       case "heroes":
         return <HeroManager />;
         
@@ -295,8 +151,8 @@ const Admin = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+    <SidebarProvider className="admin-layout">
+      <div className="admin-shell-bg min-h-screen flex w-full">
         <Sidebar className="border-r">
           <SidebarHeader className="border-b px-6 py-4">
             <div className="flex items-center space-x-2">
@@ -362,7 +218,7 @@ const Admin = () => {
               <Button variant="ghost" size="icon">
                 <Bell className="h-4 w-4" />
               </Button>
-              <Badge variant="secondary">En ligne</Badge>
+              <Badge variant="secondary"><span className="admin-live-dot mr-2" />En ligne</Badge>
             </div>
           </header>
           

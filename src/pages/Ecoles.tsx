@@ -1,14 +1,12 @@
 
 import { useState } from "react";
 import Layout from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import PageHero from "@/components/PageHero";
+import ScrollReveal from "@/components/ScrollReveal";
+import EntityListingCard from "@/components/EntityListingCard";
 import { useQuery } from "@tanstack/react-query";
 import { getSchools } from "@/lib/db/queries";
-import { Link } from "react-router-dom";
-import { MapPin, GraduationCap, BookOpen, Building2 } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 interface School {
   id: string;
@@ -56,58 +54,33 @@ const Ecoles = () => {
 
   return (
     <Layout>
-      <div className="py-16 bg-gray-50 min-h-screen">
+      <PageHero
+        eyebrow="Éducation"
+        title="Nos Écoles"
+        subtitle="Découvrez nos établissements scolaires dédiés à l'excellence éducative et au développement de chaque élève."
+        icon={<GraduationCap className="h-8 w-8 text-green-600 shrink-0" />}
+      />
+
+      <section className="py-16 bg-gray-50 min-h-[50vh]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Nos Écoles
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Découvrez nos établissements scolaires dédiés à l'excellence éducative et au développement de chaque élève
-            </p>
-          </div>
-
-
-
           {/* Schools Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {schools.map((school) => (
-              <Card key={school.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm border-0 shadow-lg transform hover:-translate-y-1">
-                <div 
-                  className="h-48 bg-cover bg-center relative"
-                  style={{ backgroundImage: `url(${school.image_url || 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&h=400&fit=crop'})` }}
-                >
-                  <div className="absolute inset-0 bg-black bg-opacity-20" />
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-green-600 text-white border-0 shadow-lg capitalize">
-                      {school.type}
-                    </Badge>
-                  </div>
-
-                </div>
-                
-                <CardContent className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{school.name}</h3>
-                    {school.subtitle && (
-                      <p className="text-green-600 font-medium text-sm mb-2">{school.subtitle}</p>
-                    )}
-                    <p className="text-gray-600 text-sm line-clamp-3">
-                      {school.description || "Aucune description disponible"}
-                    </p>
-                  </div>
-                  <Link to={`/ecoles/${school.id}`}>
-                    <Button className="w-full bg-green-600 hover:bg-green-700 border-0 shadow-lg">
-                      Voir les détails
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {schools.map((school, index) => (
+              <ScrollReveal key={school.id} delay={index * 0.06}>
+                <EntityListingCard
+                  id={school.id}
+                  name={school.name}
+                  description={school.description}
+                  subtitle={school.subtitle}
+                  badge={school.type}
+                  imageUrl={school.image_url}
+                  href={`/ecoles/${school.slug}`}
+                />
+              </ScrollReveal>
             ))}
           </div>
         </div>
-      </div>
+      </section>
     </Layout>
   );
 };

@@ -37,6 +37,7 @@ const Actualites = () => {
   // Transform database articles to match the expected format
   const transformedArticles = articles.map(article => ({
     id: article.id,
+    slug: article.slug,
     title: article.title,
     date: new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
       year: 'numeric',

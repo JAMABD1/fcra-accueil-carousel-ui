@@ -19,6 +19,7 @@ import { MapPin, Users, BookOpen, Heart, ArrowLeft, Play, Calendar, User, Extern
 interface DatabaseCenter {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   address: string | null;
   phone: string | null;
@@ -52,6 +53,7 @@ interface DatabaseCenter {
 interface Center {
   id: string;
   name: string;
+  slug: string;
   description: string;
   image_url: string;
   services: string[];
@@ -121,6 +123,7 @@ const Centres = () => {
     return {
       id: centre.id,
       name: centre.name || "Centre sans nom",
+      slug: centre.slug,
       description: centre.description || "Centre de développement communautaire",
       image_url: centre.image_url,
       services: ["Éducation", "Formation", "Aide sociale"], // Default services
@@ -173,8 +176,8 @@ const Centres = () => {
     center.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCenterClick = (centerId: string) => {
-    navigate(`/centres/${centerId}`);
+  const handleCenterClick = (centerSlug: string) => {
+    navigate(`/centres/${centerSlug}`);
   };
 
   const handleBackClick = () => {
@@ -492,7 +495,7 @@ const Centres = () => {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => handleCenterClick(center.id)}
+                    onClick={() => handleCenterClick(center.slug)}
                   >
                     Découvrir ce centre
                   </Button>

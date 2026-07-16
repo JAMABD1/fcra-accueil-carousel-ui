@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 export interface Centre {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   address: string | null;
   phone: string | null;
@@ -21,6 +22,9 @@ export interface Centre {
   imageUrl: string | null;
   tagId: string | null;
   videoId: string | null;
+  heroIds?: string[] | null;
+  missionImages?: string[] | null;
+  historyImages?: string[] | null;
   sortOrder: number | null;
   active: boolean | null;
   createdAt: string;
@@ -278,10 +282,10 @@ const CentresManager = () => {
 
                 {/* Related Resources */}
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {centre.hero && (
+                  {centre.heroIds && centre.heroIds.length > 0 && (
                     <div className="flex items-center space-x-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs">
                       <ImageIcon className="h-3 w-3" />
-                      <span>Hero</span>
+                      <span>{centre.heroIds.length > 1 ? `${centre.heroIds.length} heroes` : "Hero"}</span>
                     </div>
                   )}
                   {centre.videos && (

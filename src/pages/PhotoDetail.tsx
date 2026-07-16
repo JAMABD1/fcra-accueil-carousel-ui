@@ -1,19 +1,23 @@
 
 import Layout from "@/components/Layout";
 import { useParams, Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Eye, ArrowLeft, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Eye, ArrowLeft, Download, Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
 import { photos } from "@/lib/db/schema";
 import { db } from "@/lib/db/client";
+import { whereSlugOrId } from "@/lib/db/queries";
 import { Lightbox } from "@/components/Lightbox";
+import SectionHeading from "@/components/SectionHeading";
+import ScrollReveal from "@/components/ScrollReveal";
 
 interface Photo {
   id: string;
   title: string;
+  slug: string;
   description: string | null;
   imageUrl: string;
   thumbnailUrl: string | null;
@@ -26,20 +30,20 @@ interface Photo {
 }
 
 const PhotoDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: photo, isLoading } = useQuery({
-    queryKey: ["photo", id],
+    queryKey: ["photo", slug],
     queryFn: async () => {
       const result = await db.select()
         .from(photos)
-        .where(eq(photos.id, id!))
+        .where(whereSlugOrId(photos, slug!))
         .limit(1);
       return result[0] as Photo;
     },
-    enabled: !!id,
+    enabled: !!slug,
   });
 
   const { data: relatedPhotos = [] } = useQuery({
@@ -98,10 +102,23 @@ const PhotoDetail = () => {
           </Link>
 
           {/* Title and Description */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{photo.title}</h1>
+          <div className="text-center mb-8 relative overflow-hidden py-4">
+            <div className="grain-overlay pointer-events-none" />
+            <p className="eyebrow-label mb-3">Galerie FCRA</p>
+            {photo.category && (
+              <Badge variant="outline" className="mb-4 text-green-700 border-green-200 capitalize">
+                {photo.category}
+              </Badge>
+            )}
+            <h1 className="text-section font-bold text-gray-900 mb-4">{photo.title}</h1>
             {photo.description && (
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">{photo.description}</p>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">{photo.description}</p>
+            )}
+            {photo.images && photo.images.length > 0 && (
+              <p className="mt-5 inline-flex items-center gap-1.5 text-sm text-gray-500">
+                <Images className="h-4 w-4 text-green-600" />
+                {photo.images.length} photo{photo.images.length !== 1 ? "s" : ""}
+              </p>
             )}
           </div>
 
@@ -116,9 +133,9 @@ const PhotoDetail = () => {
               }}
             >
               {photo.images.map((imageUrl, index) => (
+                <ScrollReveal key={index} delay={index * 0.04}>
                 <div
-                  key={index}
-                  className="relative group cursor-pointer overflow-hidden rounded-lg bg-white flex items-center justify-center"
+                  className="relative group cursor-pointer overflow-hidden rounded-lg bg-white flex items-center justify-center card-lift"
                   style={{ minHeight: '120px', minWidth: '120px' }}
                   onClick={() => {
                     setCurrentImageIndex(index);
@@ -133,10 +150,11 @@ const PhotoDetail = () => {
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
                 </div>
+                </ScrollReveal>
               ))}
             </div>
           ) : (
-            <div className="relative flex items-center justify-center bg-white rounded-lg" style={{ minHeight: '120px', minWidth: '120px' }}>
+            <div className="relative flex items-center justify-center bg-white rounded-lg card-lift" style={{ minHeight: '120px', minWidth: '120px' }}>
               <img
                 src={photo.image_url}
                 alt={photo.title}

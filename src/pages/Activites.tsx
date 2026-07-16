@@ -224,7 +224,7 @@ const Activites = () => {
                       </div>
                       <Button 
                         className="w-full bg-green-600 hover:bg-green-700 mt-2"
-                        onClick={() => navigate(`/activites/${activity.id}`)}
+                        onClick={() => navigate(`/activites/${activity.slug}`)}
                       >
                         Voir le détail
                       </Button>

@@ -136,14 +136,16 @@ const TaggedHeroCarousel = ({
           }`}
         >
           <div
-            className="w-full h-full bg-cover bg-center"
+            className="w-full h-full bg-cover bg-center relative"
             style={{
-              backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${slide.image})`,
+              backgroundImage: `url(${slide.image})`,
             }}
           >
-            <div className="flex items-center justify-center h-full">
+            <div className="absolute inset-0 bg-warm-vignette" />
+            <div className="grain-overlay" />
+            <div className="relative z-10 flex items-center justify-center h-full">
               <div className="text-center text-white px-4 max-w-4xl mx-auto">
-                <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
+                <h1 className="text-hero font-bold mb-6 animate-fade-in">
                   {slide.title}
                 </h1>
                 <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto animate-fade-in">

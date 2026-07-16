@@ -124,7 +124,7 @@ const Photos = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredPhotos.map((photo) => (
               <Card key={photo.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
-                <Link to={`/photos/${photo.id}`}>
+                <Link to={`/photos/${photo.slug}`}>
                   <div className="relative">
                      <div 
                        className="h-48 bg-cover bg-center group-hover:scale-105 transition-transform duration-300"

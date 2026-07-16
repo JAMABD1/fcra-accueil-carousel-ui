@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
 import { articles } from "@/lib/db/schema";
 import { db } from "@/lib/db/client";
+import { whereSlugOrId } from "@/lib/db/queries";
 import Layout from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ import {
 } from "@/components/ui/carousel";
 import { Calendar, User, ArrowLeft, Share2, Facebook, Twitter } from "lucide-react";
 import { Article } from "@/components/admin/ArticlesManager";
+import NewsCard from "@/components/NewsCard";
+import SectionHeading from "@/components/SectionHeading";
+import ScrollReveal from "@/components/ScrollReveal";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -46,19 +50,19 @@ const processMarkdownContent = (content: string): string => {
 };
 
 const ArticleDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const location = useLocation();
   const imagesRef = useRef<HTMLDivElement | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi | undefined>(undefined);
 
   // Fetch article from database
   const { data: article, isLoading } = useQuery({
-    queryKey: ['article', id],
+    queryKey: ['article', slug],
     queryFn: async () => {
-      const result = await db.select().from(articles).where(eq(articles.id, id!)).limit(1);
+      const result = await db.select().from(articles).where(whereSlugOrId(articles, slug!)).limit(1);
       return result[0] as Article;
     },
-    enabled: !!id
+    enabled: !!slug
   });
 
   // Fetch tags to map IDs -> names
@@ -75,6 +79,40 @@ const ArticleDetail = () => {
     const found = allTags.find(t => t.id === tagIdOrName);
     return found ? found.name : (tagIdOrName as string);
   });
+
+  // Fetch other published articles to compute related articles by shared tags
+  const { data: allArticles = [] } = useQuery({
+    queryKey: ['articles', 'related', 'published'],
+    queryFn: async () => {
+      const { getArticles } = await import("@/lib/db/queries");
+      return await getArticles({ status: 'published', limit: 12 });
+    },
+    enabled: !!article
+  });
+
+  const currentTags = article?.tags || [];
+  const relatedArticles = allArticles
+    .filter((a) => a.id !== article?.id)
+    .sort((a, b) => {
+      const score = (tags: string[] | null) => (tags || []).filter((t) => currentTags.includes(t)).length;
+      return score(b.tags) - score(a.tags);
+    })
+    .slice(0, 3)
+    .map((related) => ({
+      id: related.id,
+      slug: related.slug,
+      title: related.title,
+      date: new Date(related.publishedAt || related.createdAt).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      }),
+      author: related.author || undefined,
+      image: related.images && related.images.length > 0 ? related.images[0] : '/placeholder.svg',
+      excerpt: related.excerpt || `${related.content.substring(0, 140)}...`,
+      tags: related.tags || [],
+      tagObjects: (related.tags || []).map((tagId) => allTags.find((t) => t.id === tagId)).filter(Boolean),
+    }));
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -183,6 +221,7 @@ const ArticleDetail = () => {
                 
                 {/* Article Title Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
+                  <p className="eyebrow-label mb-2 text-green-300">Actualités FCRA</p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {displayTags.map((tagName) => (
                       <Badge key={tagName} className="bg-green-600 text-white">
@@ -190,7 +229,7 @@ const ArticleDetail = () => {
                       </Badge>
                     ))}
                   </div>
-                  <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                  <h1 className="text-section font-bold mb-4">
                     {article.title}
                   </h1>
                   <div className="flex items-center gap-6 text-sm opacity-90">
@@ -211,7 +250,9 @@ const ArticleDetail = () => {
 
             {/* Fallback for articles without images */}
             {(!article.images || article.images.length === 0) && (
-              <div className="p-8 bg-gradient-to-r from-green-500 to-green-600 text-white">
+              <div className="p-8 bg-gradient-to-r from-green-500 to-green-600 text-white relative overflow-hidden">
+                <div className="grain-overlay pointer-events-none" />
+                <p className="eyebrow-label mb-2 text-white/80">Actualités FCRA</p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {displayTags.map((tagName) => (
                     <Badge key={tagName} className="bg-white/20 text-white border-white/30">
@@ -219,7 +260,7 @@ const ArticleDetail = () => {
                     </Badge>
                   ))}
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                <h1 className="text-section font-bold mb-4">
                   {article.title}
                 </h1>
                 <div className="flex items-center gap-6 text-sm opacity-90">
@@ -292,6 +333,19 @@ const ArticleDetail = () => {
             {/* Sidebar */}
             {/* Removed 'Partager cet article' section as requested */}
           </div>
+
+          {relatedArticles.length > 0 && (
+            <div className="mt-12">
+              <SectionHeading eyebrow="À lire aussi" title="Articles similaires" align="center" className="mb-10" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {relatedArticles.map((related, index) => (
+                  <ScrollReveal key={related.id} delay={index * 0.06}>
+                    <NewsCard {...related} />
+                  </ScrollReveal>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

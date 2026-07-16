@@ -7,13 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createRecord, updateRecord } from "@/lib/db/queries";
+import { createRecord, updateRecord, isSlugAvailable } from "@/lib/db/queries";
 import { uploadVideo, uploadImage } from "@/lib/storage/r2";
 import { videos } from "@/lib/db/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Video, Youtube } from "lucide-react";
 import VideoUpload from "./VideoUpload";
 import TagSelector from "./TagSelector";
+import { useSlugField } from "@/hooks/useSlugField";
+import SlugFormField from "./SlugFormField";
+import { SLUG_PATTERN } from "@/lib/utils/slug";
 
 interface VideoFormData {
   title: string;
@@ -33,6 +36,7 @@ interface VideoFormData {
 interface Video {
   id: string;
   title: string;
+  slug?: string;
   description: string | null;
   excerpt: string | null;
   video_url?: string | null;
@@ -66,7 +70,10 @@ interface VideoFormModalProps {
 const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [slugError, setSlugError] = useState<string | undefined>();
+  const [checkingSlug, setCheckingSlug] = useState(false);
   const { toast } = useToast();
+  const isEditing = !!video;
 
   const form = useForm<VideoFormData>({
     defaultValues: {
@@ -86,6 +93,8 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
   });
 
   const videoType = form.watch("video_type");
+  const titleValue = form.watch("title");
+  const { slug, setSlug, initSlug } = useSlugField(titleValue, isEditing);
 
   useEffect(() => {
     if (video) {
@@ -103,7 +112,9 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
         featured: video.featured || false,
         status: video.status || "draft",
       });
+      initSlug(video.slug || "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video, form]);
 
   const getVideoDuration = (file: File): Promise<number> => {
@@ -125,6 +136,20 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
   };
 
   const onSubmit = async (data: VideoFormData) => {
+    if (!SLUG_PATTERN.test(slug)) {
+      toast({ title: "Erreur de validation", description: "Le slug n'est pas valide.", variant: "destructive" });
+      return;
+    }
+
+    setSlugError(undefined);
+    setCheckingSlug(true);
+    const slugAvailable = await isSlugAvailable(videos, slug, isEditing ? video?.id : undefined);
+    setCheckingSlug(false);
+    if (!slugAvailable) {
+      setSlugError("Ce slug est déjà utilisé par une autre vidéo.");
+      return;
+    }
+
     setIsSubmitting(true);
     setUploadProgress(0);
 
@@ -204,6 +229,7 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
 
       const videoData = {
         title: data.title,
+        slug,
         description: data.description,
         excerpt: data.excerpt,
         videoUrl,
@@ -272,6 +298,15 @@ const VideoFormModal = ({ video, onSuccess }: VideoFormModalProps) => {
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+
+              <SlugFormField
+                value={slug}
+                onChange={setSlug}
+                onBlur={() => setSlugError(undefined)}
+                prefix="/videos/"
+                error={slugError}
+                checking={checkingSlug}
               />
 
               {/* Description */}

@@ -54,7 +54,7 @@ const Videos = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredVideos.map((video: any) => (
               <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
-                <Link to={`/videos/${video.id}`}>
+                <Link to={`/videos/${video.slug}`}>
                   <div className="relative">
                     <div 
                       className="h-48 bg-cover bg-center"

@@ -18,6 +18,11 @@ export default {
 			}
 		},
 		extend: {
+			fontSize: {
+				'hero': ['clamp(2.5rem, 6vw, 4.5rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+				'section': ['clamp(1.75rem, 3vw, 2.75rem)', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
+				'eyebrow': ['0.75rem', { lineHeight: '1.5', letterSpacing: '0.12em' }],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -52,6 +57,17 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				brand: {
+					DEFAULT: 'hsl(var(--brand))',
+					deep: 'hsl(var(--brand-deep))',
+					foreground: 'hsl(var(--brand-foreground))',
+				},
+				ivory: 'hsl(var(--ivory))',
+				charcoal: 'hsl(var(--charcoal))',
+				mist: 'hsl(var(--mist))',
+				gold: {
+					light: 'hsl(var(--gold-light))',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -84,12 +100,26 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+				'fade-in': {
+					from: { opacity: '0', transform: 'translateY(20px)' },
+					to: { opacity: '1', transform: 'translateY(0)' }
+				},
+				'breathe': {
+					'0%, 100%': { opacity: '0.6', transform: 'scale(0.98)' },
+					'50%': { opacity: '1', transform: 'scale(1)' }
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
-			}
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.8s ease-out forwards',
+				'breathe': 'breathe 2s ease-in-out infinite',
+			},
+			backgroundImage: {
+				'warm-vignette': 'linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4))',
+				'footer-gradient': 'linear-gradient(to right, hsl(var(--brand)), hsl(var(--brand-deep)))',
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],

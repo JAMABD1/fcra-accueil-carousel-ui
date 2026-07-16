@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { createRecord, updateRecord, getTags, getHeroItems } from "@/lib/db/queries";
+import { createRecord, updateRecord, getTags, getHeroItems, isSlugAvailable } from "@/lib/db/queries";
 import { sections } from "@/lib/db/schema";
 import { uploadImage } from "@/lib/storage/r2";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -17,13 +17,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Section } from "./SectionsManager";
 import { Save, X, Layers } from "lucide-react";
 import SectionImageUpload from "./SectionImageUpload";
+import { useSlugField } from "@/hooks/useSlugField";
+import SlugFormField from "./SlugFormField";
+import { SLUG_PATTERN } from "@/lib/utils/slug";
+import HeroMultiSelect from "./shared/HeroMultiSelect";
+import MultiImageUpload from "./shared/MultiImageUpload";
 
 interface SectionFormData {
   title: string;
   subtitle: string;
   description: string;
   image: FileList | null;
-  hero_id: string;
   tag_name: string;
   sort_order: number;
   active: boolean;
@@ -39,8 +43,11 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
   const queryClient = useQueryClient();
   const isEditing = !!section;
 
-  // No hero selection, only tags
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [selectedHeroIds, setSelectedHeroIds] = useState<string[]>([]);
+  const [slugError, setSlugError] = useState<string | undefined>();
+  const [checkingSlug, setCheckingSlug] = useState(false);
 
   const form = useForm<SectionFormData>({
     defaultValues: {
@@ -48,7 +55,6 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
       subtitle: "",
       description: "",
       image: null,
-      hero_id: "none",
       tag_name: "none",
       sort_order: 0,
       active: true,
@@ -63,6 +69,17 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
     }
   });
 
+  // Fetch heroes for selection
+  const { data: heroes = [] } = useQuery({
+    queryKey: ['heroes'],
+    queryFn: async () => {
+      return await getHeroItems();
+    }
+  });
+
+  const titleValue = form.watch("title");
+  const { slug, setSlug, initSlug } = useSlugField(titleValue, isEditing);
+
   // Set form values when editing
   useEffect(() => {
     if (section) {
@@ -76,7 +93,11 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
         active: section.active || false,
       });
       setSelectedTags(section.tagIds || []);
+      setGalleryImages(section.galleryImages || []);
+      setSelectedHeroIds(section.heroIds || []);
+      initSlug(section.slug || "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section, form]);
 
   // Handle tag selection
@@ -108,12 +129,14 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
 
       const sectionData = {
         title: data.title,
+        slug,
         subtitle: data.subtitle || null,
         description: data.description || null,
         imageUrl: imageUrl,
-        // No hero_id or hero_ids, only tags
+        heroIds: selectedHeroIds,
         tagName: data.tag_name === "none" ? null : data.tag_name,
         tagIds: selectedTags,
+        galleryImages,
         sortOrder: data.sort_order,
         active: data.active,
       };
@@ -142,7 +165,7 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
     }
   });
 
-  const onSubmit = (data: SectionFormData) => {
+  const onSubmit = async (data: SectionFormData) => {
     // Basic validation
     if (!data.title.trim()) {
       toast({
@@ -159,6 +182,20 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
         description: "Une image est requise.",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (!SLUG_PATTERN.test(slug)) {
+      toast({ title: "Erreur de validation", description: "Le slug n'est pas valide.", variant: "destructive" });
+      return;
+    }
+
+    setSlugError(undefined);
+    setCheckingSlug(true);
+    const available = await isSlugAvailable(sections, slug, isEditing ? section?.id : undefined);
+    setCheckingSlug(false);
+    if (!available) {
+      setSlugError("Ce slug est déjà utilisé par une autre section.");
       return;
     }
 
@@ -212,6 +249,15 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
                 )}
               />
 
+              <SlugFormField
+                value={slug}
+                onChange={setSlug}
+                onBlur={() => setSlugError(undefined)}
+                prefix="/sections/"
+                error={slugError}
+                checking={checkingSlug}
+              />
+
               <FormField
                 control={form.control}
                 name="subtitle"
@@ -248,6 +294,8 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
                   </FormItem>
                 )}
               />
+
+              <HeroMultiSelect heroes={heroes} value={selectedHeroIds} onChange={setSelectedHeroIds} />
 
               {/* Tags Selection */}
               <div>
@@ -328,12 +376,27 @@ const SectionFormModal = ({ section, onClose }: SectionFormModalProps) => {
                     <FormControl>
                       <SectionImageUpload
                         onChange={field.onChange}
-                        existingImage={section?.image_url}
+                        existingImage={section?.imageUrl}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Galerie (carrousel de la section)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MultiImageUpload
+                label="Images de la galerie"
+                value={galleryImages}
+                onChange={setGalleryImages}
+                folder="sections"
+                prefix="section-gallery-"
               />
             </CardContent>
           </Card>

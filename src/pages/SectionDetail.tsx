@@ -1,11 +1,8 @@
 import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { eq } from "drizzle-orm";
-import { sections } from "@/lib/db/schema";
-import { db } from "@/lib/db/client";
 import Layout from "@/components/Layout";
-import TaggedHeroCarousel from "@/components/TaggedHeroCarousel";
+import DirectHeroCarousel from "@/components/DirectHeroCarousel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +16,6 @@ import UniversitesSection from "@/components/UniversitesSection";
 import RVSSection from "@/components/RVSSection";
 import PartnersCarousel from "@/components/PartnersCarousel";
 import Counter from "@/components/Counter";
-import { fetchPhotosByTags } from "@/lib/utils";
 import { getTags, getImpactItems, getArticles, getPartners } from "@/lib/db/queries";
 
 interface Section {
@@ -83,20 +79,23 @@ interface Article {
 }
 
 const SectionDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  // Fetch section details
+  // Fetch section details (includes heroes/galleryImages)
   const { data: section, isLoading: sectionLoading } = useQuery({
-    queryKey: ['section', id],
+    queryKey: ['section', slug],
     queryFn: async () => {
-      if (!id) throw new Error('Section ID is required');
+      if (!slug) throw new Error('Section slug is required');
 
-      const result = await db.select().from(sections).where(eq(sections.id, id)).limit(1);
-      return result[0];
+      const { getSections } = await import("@/lib/db/queries");
+      const allSections = await getSections();
+      return allSections.find((s: any) => s.slug === slug || s.id === slug) ?? null;
     },
-    enabled: !!id
+    enabled: !!slug
   });
+
+  const sectionHeroes = (section as any)?.heroes || [];
 
   // Fetch tags
   const { data: tags = [] } = useQuery({
@@ -157,18 +156,8 @@ const SectionDetail = () => {
     return [];
   }, [section, tags]);
 
-  // Fetch photos based on section tags (using resolved IDs)
-  const { data: sectionPhotos = [] } = useQuery({
-    queryKey: ['section-photos', sectionTagIds],
-    queryFn: async () => {
-      if (sectionTagIds.length === 0) {
-        // If no specific tags, return a reasonable number of recent photos
-        return await fetchPhotosByTags([], 20);
-      }
-      return await fetchPhotosByTags(sectionTagIds, 1000); // Show all photos with matching tags
-    },
-    enabled: !!section
-  });
+  // Section gallery photos come directly from the section's own galleryImages
+  const sectionPhotos = (section as any)?.galleryImages || (section as any)?.gallery_images || [];
 
   // Fetch related impacts based on shared tags
   const { data: relatedImpacts = [] } = useQuery({
@@ -288,13 +277,9 @@ const SectionDetail = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        {/* Hero Carousel - Show heroes with matching tag name */}
-        {sectionTagName && (
-          <TaggedHeroCarousel 
-            filterTags={[sectionTagName]}
-            showButtons={false}
-            heightClass="h-96 md:h-[500px]"
-          />
+        {/* Hero Carousel */}
+        {sectionHeroes.length > 0 && (
+          <DirectHeroCarousel heroes={sectionHeroes} heightClass="h-96 md:h-[500px]" />
         )}
 
       {/* Section Content */}
@@ -428,7 +413,7 @@ const SectionDetail = () => {
                         <p className="text-gray-600 mb-4 line-clamp-3">{article.excerpt}</p>
                       )}
                       <Button asChild variant="outline" className="w-full">
-                        <a href={`/actualites/${article.id}`}>Lire l'article</a>
+                        <a href={`/actualites/${article.slug}`}>Lire l'article</a>
                       </Button>
                     </CardContent>
                   </Card>
